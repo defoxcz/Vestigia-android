@@ -1,8 +1,9 @@
 # Badatelské pomůcky: skutečné stažení a odinstalace
 
 Správce nyní skutečně stahuje a instaluje SQLite balíčky. Ukázkové úlohy a
-simulovaný průběh byly odstraněny. Prohlížeče a odborné použití databází v modulech
-jsou samostatná další práce; nainstalovaná databáze není totéž jako hotový modul.
+simulovaný průběh byly odstraněny. Nainstalované pomůcky se otevírají přímo do
+společného textového nebo obrazového prohlížeče. Jde o samostatné funkce bez vazby
+na pracovní moduly; podrobnosti jsou v [readers.md](readers.md).
 
 ## Katalog a přenos
 
@@ -46,7 +47,7 @@ jsou validována. Soubory nejsou součástí uživatelských projektů ani sdíl
 
 ## Odinstalace
 
-Odinstalace je dostupná v detailu nainstalované pomůcky i ve Stahování.
+Odinstalace je dostupná ve Stahování; detail nainstalované pomůcky slouží k prohlížení.
 Vyžaduje potvrzení s názvem pomůcky. Nejprve se zruší její případná úloha,
 vyčká se ukončení zápisu a potom se odstraní pouze adresář daného ID v úložišti
 pomůcek včetně dočasných/stárších verzí. Ostatní pomůcky, rodokmeny a osobní
@@ -62,7 +63,7 @@ stáhnout. Souhrn místa se počítá z reálně nainstalovaných databází.
   SQLite kontrola, trvalost po vytvoření nového správce, odinstalace a opětovná
   instalace; také skutečný foreground Worker a potvrzení odinstalace v GUI.
 - Testy síťových balíčků pracují v izolovaném adresáři. Test Workeru neproběhne,
-  pokud už je příslušná pomůcka uživatelem nainstalována; vlastní testovací instalaci
+  pokud už je nějaká pomůcka nainstalována nebo existuje rozpracovaná fronta; vlastní testovací instalaci
   po sobě odstraní. Testy se spouštějí pouze na fyzickém telefonu.
 
 ### Výsledek ověření 28. 10. 2026

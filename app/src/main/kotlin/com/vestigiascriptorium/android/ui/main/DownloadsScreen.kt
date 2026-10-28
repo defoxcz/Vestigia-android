@@ -69,7 +69,7 @@ internal fun DownloadsScreen(copy: Copy,library: AidLibraryState,onDownload: (St
                     if(status!="busy") {
                         FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                             when(status) {
-                                "installed" -> TextButton(onClick={onDetail(aid.id)}) { Text(copy.t("Detail","Details")) }
+                                "installed" -> TextButton(onClick={onDetail(aid.id)}) { Text(copy.t("Otevřít","Open")) }
                                 "update" -> TextButton(onClick={onDownload(aid.id)}) { Text(copy.t("Aktualizovat","Update")) }
                                 "active","queued" -> TextButton(onClick={onPause(aid.id)}) { Text(copy.t("Pozastavit","Pause")) }
                                 "error" -> TextButton(onClick={onDownload(aid.id)}) { Text(copy.t("Zkusit znovu","Retry")) }

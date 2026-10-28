@@ -47,7 +47,11 @@ class AidWorkerDeviceTest {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val repository=AidRepository.get(context)
         val id="manuscript-abbreviations"
-        org.junit.Assume.assumeTrue("Do not alter an existing user-installed package",repository.store.installed(id)==null)
+        val allIds=context.assets.open("research-aids.json").bufferedReader().use { AidNetwork.parse(it.readText()) }.keys
+        val existingWork=androidx.work.WorkManager.getInstance(context).getWorkInfosByTag(AidRepository.TAG).get()
+        val paused=context.getSharedPreferences("research-aids",android.content.Context.MODE_PRIVATE).all.any { it.key.startsWith("state:") && it.value=="paused" }
+        org.junit.Assume.assumeTrue("Do not alter a persistent user library or queue",
+            allIds.none { repository.store.installed(it)!=null } && existingWork.all { it.state.isFinished } && !paused)
         val previousWifi=repository.state.value.wifiOnly
         fun await(description: String,condition: () -> Boolean) {
             val deadline=System.currentTimeMillis()+120_000

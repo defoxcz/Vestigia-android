@@ -12,3 +12,8 @@
 - Po dokončení a ověření práce vždy commit a push do
   https://github.com/defoxcz/Vestigia-android. Nezahrnovat lokální cesty SDK,
   podpisové klíče, cache, APK, uživatelská data ani tajné údaje.
+
+- Debug aplikace slouží uživateli jako stálá instalace. Aktualizovat výhradně
+  pomocí `adb install -r`; bez výslovného pokynu nikdy neodinstalovat aplikaci,
+  nemazat její data ani existující pomůcky. Testy prohlížečů používají izolované
+  testovací databáze, nikoli uživatelovu knihovnu.

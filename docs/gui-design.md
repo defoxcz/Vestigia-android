@@ -35,8 +35,11 @@ formát, identita záznamů a kompatibilita. Editor ani import nejsou zatím hot
 Katalog má všech 14 stávajících databázových balíčků, hledání, oborové filtry a
 přehled skutečně nainstalovaných pomůcek. Detail rozlišuje přenosovou velikost
 a místo po instalaci a nabízí stažení, aktualizaci a potvrzenou odinstalaci.
-Pomůcky po instalaci zůstávají dostupné bez připojení; jejich odborné prohlížeče
-se doplní v rámci modulů.
+Nainstalované pomůcky se otevírají přímo do samostatného sdíleného prohlížeče,
+bez vazby na moduly. Textová a obrazová podoba sdílejí datovou vrstvu, hledání,
+filtry, stránkování a detail. U obrazů je nutné rozlišit vložené obrázky šablon
+od online obrázků na Commons; dříve načtené snímky mohou být v mezipaměti.
+Podrobnosti: [readers.md](readers.md).
 
 Stahování už není simulace. WorkManager provádí přenos na pozadí, ověření a
 instalaci. Obrazovka ukazuje skutečné bajty, frontu, chyby, nainstalované balíčky
@@ -59,6 +62,8 @@ webovým katalogem a testy jsou popsány v [downloads.md](downloads.md).
 - [Vstup do Genealogie](previews/genealogy.png)
 - [Tmavý režim](previews/dark.png)
 - [Tablet](previews/tablet.png)
+- [Textový prohlížeč pomůcky](previews/reader-text.png)
+- [Obrazový prohlížeč pomůcky](previews/reader-images.png)
 
 Compose náhledy jsou pouze vykreslené obrazovky; nespouštějí skutečná stahování.
 Sestavení a statická kontrola: `./gradlew assembleDebug lintDebug`.

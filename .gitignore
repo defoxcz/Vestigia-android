@@ -17,3 +17,6 @@ local.properties
 # Module build outputs and Kotlin caches
 **/build/
 .kotlin/
+
+# Generated public reader test fixtures (test APK only)
+/app/src/androidTest/assets/reference-fixtures/

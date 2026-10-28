@@ -28,21 +28,31 @@ class LibraryUiTest {
         rule.onNodeWithText("Další moduly").assertDoesNotExist()
         rule.onNodeWithText("Připravujeme").assertDoesNotExist()
     }
+    @Test fun installedAidOpensContentDirectly() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val meta=context.assets.open("research-aids.json").bufferedReader().use { AidNetwork.parse(it.readText()) }.getValue("historical-units")
+        var opened: String?=null
+        val library=AidLibraryState(metadata=mapOf(meta.id to meta),installed=mapOf(meta.id to meta),jobs=mapOf(meta.id to AidJob("installed")))
+        rule.setContent { VestigiaScriptoriumTheme { VestigiaApp(initialTab=1,library=library,onOpenAid={opened=it}) } }
+        rule.onNodeWithText("Historické míry a váhy").performScrollTo().performClick()
+        rule.runOnIdle { assertEquals(meta.id,opened) }
+        rule.onNodeWithText("Po instalaci").assertDoesNotExist()
+    }
     @Test fun uninstallRequiresConfirmationAndTargetsOnlySelectedAid() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val meta=context.assets.open("research-aids.json").bufferedReader().use { AidNetwork.parse(it.readText()) }.getValue("historical-units")
         var removed: String?=null
         val state=AidLibraryState(metadata=mapOf(meta.id to meta),installed=mapOf(meta.id to meta),jobs=mapOf(meta.id to AidJob("installed")))
         rule.setContent { VestigiaScriptoriumTheme {
-            AidDetail(aids.first { it.id==meta.id },Copy(true),state,{}, {}, {removed=it})
+            DownloadsScreen(Copy(true),state,{}, {}, {}, {removed=it}, {}, {}, {})
         }}
-        rule.onNodeWithText("Odinstalovat pomůcku").performScrollTo().performClick()
+        rule.onNodeWithText("Odinstalovat").performScrollTo().performClick()
         rule.onNodeWithText("Odinstalovat pomůcku?").assertIsDisplayed()
         rule.runOnIdle { assertEquals(null,removed) }
         rule.onNodeWithText("Zpět").performClick()
         rule.runOnIdle { assertEquals(null,removed) }
-        rule.onNodeWithText("Odinstalovat pomůcku").performClick()
-        rule.onNodeWithText("Odinstalovat",useUnmergedTree=true).performClick()
+        rule.onNodeWithText("Odinstalovat").performClick()
+        rule.onNode(hasText("Odinstalovat") and hasAnyAncestor(isDialog())).performClick()
         rule.runOnIdle { assertEquals(meta.id,removed) }
     }
 }

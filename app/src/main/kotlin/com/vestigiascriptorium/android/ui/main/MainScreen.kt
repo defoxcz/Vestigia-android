@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vestigiascriptorium.android.aids.AidLibraryModel
 import com.vestigiascriptorium.android.aids.AidLibraryState
 import com.vestigiascriptorium.android.aids.AidNetwork
+import com.vestigiascriptorium.android.aids.reader.AidReaderActivity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -43,7 +44,8 @@ fun MainScreen() {
         repository.download(id)
     },onPause=repository::pause,
         onCancel=repository::cancel,onUninstall=repository::uninstall,onWifi=repository::wifiOnly,
-        onRefresh=repository::refresh,onClearError=repository::clearError)
+        onRefresh=repository::refresh,onClearError=repository::clearError,
+        onOpenAid={ id -> context.startActivity(AidReaderActivity.intent(context,id)) })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +53,7 @@ fun MainScreen() {
 internal fun VestigiaApp(initialTab: Int = 0, initialGenealogy: Boolean = false,
     library: AidLibraryState = AidLibraryState(),
     onDownload: (String) -> Unit = {},onPause: (String) -> Unit = {},onCancel: (String) -> Unit = {},
-    onUninstall: (String) -> Unit = {},onWifi: (Boolean) -> Unit = {},onRefresh: () -> Unit = {},onClearError: () -> Unit = {}) {
+    onUninstall: (String) -> Unit = {},onWifi: (Boolean) -> Unit = {},onRefresh: () -> Unit = {},onClearError: () -> Unit = {},onOpenAid: (String) -> Unit = {}) {
     val copy = Copy(LocalConfiguration.current.locales[0].language == "cs")
     var tab by rememberSaveable { mutableIntStateOf(initialTab) }
     var detail by rememberSaveable { mutableStateOf<String?>(null) }
@@ -61,6 +63,7 @@ internal fun VestigiaApp(initialTab: Int = 0, initialGenealogy: Boolean = false,
     val wide = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() >= 700.dp }
     val labels = listOf(copy.t("Moduly","Modules"),copy.t("Pomůcky","Research aids"),copy.t("Stahování","Downloads"))
     val activeCount = jobs.values.count { it in listOf("queued","active","paused","error","verifying","installing") }
+    fun openAid(id: String) { if(library.installed.containsKey(id)) onOpenAid(id) else detail=id }
     fun select(index: Int) { tab=index;detail=null;genealogy=false }
     BackHandler(enabled=detail!=null || genealogy || tab!=0) {
         when { detail!=null -> detail=null;genealogy -> genealogy=false;else -> select(0) }
@@ -93,11 +96,11 @@ internal fun VestigiaApp(initialTab: Int = 0, initialGenealogy: Boolean = false,
                     when {
                         detail!=null -> AidDetail(aids.first { it.id==detail },copy,library,onDownload={ id ->
                             onDownload(id);select(2)
-                        },onManage={select(2)},onUninstall=onUninstall)
+                        },onManage={select(2)},onOpen={onOpenAid(it)})
                         genealogy -> GenealogyScreen(copy,onCreate={info=copy.t("Nový rodokmen","New family tree")})
                         tab==0 -> ModulesScreen(copy,onGenealogy={genealogy=true},onModule={info=it})
-                        tab==1 -> AidsScreen(copy,library,onRefresh=onRefresh,onDetail={detail=it})
-                        else -> DownloadsScreen(copy,library,onDownload,onPause,onCancel,onUninstall,onWifi,onCatalog={select(1)},onDetail={detail=it})
+                        tab==1 -> AidsScreen(copy,library,onRefresh=onRefresh,onDetail={openAid(it)})
+                        else -> DownloadsScreen(copy,library,onDownload,onPause,onCancel,onUninstall,onWifi,onCatalog={select(1)},onDetail={openAid(it)})
                     }
                 }
             }

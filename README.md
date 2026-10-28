@@ -8,7 +8,11 @@ budou implementovány postupně. Na hlavní obrazovce nejsou štítky Připravuj
 Badatelské pomůcky se skutečně stahují, ověřují a instalují. Správce zobrazuje
 reálný průběh, síťovou podmínku, chyby a nainstalované balíčky. Odinstalace maže
 jen potvrzenou pomůcku a nezasahuje do vlastních badatelských dat.
-Podrobnosti: [Stahování a odinstalace](docs/downloads.md), [Návrh GUI](docs/gui-design.md).
+Nainstalované pomůcky se otevírají přímo do společného prohlížeče: textový seznam
+nebo obrazová galerie, hledání, filtry, stránkování, detaily a zvětšení obrázků.
+Jsou samostatnými funkcemi a nevyžadují otevření žádného pracovního modulu.
+Podrobnosti: [Prohlížeče](docs/readers.md), [Stahování a odinstalace](docs/downloads.md),
+[Návrh GUI](docs/gui-design.md).
 Minimum Android 8.0 (API 26), compile/target SDK 36.
 
 ## Otevření ve VS Code

@@ -59,11 +59,18 @@ internal fun AidsScreen(copy: Copy,library: AidLibraryState,onRefresh: () -> Uni
 }
 
 @Composable
-internal fun AidDetail(aid: Aid,copy: Copy,library: AidLibraryState,onDownload: (String) -> Unit,onManage: () -> Unit,onUninstall: (String) -> Unit) {
+internal fun AidDetail(aid: Aid,copy: Copy,library: AidLibraryState,onDownload: (String) -> Unit,onManage: () -> Unit,onOpen: (String) -> Unit) {
     val status=library.jobs[aid.id]?.status
     val installed=library.installed[aid.id]
     val meta=library.metadata[aid.id]
-    var confirm by rememberSaveable { mutableStateOf(false) }
+    if(installed!=null) {
+        Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
+            Heading(copy.title(aid),copy.description(aid))
+            Button(onClick={onOpen(aid.id)}) { Text(copy.t("Otevřít pomůcku","Open research aid")) }
+            TextButton(onClick=onManage) { Text(copy.t("Správa ve Stahování","Manage in Downloads")) }
+        }
+        return
+    }
     val working=status in listOf("active","queued","verifying","installing","busy")
     LazyColumn(contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
         item { Eyebrow(copy.categories[aid.category].uppercase()) }
@@ -84,10 +91,6 @@ internal fun AidDetail(aid: Aid,copy: Copy,library: AidLibraryState,onDownload: 
                             Text(when { working -> copy.t("Zobrazit stahování","View download");installed!=null -> copy.t("Aktualizovat","Update");else -> copy.t("Stáhnout a nainstalovat","Download and install") })
                         }
                     }
-                    if(installed!=null) {
-                        Text(copy.t("Databáze je uložena v offline knihovně. Její využití doplníme v příslušných modulech.","The database is stored in the offline library. Its use will be integrated into the relevant modules."))
-                        OutlinedButton(onClick={confirm=true},enabled=status!="busy",modifier=Modifier.fillMaxWidth()) { Text(copy.t("Odinstalovat pomůcku","Uninstall research aid")) }
-                    }
                     TextButton(onClick=onManage) { Text(copy.t("Otevřít správce stahování","Open download manager")) }
                 }
             }
@@ -95,7 +98,6 @@ internal fun AidDetail(aid: Aid,copy: Copy,library: AidLibraryState,onDownload: 
         item { SectionTitle(copy.t("Bezpečná aktualizace","Safe updates")) }
         item { Note(copy.t("Před instalací ověříme velikost, SHA-256, obsah ZIPu a databázi. Při chybě aktualizace zůstane původní pomůcka zachovaná.","Before installation, we verify the size, SHA-256, ZIP content and database. A failed update preserves the existing reference.")) }
     }
-    if(confirm) UninstallDialog(copy,copy.title(aid),onDismiss={confirm=false},onConfirm={onUninstall(aid.id);confirm=false})
 }
 
 @Composable
