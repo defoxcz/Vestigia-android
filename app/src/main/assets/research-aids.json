@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "aids": [
+    {
+      "id": "historical-units",
+      "file": "historical_units.db",
+      "archiveSize": 146323,
+      "size": 483328,
+      "sha256": "a73a49cd602995311a347c20b27a5ffe126509e9a965608a58af9335bcb11e77"
+    },
+    {
+      "id": "saints",
+      "file": "saints.db",
+      "archiveSize": 2140946,
+      "size": 5169152,
+      "sha256": "e5638424b3eba309ae5494c8e22136e17bc299c3b6f80c6237097a48f4722e10"
+    },
+    {
+      "id": "places",
+      "file": "places.db",
+      "archiveSize": 52011399,
+      "size": 166670336,
+      "sha256": "ebd33372c69f056b21a71e37e9d5a581ffd6a948bc156390b193235ae4736152"
+    },
+    {
+      "id": "manuscript-abbreviations",
+      "file": "manuscript_abbreviations.db",
+      "archiveSize": 8517,
+      "size": 69632,
+      "sha256": "c0dd84d9e753b3d922dead8c00c6b52a5f307c5d0f7021801e8e1979824e470c"
+    },
+    {
+      "id": "numismatics",
+      "file": "numismatics.db",
+      "archiveSize": 249233872,
+      "size": 1094303744,
+      "sha256": "f4105cbaf33280a13349ab4d025e2305f15f620327172ab6416fecc70b62d68c"
+    },
+    {
+      "id": "sigillography",
+      "file": "sigillography.db",
+      "archiveSize": 402375,
+      "size": 1605632,
+      "sha256": "b12e39c1947193933c3e5885f4cb4f91d375a29648ed4f381acf49137cb81fb7"
+    },
+    {
+      "id": "epigraphy-noble-tombs",
+      "file": "epigraphy_noble_tombs.db",
+      "archiveSize": 6106026,
+      "size": 25526272,
+      "sha256": "1a24153e0a722a4ab3f968c5b8797c27b96928b22eff780ce01f2a1cb1331c8f"
+    },
+    {
+      "id": "heraldry",
+      "file": "heraldry_municipality.db",
+      "archiveSize": 19820949,
+      "size": 52973568,
+      "sha256": "ea94ba210bd7cc33eee9dcc0d5453f9b94cc8be73feb36fd53a86e4942cd4313"
+    },
+    {
+      "id": "heraldry-nobility",
+      "file": "heraldry_nobility.db",
+      "archiveSize": 5522701,
+      "size": 17612800,
+      "sha256": "eacc32c1c05218b747e701dedb88350576fb431c494869819237da9e82516152"
+    },
+    {
+      "id": "heraldry-ecclesiastical",
+      "file": "heraldry_ecclesiastical.db",
+      "archiveSize": 795999,
+      "size": 2424832,
+      "sha256": "325e40eed06e6222281b9db97988c41100471b49b9f0091be3c180cf94fe0901"
+    },
+    {
+      "id": "heraldry-chivalric-orders",
+      "file": "heraldry_chivalric_religious_orders.db",
+      "archiveSize": 128237,
+      "size": 417792,
+      "sha256": "6ff4ee4df32ab7066390ec1fcbd24473c4bafa079c483ff2f2fcc5ffa61896fc"
+    },
+    {
+      "id": "heraldry-burgher-patrician",
+      "file": "heraldry_burgher_patrician_families.db",
+      "archiveSize": 14100,
+      "size": 143360,
+      "sha256": "0ee5fb35e78a9c912f3accaa081655d89e2f267588476c48a14a6ff3f2d9ae67"
+    },
+    {
+      "id": "heraldry-personal-coats-of-arms",
+      "file": "heraldry_personal_coats_of_arms.db",
+      "archiveSize": 27213222,
+      "size": 80015360,
+      "sha256": "bf148479221aed6f4aa3f4bc4124158951d05da11fe119ffbbae4909e4b93c70"
+    },
+    {
+      "id": "heraldry-templates",
+      "file": "heraldry_template_catalog.db",
+      "archiveSize": 1560801,
+      "size": 2437120,
+      "sha256": "c61dc00df185ba335724f09b795fc80d8a1e0ede6f565d0b01f19f434236c218",
+      "schemaVersion": 3
+    }
+  ]
+}

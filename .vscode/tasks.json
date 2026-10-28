@@ -1,0 +1,65 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Android: sestavit APK",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "assembleDebug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: nainstalovat a spustit na telefonu",
+      "type": "shell",
+      "command": "./scripts/run-device.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: připojená zařízení",
+      "type": "shell",
+      "command": "adb",
+      "args": [
+        "devices",
+        "-l"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: kontrola kódu",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "lintDebug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: připravit F5 debug",
+      "type": "shell",
+      "command": "./scripts/debug-device.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: odpojit debug port",
+      "type": "shell",
+      "command": "./scripts/debug-device.sh",
+      "args": [
+        "cleanup"
+      ],
+      "problemMatcher": []
+    }
+  ],
+  "options": {
+    "env": {
+      "JAVA_HOME": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
+      "ANDROID_HOME": "${env:HOME}/Library/Android/sdk",
+      "PATH": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin:${env:HOME}/Library/Android/sdk/platform-tools:${env:PATH}"
+    }
+  }
+}

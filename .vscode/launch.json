@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Android: VestigiaScriptorium na telefonu",
+      "type": "intellij_jvm",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "timeout": 30000,
+      "preLaunchTask": "Android: připravit F5 debug",
+      "postDebugTask": "Android: odpojit debug port"
+    }
+  ]
+}

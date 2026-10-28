@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Vestigia Scriptorium</string>
+    <string name="welcome_title">Vaše bádání po ruce</string>
+    <string name="welcome_description">Základ Android aplikace Vestigia Scriptorium.</string>
+</resources>
