@@ -36,16 +36,23 @@ class ReaderUiTest {
         rule.onNodeWithText("Smazat").performClick()
         rule.waitUntil(10_000) { rule.onAllNodesWithText(first.title).fetchSemanticsNodes().isNotEmpty() }
     }
-    @Test fun galleryOpensEmbeddedImageAndZoom() = withReaderFixtures { root,names ->
-        val source=AidReaderSource { File(root,names.getValue("heraldry-templates")) }
-        val first=runBlocking { source.page("heraldry-templates","cs","","",0).records.first() }
-        rule.setContent { VestigiaScriptoriumTheme { AidReaderScreen(aids.first {it.id=="heraldry-templates"},Copy(true),source,{}) } }
+    @Test fun galleryOpensRecord() = withReaderFixtures { root,names ->
+        val source=AidReaderSource { File(root,names.getValue("sigillography")) }
+        val first=runBlocking { source.page("sigillography","cs","","",0).records.first() }
+        rule.setContent { VestigiaScriptoriumTheme { AidReaderScreen(aids.first {it.id=="sigillography"},Copy(true),source,{}) } }
         rule.waitUntil(10_000) { rule.onAllNodesWithText(first.title).fetchSemanticsNodes().isNotEmpty() }
         rule.onAllNodesWithText(first.title)[0].performClick()
-        rule.waitUntil(10_000) { rule.onAllNodesWithContentDescription(first.images.first().name).fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithContentDescription(first.images.first().name).performClick()
-        rule.onNodeWithText("Zavřít obrázek").assertIsDisplayed().performClick()
+        rule.waitUntil(10_000) { rule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isEmpty() && rule.onAllNodesWithText(first.title).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithContentDescription("Zpět").performClick()
         rule.onNodeWithText("Hledat v záznamech").assertExists()
+    }    @Test fun sharedImageZoomClosesAndResets() {
+        val bitmap=android.graphics.Bitmap.createBitmap(4,4,android.graphics.Bitmap.Config.ARGB_8888)
+        val bytes=java.io.ByteArrayOutputStream().also { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }.toByteArray()
+        val closed=androidx.compose.runtime.mutableStateOf(false)
+        rule.setContent { VestigiaScriptoriumTheme { if(!closed.value) ImageZoom(RecordImage("Test",bytes,online=false),Copy(true),onClose={closed.value=true}) } }
+        rule.onNodeWithText("100 %").performClick()
+        rule.onNodeWithText("Zavřít obrázek").performClick()
+        rule.runOnIdle { org.junit.Assert.assertTrue(closed.value) }
     }
+
 }

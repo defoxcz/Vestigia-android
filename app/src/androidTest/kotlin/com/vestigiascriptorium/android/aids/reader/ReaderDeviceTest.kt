@@ -16,7 +16,7 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class ReaderDeviceTest {
     private fun fixtures(test: (File,Map<String,String>) -> Unit) = withReaderFixtures(test)
-    @Test fun allFourteenDatabasesSharePageSearchFilterAndDetailContracts() = fixtures { root,names -> runBlocking {
+    @Test fun allThirteenDatabasesSharePageSearchFilterAndDetailContracts() = fixtures { root,names -> runBlocking {
         for((id,name) in names) {
             val source=AidReaderSource { File(root,name) }
             for(language in listOf("cs","en")) {
@@ -36,13 +36,7 @@ class ReaderDeviceTest {
                 if(page.kind==AidViewKind.IMAGE) {
                     val onlyImages=source.page(id,language,"","",0,true)
                     assertTrue(onlyImages.records.all { it.images.isNotEmpty() })
-                    if(id=="heraldry-templates") {
-                        assertTrue(onlyImages.total>0)
-                        val image=source.detail(id,language,onlyImages.records.first().id)!!.images.first()
-                        assertFalse(image.online)
-                        val bytes=image.data as ByteArray
-                        assertNotNull(BitmapFactory.decodeByteArray(bytes,0,bytes.size))
-                    }
+
                 }
             }
         }

@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.vestigiascriptorium.android.aids.AidLibraryState
@@ -18,12 +19,12 @@ internal fun DownloadsScreen(copy: Copy,library: AidLibraryState,onDownload: (St
     onCancel: (String) -> Unit,onUninstall: (String) -> Unit,onWifi: (Boolean) -> Unit,onCatalog: () -> Unit,onDetail: (String) -> Unit) {
     var filter by rememberSaveable { mutableIntStateOf(0) }
     var removeId by rememberSaveable { mutableStateOf<String?>(null) }
-    val selected=aids.filter { aid -> library.jobs[aid.id]?.let { job ->
-        when(filter) { 1 -> job.status !in listOf("installed","update","error");2 -> library.installed.containsKey(aid.id);3 -> job.status=="error";else -> true }
+    val selected=managedAids.filter { aid -> library.jobs[aid.id]?.let { job ->
+        when(filter) { 1 -> job.status !in listOf("installed","update","error","retired");2 -> library.installed.containsKey(aid.id);3 -> job.status=="error";else -> true }
     } ?: false }
     val installedSize=library.installed.values.sumOf { it.size }
     val filterLabels=listOf(copy.t("Vše","All"),copy.t("Fronta","Queue"),copy.t("Nainstalované","Installed"),copy.t("Chyby","Errors"))
-    LazyColumn(contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
+    LazyColumn(modifier=Modifier.testTag("downloads-list"),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
         item { Eyebrow(copy.t("SPRÁVA BADATELSKÝCH POMŮCEK","RESEARCH AID MANAGEMENT")) }
         item { Heading(copy.t("Stahování","Downloads"),copy.t("Stažení, instalace a odinstalace databázových pomůcek.","Download, install and uninstall reference databases.")) }
         item {
@@ -57,6 +58,7 @@ internal fun DownloadsScreen(copy: Copy,library: AidLibraryState,onDownload: (St
                 Column(Modifier.fillMaxWidth().padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                     Text(copy.title(aid),style=MaterialTheme.typography.titleLarge,fontFamily=FontFamily.Serif)
                     Pill(copy.status(status),installed!=null)
+                    if(aid.id=="heraldry-templates") Text(copy.t("Tento balíček je určen pouze pro desktop. V Androidu jej můžete odinstalovat.","This package is for desktop use only. You can uninstall it from Android."))
                     if(status=="active") {
                         LinearProgressIndicator(progress={if(job.total>0) (job.bytes.toFloat()/job.total).coerceIn(0f,1f) else 0f},modifier=Modifier.fillMaxWidth())
                         Text("${copy.size(job.bytes)} / ${copy.size(job.total)}",style=MaterialTheme.typography.bodySmall)
@@ -65,7 +67,7 @@ internal fun DownloadsScreen(copy: Copy,library: AidLibraryState,onDownload: (St
                     if(status=="queued") Text(copy.t("Čeká na povolenou síť nebo spuštění systémem.","Waiting for an allowed network or system scheduling."),style=MaterialTheme.typography.bodySmall)
                     if(status=="paused") Text(copy.t("Po pokračování se balíček stáhne od začátku.","Resuming will download the package from the beginning."),style=MaterialTheme.typography.bodySmall)
                     if(status=="error") Text(copy.error(job.error),color=MaterialTheme.colorScheme.error)
-                    if(installed!=null && status !in listOf("installed","update")) Text(copy.t("Původní databáze je stále nainstalovaná.","The existing database is still installed."),style=MaterialTheme.typography.bodySmall)
+                    if(installed!=null && status !in listOf("installed","update","retired")) Text(copy.t("Původní databáze je stále nainstalovaná.","The existing database is still installed."),style=MaterialTheme.typography.bodySmall)
                     if(status!="busy") {
                         FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                             when(status) {
@@ -75,8 +77,8 @@ internal fun DownloadsScreen(copy: Copy,library: AidLibraryState,onDownload: (St
                                 "error" -> TextButton(onClick={onDownload(aid.id)}) { Text(copy.t("Zkusit znovu","Retry")) }
                                 "paused" -> TextButton(onClick={onDownload(aid.id)}) { Text(copy.t("Pokračovat","Resume")) }
                             }
-                            if(status !in listOf("installed","update")) TextButton(onClick={onCancel(aid.id)}) { Text(copy.t("Zrušit přenos","Cancel transfer")) }
-                            if(installed!=null) TextButton(onClick={removeId=aid.id}) { Text(copy.t("Odinstalovat","Uninstall"),color=MaterialTheme.colorScheme.error) }
+                            if(status !in listOf("installed","update","retired")) TextButton(onClick={onCancel(aid.id)}) { Text(copy.t("Zrušit přenos","Cancel transfer")) }
+                            if(installed!=null || aid.id=="heraldry-templates") TextButton(onClick={removeId=aid.id}) { Text(copy.t("Odinstalovat","Uninstall"),color=MaterialTheme.colorScheme.error) }
                         }
                     }
                 }
@@ -84,5 +86,5 @@ internal fun DownloadsScreen(copy: Copy,library: AidLibraryState,onDownload: (St
         }
         item { Note(copy.t("Stahují se pouze badatelské pomůcky. Rodokmeny a vlastní dokumenty nejsou součástí tohoto správce.","Only research aids are downloaded. Family trees and personal documents are not part of this manager.")) }
     }
-    removeId?.let { id -> UninstallDialog(copy,copy.title(aids.first { it.id==id }),onDismiss={removeId=null},onConfirm={onUninstall(id);removeId=null}) }
+    removeId?.let { id -> UninstallDialog(copy,copy.title(managedAids.first { it.id==id }),onDismiss={removeId=null},onConfirm={onUninstall(id);removeId=null}) }
 }

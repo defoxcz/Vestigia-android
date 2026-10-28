@@ -34,17 +34,19 @@ internal class AidRepository private constructor(private val app: Application) {
     private val catalogFile=AtomicFile(File(app.noBackupFilesDir,"research-aids-catalog.json"))
     private val stateFlow=MutableStateFlow(AidLibraryState(wifiOnly=prefs.getBoolean("wifiOnly",true)))
     val state=stateFlow.asStateFlow()
-    @Volatile private var metadata=runCatching { catalogFile.openRead().bufferedReader().use { AidNetwork.parse(it.readText()) } }
-        .getOrElse { app.assets.open("research-aids.json").bufferedReader().use { AidNetwork.parse(it.readText()) } }
+    @Volatile private var metadata=MobileAids.withCache(
+        app.assets.open("research-aids.json").bufferedReader().use { AidNetwork.parse(it.readText()) },
+        runCatching { catalogFile.openRead().bufferedReader().use { AidNetwork.parse(it.readText()) } }.getOrDefault(emptyMap()))
     private val busy=java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     @Volatile private var infos: List<WorkInfo> = emptyList()
     init {
         scope.launch { work.getWorkInfosByTagFlow(TAG).collect { infos=it;publish() } }
         scope.launch { while(isActive) { publish();delay(750) } }
+        scope.launch { work.cancelUniqueWork("aid:${MobileAids.DESKTOP_TEMPLATES}").result.get() }
         refresh()
     }
     @Synchronized private fun publish() {
-        val installed=metadata.keys.mapNotNull { id -> store.installed(id)?.let { id to it } }.toMap()
+        val installed=(metadata.keys+MobileAids.DESKTOP_TEMPLATES).mapNotNull { id -> store.installed(id)?.let { id to it } }.toMap()
         val jobs=linkedMapOf<String,AidJob>()
         metadata.forEach { (id,meta) ->
             val saved=prefs.getString("state:$id",null)
@@ -61,6 +63,9 @@ internal class AidRepository private constructor(private val app: Application) {
             }
             if(current!=null) jobs[id]=current
         }
+        if(store.hasFiles(MobileAids.DESKTOP_TEMPLATES) || MobileAids.DESKTOP_TEMPLATES in busy) {
+            jobs[MobileAids.DESKTOP_TEMPLATES]=AidJob(if(MobileAids.DESKTOP_TEMPLATES in busy) "busy" else "retired")
+        }
         stateFlow.value=stateFlow.value.copy(metadata=metadata,installed=installed,jobs=jobs,wifiOnly=prefs.getBoolean("wifiOnly",true),busy=busy.toSet())
     }
     fun refresh() { scope.launch {
@@ -69,7 +74,7 @@ internal class AidRepository private constructor(private val app: Application) {
         finally { stateFlow.value=stateFlow.value.copy(refreshing=false);publish() }
     }}
     fun refreshNow(): Map<String,AidMetadata> {
-        val next=AidNetwork.catalog()
+        val next=MobileAids.compatible(AidNetwork.catalog())
         // Older web deployments return just heraldic templates. Keep other cached metadata.
         synchronized(catalogFile) {
         metadata=metadata+next
@@ -114,7 +119,7 @@ internal class AidRepository private constructor(private val app: Application) {
         prefs.edit().putBoolean("wifiOnly",value).apply();publish()
         // Existing requests retain their constraints; restart pending requests under the new policy.
         infos.filter { !it.state.isFinished }.flatMap { it.tags }.filter { it.startsWith("aid:") }.distinct()
-            .forEach { tag -> download(tag.removePrefix("aid:")) }
+            .filter { it.removePrefix("aid:") in MobileAids.ids }.forEach { tag -> download(tag.removePrefix("aid:")) }
     }
     fun clearError() { stateFlow.value=stateFlow.value.copy(actionError=null) }
     private fun action(id: String, block: () -> Unit) {

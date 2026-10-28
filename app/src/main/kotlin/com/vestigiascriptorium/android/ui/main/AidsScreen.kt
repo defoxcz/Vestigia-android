@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.vestigiascriptorium.android.aids.AidLibraryState
@@ -22,7 +23,7 @@ internal fun AidsScreen(copy: Copy,library: AidLibraryState,onRefresh: () -> Uni
         (category==-1 || aid.category==category) && (!offline || library.installed.containsKey(aid.id)) &&
             (copy.title(aid)+" "+copy.description(aid)).contains(query,ignoreCase=true)
     }
-    LazyColumn(contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
+    LazyColumn(modifier=Modifier.testTag("aids-catalogue"),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
         item { Eyebrow(copy.t("KNIHOVNA PRO VAŠE BÁDÁNÍ","A LIBRARY FOR YOUR RESEARCH")) }
         item { Heading(copy.t("Badatelské pomůcky","Research aids"),copy.t("Vyberte si podklady pro práci bez připojení.","Choose reference material for working offline.")) }
         item {

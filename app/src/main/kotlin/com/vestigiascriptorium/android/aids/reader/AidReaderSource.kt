@@ -62,6 +62,10 @@ internal class AidReaderSource(private val file: () -> File?) {
                 }}} ?: emptyList()
                 RecordPage(withImages,total,safePage,options,schema.facet?.let { if(language=="cs") it.cs else it.en },schema.kind)
             }
+            } catch(error: android.os.OperationCanceledException) {
+                // SQLite cancellation is not a Kotlin CancellationException. Preserve structured cancellation.
+                ensureActive()
+                throw error
             } finally { watcher.cancel() }
         }
     }
@@ -92,9 +96,6 @@ internal class AidReaderSource(private val file: () -> File?) {
     private fun hasFts5(db: SQLiteDatabase)=db.rawQuery("PRAGMA compile_options",null).use { c -> var enabled=false;while(c.moveToNext()) if(c.getString(0)=="ENABLE_FTS5") enabled=true;enabled }
     private fun images(db: SQLiteDatabase,s: AidSchema,id: String,limit: Int): Pair<List<RecordImage>,Int> {
         if(s.imageFamily==null) return emptyList<RecordImage>() to 0
-        if(s.imageFamily=="templates") return db.rawQuery("SELECT name,image FROM templates WHERE id=? AND length(image)>0",arrayOf(id)).use { c ->
-            (if(c.moveToFirst()) listOf(RecordImage(c.string(0),c.getBlob(1),online=false)) else emptyList()) to 0
-        }
         val sql=AidSchemas.imageSql(s.imageFamily)
         var hidden=0
         val result=db.rawQuery(sql,arrayOf(id)).use { c -> buildList {
@@ -181,7 +182,6 @@ internal class AidReaderSource(private val file: () -> File?) {
             "feast" -> value.split(",").joinToString(", ") { raw ->
                 val day=raw.trim();val parts=day.split('-');if(language=="cs" && parts.size==2) "${parts[1].toIntOrNull() ?: parts[1]}. ${parts[0].toIntOrNull() ?: parts[0]}." else day
             }
-            "kind" -> if(language!="cs") value.replaceFirstChar { it.uppercase() } else mapOf("shield" to "Štít","helm" to "Přilba","wreath" to "Točenice","crest" to "Klenot","crown" to "Koruna","mantling" to "Přikryvadlo","compartment" to "Půda","supporter" to "Štítonoš","motto" to "Heslo","cartouche" to "Kartuše","mantle" to "Plášť","composition" to "Kompozice","hat" to "Klobouk","mitre" to "Mitra","crozier" to "Berla")[value] ?: value
             else -> value
         }
     }

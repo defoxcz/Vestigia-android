@@ -2,11 +2,9 @@ package com.vestigiascriptorium.android.aids.reader
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.platform.LocalContext
 import com.vestigiascriptorium.android.ui.main.Copy
 import com.vestigiascriptorium.android.ui.main.aids
 import com.vestigiascriptorium.android.ui.theme.VestigiaScriptoriumTheme
-import org.json.JSONArray
 
 @Preview(name="Text research aid",showBackground=true,device="spec:width=412dp,height=915dp,dpi=420",locale="cs")
 @Composable
@@ -18,12 +16,6 @@ fun TextReaderPreview() {
 @Preview(name="Image research aid",showBackground=true,device="spec:width=412dp,height=915dp,dpi=420",locale="cs")
 @Composable
 fun ImageReaderPreview() {
-    val assets=LocalContext.current.assets
-    val data=JSONArray(assets.open("reader-preview.json").bufferedReader().use {it.readText()})
-    val records=(0 until data.length()).map { index ->
-        val item=data.getJSONObject(index)
-        val name=item.getString("title")
-        AidRecord(item.getString("id"),name,"",images=listOf(RecordImage(name,assets.open(item.getString("image")).use {it.readBytes()},online=false)))
-    }
-    VestigiaScriptoriumTheme { AidReaderScreen(aids.first {it.id=="heraldry-templates"},Copy(true),AidReaderSource {null},{},RecordPage(records,99,0,listOf(FacetOption("shield","Štít")),"Druh šablony",AidViewKind.IMAGE)) }
+    val records=listOf(AidRecord("Q131226179","Jacobi",""),AidRecord("Q131621255","Pfister",""),AidRecord("Q131634701","Sättelin",""),AidRecord("Q132571619","Marquard",""))
+    VestigiaScriptoriumTheme { AidReaderScreen(aids.first {it.id=="heraldry-burgher-patrician"},Copy(true),AidReaderSource {null},{},RecordPage(records,22,0,listOf(FacetOption("BE","Belgie")),"Země",AidViewKind.IMAGE)) }
 }

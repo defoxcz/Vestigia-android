@@ -31,9 +31,6 @@ internal object AidSchemas {
             "manuscript-abbreviations" -> AidSchema(id,"abbreviations a","CAST(a.id AS TEXT)","a.abbreviation","a.expansion","a.search_text",
                 listOf(AidField("Rozvedení","Expansion","a.expansion"),AidField("Jazyk","Language","a.language","language"),AidField("Kategorie","Category","a.category"),AidField("Období","Period","a.period"),AidField("Oblast","Region","a.region"),AidField("Varianty","Variants","a.variants"),AidField("Poznámka","Notes","a.notes"),source("a.source_url")),
                 AidFacet("Jazyk","Language","a.language","SELECT DISTINCT language FROM abbreviations ORDER BY language","language"))
-            "heraldry-templates" -> AidSchema(id,"templates t LEFT JOIN template_translations tr ON tr.template_id=t.id AND tr.locale='$lang'","t.id","COALESCE(NULLIF(tr.name,''),t.name)","COALESCE(NULLIF(tr.description,''),t.description)","t.name || ' ' || t.description || ' ' || COALESCE(tr.name,'') || ' ' || COALESCE(tr.description,'')",
-                listOf(AidField("Popis","Description","COALESCE(NULLIF(tr.description,''),t.description)"),AidField("Druh","Type","t.kind","kind"),AidField("Období","Period","t.period"),AidField("Původ","Provenance","t.provenance")),
-                AidFacet("Druh šablony","Template type","t.kind","SELECT DISTINCT kind FROM templates ORDER BY kind","kind"),AidViewKind.IMAGE,"templates")
             "numismatics","sigillography" -> AidSchema(id,"objects o","o.wikidata_id","o.display_name","o.description","o.display_name || ' ' || o.description",
                 listOf(AidField("Popis","Description","o.description"),AidField("Datové sady","Datasets","(SELECT group_concat(d.name, ', ') FROM object_datasets od JOIN datasets d ON d.id=od.dataset_id WHERE od.object_id=o.wikidata_id)"),source("o.wikidata_url")),
                 null,AidViewKind.IMAGE,"objects","o.wikidata_id IN (SELECT object_id FROM object_search WHERE object_search MATCH ?)")
@@ -52,7 +49,6 @@ internal object AidSchemas {
         }
     }
     fun imageExists(s: AidSchema): String = when(s.imageFamily) {
-        "templates" -> "length(t.image)>0"
         "heraldry" -> "EXISTS(SELECT 1 FROM images i WHERE i.wikidata_id=e.wikidata_id AND i.missing=0 AND i.display_policy IN ('public_domain','attribution_required'))"
         "objects" -> "EXISTS(SELECT 1 FROM images i WHERE i.object_id=o.wikidata_id AND i.display_policy IN ('public_domain','attribution_required'))"
         "monuments" -> "EXISTS(SELECT 1 FROM monument_media mm JOIN media i ON i.file_name=mm.file_name WHERE mm.monument_qid=m.qid AND i.missing=0 AND i.reuse_status IN ('public_domain','attribution_required'))"

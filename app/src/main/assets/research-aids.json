@@ -91,14 +91,6 @@
       "archiveSize": 27213222,
       "size": 80015360,
       "sha256": "bf148479221aed6f4aa3f4bc4124158951d05da11fe119ffbbae4909e4b93c70"
-    },
-    {
-      "id": "heraldry-templates",
-      "file": "heraldry_template_catalog.db",
-      "archiveSize": 1560801,
-      "size": 2437120,
-      "sha256": "c61dc00df185ba335724f09b795fc80d8a1e0ede6f565d0b01f19f434236c218",
-      "schemaVersion": 3
     }
   ]
 }

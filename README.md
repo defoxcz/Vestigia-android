@@ -8,6 +8,7 @@ budou implementovány postupně. Na hlavní obrazovce nejsou štítky Připravuj
 Badatelské pomůcky se skutečně stahují, ověřují a instalují. Správce zobrazuje
 reálný průběh, síťovou podmínku, chyby a nainstalované balíčky. Odinstalace maže
 jen potvrzenou pomůcku a nezasahuje do vlastních badatelských dat.
+Mobilní katalog obsahuje 13 pomůcek; heraldické šablony jsou pouze pro desktop.
 Nainstalované pomůcky se otevírají přímo do společného prohlížeče: textový seznam
 nebo obrazová galerie, hledání, filtry, stránkování, detaily a zvětšení obrázků.
 Jsou samostatnými funkcemi a nevyžadují otevření žádného pracovního modulu.

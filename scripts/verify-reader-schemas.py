@@ -39,4 +39,4 @@ for row in probes.read_text().splitlines():
                 db.execute(f'SELECT count(*) FROM {source} WHERE {condition}', (values[0][0],)).fetchone()
         print(f'{aid}/{language}: {total} records, page/detail/search/filter/images OK', flush=True)
         count += 1
-assert count == 28
+assert count == 26

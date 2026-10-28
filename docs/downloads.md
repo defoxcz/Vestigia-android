@@ -7,12 +7,13 @@ na pracovní moduly; podrobnosti jsou v [readers.md](readers.md).
 
 ## Katalog a přenos
 
-- Přehled má všech 14 existujících balíčků desktopu, oddělené od rodokmenů a médií.
+- Přehled má 13 mobilních balíčků, bez desktopových heraldických šablon, oddělené od rodokmenů a médií.
 - Výchozí metadata jsou přibalena z webového katalogu. Aplikace je obnovuje přes
   `https://vestigiascriptorium.com/api/research-aids/catalog?scope=all` a ukládá
   poslední platnou odpověď pro použití offline. Bez přihlášení.
-- Původní webové API vrací jen heraldické šablony. Do nasazení rozšířeného API
-  Android zachovává přibalená metadata pro ostatní balíčky; při neaktuálním hashi
+- Původní webové API vrací jen desktopové heraldické šablony, které Android
+  ignoruje. Do nasazení rozšířeného API zachovává přibalená metadata mobilních
+  balíčků; při neaktuálním hashi
   odmítne instalaci a zobrazí chybu místo instalace neověřeného obsahu.
 - WorkManager uchovává frontu přes zavření aplikace a běžný restart systému;
   přenos pokračuje podle omezení Androidu. Násilné ukončení aplikace systémem
@@ -36,7 +37,7 @@ Známé přídavné resource-fork soubory `__MACOSX/._<databáze>` do 64 KiB se 
 bez extrakce; jiné soubory, cesty a nejednoznačné databáze se odmítají.
 
 SQLite se otevře readonly, ověří se `PRAGMA quick_check`, přítomnost tabulek a
-případná publikovaná verze schématu. Heraldické šablony podporují schéma 3.
+případná publikovaná verze schématu. Desktopové heraldické šablony se v Androidu nestahují.
 Nová databáze a její metadata se připraví v samostatné verzi. Až po kontrole
 se atomicky přepne ukazatel `current`. Při chybě nebo zrušení zůstává stará
 verze zachovaná. Nedokončené soubory se uklidí a odstraní se staré verze.
@@ -76,3 +77,8 @@ sada bez přeskočení. Sestavení APK, Android Lint a šest Compose renderů pr
 Rozšíření webového katalogu je v commitu 46d9805; produkční endpoint při kontrole
 stále vracel původní katalog jedné položky. Stávající veřejné download endpointy
 všech balíčků jsou použitelné s přibalenými ověřovacími metadaty.
+
+Aktualizace pro mobilní prohlížeče: aktivní katalog má 13 pomůcek bez heraldických
+šablon. Prošlo 11 JVM testů a 9 testů prohlížečů a přechodového chování na telefonu.
+Starší šablony nejsou automaticky mazány; případná stará instalace nebo zbylé
+soubory jsou ve Stahování dostupné pouze k potvrzené odinstalaci.

@@ -37,7 +37,7 @@ se nepovažují za SQL kód, hodnoty jsou vždy vázané parametry.
   způsoby prezentace. Zpět vrátí detail do seznamu bez ztráty hledání.
 - `AidImages`: jeden loader, velikost náhledu, disková mezipaměť, chybový stav,
   opakování a zvětšení pro všechny obrazové databáze.
-- `AidReaderActivity`: jedna neveřejná aktivita pro všech 14 známých ID.
+- `AidReaderActivity`: jedna neveřejná aktivita pro všech 13 mobilních ID.
 
 Schémata vycházejí z `src/ui/reference/referencedatamodel.cpp` a
 `src/ui/reference/heraldrytemplatesview.cpp` desktopu a ze skutečných
@@ -50,7 +50,6 @@ publikovaných ZIPů. Databáze ani jejich formáty nejsou kvůli Androidu měn�
 | Historická topografie | places + place_names | Text |
 | Písařské zkratky | abbreviations | Text |
 | Šest heraldických katalogů | entities + entity_labels + images | Obrazy |
-| Heraldické šablony | templates + template_translations | Obrazy |
 | Numismatika a sfragistika | objects + object_search + images | Obrazy |
 | Šlechtické náhrobníky | monuments + entities + inscriptions + media | Obrazy |
 
@@ -60,9 +59,9 @@ oddělené od jazyků samotných původních dat.
 
 ## Obrázky a offline režim
 
-Heraldické šablony mají PNG přímo v databázi a fungují zcela offline. Ostatní
-katalogy většinou obsahují jména souborů na Wikimedia Commons, nikoli obrazová
-data. Tyto obrázky vyžadují internet, dokud nejsou v mezipaměti. Rozhraní tento
+Desktopové heraldické šablony nejsou v nabídce ani mezi podporovanými adaptéry
+Androidu. Obrazové katalogy většinou obsahují jména souborů na Wikimedia Commons,
+nikoli obrazová data. Tyto obrázky vyžadují internet, dokud nejsou v mezipaměti. Rozhraní tento
 rozdíl pojmenovává a při nedostupnosti nabízí opakování a dostupný zdrojový odkaz.
 
 Coil zajišťuje dekódování PNG/JPEG/WebP/SVG a zmenšení náhledů; obrázky se drží
@@ -79,9 +78,9 @@ HTTP/HTTPS; HTML se v textových údajích nespouští.
 
 ## Ověření
 
-JVM testy ověřují registr 14 schémat a bezpečné zpracování hledání.
-Skutečné databáze všech 14 pomůcek byly ověřeny readonly na hostiteli pro cs/en,
-včetně seznamu, detailu, hledání, filtrů a mediálních dotazů (28 kombinací).
+JVM testy ověřují registr 13 schémat a bezpečné zpracování hledání.
+Skutečné databáze všech 13 mobilních pomůcek byly ověřeny readonly na hostiteli pro cs/en,
+včetně seznamu, detailu, hledání, filtrů a mediálních dotazů (26 kombinací).
 Postup opakování nad vlastními kopiemi veřejných databází:
 
 ```sh
@@ -104,8 +103,17 @@ neodinstalovává se a její data zůstávají zachována.
 ## Náhledy a stav ověření
 
 [Textový prohlížeč](previews/reader-text.png) a [obrazový prohlížeč](previews/reader-images.png)
-jsou vykreslené Compose náhledy se vzorovými řádky a skutečnými náhledy šablon.
-Deset JVM testů, sestavení aplikace i testovacího APK a Android Lint prošly.
-Všech 28 kombinací databáze/jazyka prošlo readonly ověřením dotazů nad plnými
-veřejnými databázemi včetně rozšiřujících údajů. Nové testy na fyzickém telefonu
-zatím nebyly spuštěny, protože zařízení nebylo při této změně připojené.
+jsou vykreslené Compose náhledy se vzorovými řádky a záznamy heraldického katalogu.
+Jedenáct JVM testů, sestavení aplikace i testovacího APK a Android Lint prošly.
+Všech 26 kombinací databáze/jazyka prošlo readonly ověřením dotazů nad plnými
+veřejnými databázemi včetně rozšiřujících údajů. Na fyzickém Samsungu / Android 17 prošlo všech devět testů prohlížečů,
+rušení dotazů, navigace a odinstalačního dialogu. Testy používají izolované kopie
+13 veřejných databází a nezasahují do nainstalovaných pomůcek uživatele.
+
+## Přechod ze starší Android verze se šablonami
+
+Katalog na serveru může dál obsahovat `heraldry-templates` pro desktop. Android
+jej odfiltruje i ze staré lokální cache a neumožní nové stažení. Rozpracovaná
+úloha šablon se zruší, ale nainstalované ani dočasné soubory se automaticky
+nemažou. Pokud existují, Stahování zobrazí pouze desktopovou položku s možností
+potvrzené odinstalace, bez otevření, aktualizace a opětovného stažení.

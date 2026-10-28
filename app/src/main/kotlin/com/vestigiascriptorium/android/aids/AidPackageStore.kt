@@ -54,6 +54,7 @@ internal class AidPackageStore(private val root: File) {
         val meta=readMetadata(File(version,"metadata.properties")) ?: return@run null
         if(meta.id!=id || meta.sha256!=hash || File(version,meta.file).length()!=meta.size) null else meta
     }
+    fun hasFiles(id: String): Boolean = directory(id).listFiles()?.isNotEmpty()==true
     fun database(id: String): File? = installed(id)?.let { File(directory(id),"versions/${it.sha256}/${it.file}") }
 
     /** Bounded ZIP extraction; validate first, then atomically publish a version pointer. */

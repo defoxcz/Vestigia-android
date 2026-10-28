@@ -14,14 +14,13 @@ import java.io.File
 internal class AidWorker(context: Context,params: WorkerParameters): CoroutineWorker(context,params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val id=inputData.getString("aid") ?: return@withContext Result.failure()
+        if(id !in MobileAids.ids) return@withContext Result.failure(workDataOf("error" to "unavailable"))
         val repo=AidRepository.get(applicationContext)
         val jobContext=currentCoroutineContext()
         val check={ jobContext.ensureActive();if(isStopped) throw CancellationException() }
         try {
             setForeground(notification(id))
             var meta=runCatching { repo.refreshNow()[id] }.getOrNull() ?: repo.metadata(id) ?: throw AidFailure("unavailable")
-            // Decline known future schemas rather than claiming them as usable offline.
-            if(id=="heraldry-templates" && meta.schemaVersion!=3) throw AidFailure("unsupported")
             var lastProgress=0L
             var changed=false
             while(true) {
@@ -40,7 +39,6 @@ internal class AidWorker(context: Context,params: WorkerParameters): CoroutineWo
                     if(changed) throw AidFailure("changed")
                     changed=true
                     meta=repo.refreshNow()[id] ?: throw AidFailure("unavailable")
-                    if(id=="heraldry-templates" && meta.schemaVersion!=3) throw AidFailure("unsupported")
                 }
             }
             Result.success()

@@ -32,13 +32,13 @@ formát, identita záznamů a kompatibilita. Editor ani import nejsou zatím hot
 
 ## Badatelské pomůcky a správce stahování
 
-Katalog má všech 14 stávajících databázových balíčků, hledání, oborové filtry a
+Katalog má 13 mobilních databázových balíčků, bez desktopových šablon, hledání, oborové filtry a
 přehled skutečně nainstalovaných pomůcek. Detail rozlišuje přenosovou velikost
 a místo po instalaci a nabízí stažení, aktualizaci a potvrzenou odinstalaci.
 Nainstalované pomůcky se otevírají přímo do samostatného sdíleného prohlížeče,
 bez vazby na moduly. Textová a obrazová podoba sdílejí datovou vrstvu, hledání,
-filtry, stránkování a detail. U obrazů je nutné rozlišit vložené obrázky šablon
-od online obrázků na Commons; dříve načtené snímky mohou být v mezipaměti.
+filtry, stránkování a detail. Obrázky na Commons vyžadují připojení; dříve načtené snímky mohou být
+v mezipaměti. Desktopové heraldické šablony v Androidu nejsou.
 Podrobnosti: [readers.md](readers.md).
 
 Stahování už není simulace. WorkManager provádí přenos na pozadí, ověření a
