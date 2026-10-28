@@ -171,7 +171,7 @@ Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v
 ## Verzování
 
 Obě varianty používají verzi `1.0.XXXX`, kde `XXXX` je číslo buildu doplněné
-zleva nulami na čtyři číslice. Aktuální build je **1.0.0002** (`versionCode=2`);
+zleva nulami na čtyři číslice. Aktuální build je **1.0.0003** (`versionCode=3`);
 předchozí pracovní APK měly `versionCode=1`. Debug/Release se rozlišují názvem,
 ID a podpisem, nikoli příponou čísla verze. Verzi najdete také na přihlašovací
 obrazovce a v nabídce **Účet**.

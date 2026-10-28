@@ -34,7 +34,13 @@ internal class AidReaderSource(private val file: () -> File?) {
                 val where=mutableListOf<String>();val args=mutableListOf<String>()
                 if(query.isNotBlank()) {
                     val fts=AidSchemas.fts(query)
-                    if(schema.fts!=null && fts.isNotEmpty() && hasFts5(db)) { where+=schema.fts;args+=fts }
+                    if (aid == "places") {
+                        // search_text also contains districts; a place-name filter must not match those.
+                        val title = if (Build.VERSION.SDK_INT >= 30) "vestigia_fold(p.canonical_name)" else "LOWER(p.canonical_name)"
+                        where += "($title LIKE ? ESCAPE '\\' OR p.id IN (SELECT place_id FROM place_names WHERE normalized_name LIKE ? ESCAPE '\\'))"
+                        args += AidSchemas.like(if (Build.VERSION.SDK_INT >= 30) AidSchemas.fold(query.trim()) else query.trim().lowercase(Locale.ROOT))
+                        args += AidSchemas.like(AidSchemas.fold(query.trim()))
+                    } else if(schema.fts!=null && fts.isNotEmpty() && hasFts5(db)) { where+=schema.fts;args+=fts }
                     else {
                         if(Build.VERSION.SDK_INT>=30) { where+="vestigia_fold(COALESCE(${schema.search},'')) LIKE ? ESCAPE '\\'";args+=AidSchemas.like(AidSchemas.fold(query.trim())) }
                         else { where+="LOWER(COALESCE(${schema.search},'')) LIKE ? ESCAPE '\\'";args+=AidSchemas.like(query.trim().lowercase(Locale.ROOT)) }

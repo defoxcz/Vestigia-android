@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
 import com.vestigiascriptorium.android.ui.main.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -43,8 +44,11 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
         loading=true;error=false
         try {
             if(selected==null) {
+                data=null // Never show rows for the previous text while the IME replacement is loading.
                 if(query.isNotEmpty()) delay(250)
-                data=source.page(aid.id,language,query,filter,page,imagesOnly)
+                val next=source.page(aid.id,language,query,filter,page,imagesOnly)
+                ensureActive()
+                data=next
                 if(data!!.page!=page) page=data!!.page
             } else {
                 record=source.detail(aid.id,language,selected!!)

@@ -117,3 +117,15 @@ jej odfiltruje i ze staré lokální cache a neumožní nové stažení. Rozprac
 úloha šablon se zruší, ale nainstalované ani dočasné soubory se automaticky
 nemažou. Pokud existují, Stahování zobrazí pouze desktopovou položku s možností
 potvrzené odinstalace, bez otevření, aktualizace a opětovného stažení.
+
+
+### Hledání obcí (1.0.0003)
+
+Filtr obcí porovnává aktuální i historické/jazykové názvy; text správních
+jednotek není názvem obce a při hledání se neporovnává. Proto dotaz Břeclav
+nevrací všechny obce okresu Břeclav. Hledání podle normalizovaných variant
+zachovává zadávání bez diakritiky. Změny textu včetně náhrady návrhem IME
+spustí nový dotaz, oříznou okolní mezery a během načítání skryjí staré výsledky.
+PlaceSearchTest ověřuje postupné prefixy, diakritiku, historické názvy,
+kombinaci s filtrem země a nahrazení breclav → Břeclav s koncovou mezerou.
+Testovací databáze je samostatná dočasná kopie bez zásahu do knihovny.
