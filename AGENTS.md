@@ -18,3 +18,10 @@
   pomocí `adb install -r`; bez výslovného pokynu nikdy neodinstalovat aplikaci,
   nemazat její data ani existující pomůcky. Testy prohlížečů používají izolované
   testovací databáze, nikoli uživatelovu knihovnu.
+
+- Debug i Release vyžadují skutečný účet a podepsané testovací oprávnění.
+  Nevytvářet lokální přepínač obcházející přihlášení ani neměnit uživatelská
+  oprávnění kvůli testům. Přihlašování probíhá v systémovém prohlížeči;
+  nečíst přihlašovací údaje desktopu nebo webového prohlížeče.
+  Testy používají vlastní dočasný Keystore alias a soubor; skutečnou relaci
+  nikdy nemažou. Úspěšný test nepřihlášeného vstupu není důkaz přihlášení účtu.

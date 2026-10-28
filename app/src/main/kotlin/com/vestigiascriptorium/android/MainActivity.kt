@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
 
     enableEdgeToEdge()
     setContent {
-      VestigiaScriptoriumTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { MainScreen() } }
+      VestigiaScriptoriumTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { com.vestigiascriptorium.android.account.AccountGate { MainScreen() } } }
     }
   }
 }

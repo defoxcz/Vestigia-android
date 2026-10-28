@@ -70,3 +70,14 @@ Sestavení a statická kontrola: `./gradlew assembleDebug lintDebug`.
 Testy instalace: `./gradlew testDebugUnitTest connectedDebugAndroidTest`.
 UI testy vyžadují fyzický odemčený telefon; na zamčeném telefonu se přeskočí.
 Emulátor se nepoužívá.
+
+
+## Povinný účet v testovací distribuci
+
+Před otevřením modulů i samostatných pomůcek je společná vstupní kontrola účtu.
+Přihlášení/registrace používá web Vestigia v systémovém prohlížeči s potvrzením
+shodného kódu. Účet bez testovacího povolení do aplikace nevstoupí, ani když má
+Premium nebo administrátorskou roli. V horní liště je **Účet** se stavem,
+termínem online ověření, ručním ověřením a odhlášením. Odebrání přístupu
+zobrazí vstupní kontrolu bez smazání knihovny. Debug i Release používají stejné
+podmínky a samostatné relace. Technické podrobnosti jsou v README.

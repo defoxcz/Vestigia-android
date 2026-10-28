@@ -76,7 +76,7 @@ internal fun VestigiaApp(initialTab: Int = 0, initialGenealogy: Boolean = false,
                     Text("SCRIPTORIUM",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }},
                 navigationIcon={if(detail!=null || genealogy) IconButton(onClick={detail=null;genealogy=false},modifier=Modifier.semantics { contentDescription=copy.t("Zpět","Back") }) { Mark(5) }},
-                actions={ TextButton(onClick={info=copy.t("Soukromé bádání","Private research")}) { Text(copy.t("Moje bádání","My research")) } }
+                actions={ com.vestigiascriptorium.android.account.AccountButton(); TextButton(onClick={info=copy.t("Soukromé bádání","Private research")}) { Text(copy.t("Moje bádání","My research")) } }
             )
         },
         bottomBar={ if(!wide) NavigationBar {

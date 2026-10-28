@@ -22,7 +22,7 @@ class AidReaderActivity: ComponentActivity() {
         val id=intent.getStringExtra("aid")
         if(id==null || aids.none { it.id==id }) { finish();return }
         enableEdgeToEdge()
-        setContent { VestigiaScriptoriumTheme { ReaderRoute(id,onBack={finish()}) } }
+        setContent { VestigiaScriptoriumTheme { com.vestigiascriptorium.android.account.AccountGate { ReaderRoute(id,onBack={finish()}) } } }
     }
     companion object {
         fun intent(context: Context,id: String)=Intent(context,AidReaderActivity::class.java).putExtra("aid",id)

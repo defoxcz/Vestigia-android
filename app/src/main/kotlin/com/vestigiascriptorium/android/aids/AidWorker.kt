@@ -15,9 +15,11 @@ internal class AidWorker(context: Context,params: WorkerParameters): CoroutineWo
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val id=inputData.getString("aid") ?: return@withContext Result.failure()
         if(id !in MobileAids.ids) return@withContext Result.failure(workDataOf("error" to "unavailable"))
+        if (!com.vestigiascriptorium.android.account.AccountManager.get(applicationContext).hasAccess()) return@withContext Result.retry()
         val repo=AidRepository.get(applicationContext)
         val jobContext=currentCoroutineContext()
-        val check={ jobContext.ensureActive();if(isStopped) throw CancellationException() }
+        val account = com.vestigiascriptorium.android.account.AccountManager.get(applicationContext)
+        val check={ jobContext.ensureActive();if(isStopped) throw CancellationException();if(!account.accessNow()) throw AccountRequired() }
         try {
             setForeground(notification(id))
             var meta=runCatching { repo.refreshNow()[id] }.getOrNull() ?: repo.metadata(id) ?: throw AidFailure("unavailable")
@@ -43,11 +45,13 @@ internal class AidWorker(context: Context,params: WorkerParameters): CoroutineWo
             }
             Result.success()
         } catch(error: CancellationException) { throw error }
+        catch (_: AccountRequired) { Result.retry() }
         catch(error: Exception) {
             val code=(error as? AidFailure)?.code ?: "network"
             Result.failure(workDataOf("error" to code))
         }
     }
+    private class AccountRequired: Exception()
     private fun validateDatabase(file: File,meta: AidMetadata) {
         try {
             SQLiteDatabase.openDatabase(file.path,null,SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS).use { db ->

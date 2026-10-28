@@ -94,7 +94,7 @@ C++/Qt UI se nepřenáší přímo. Sdílet můžeme specifikace formátů, test
 Desktop: `/Users/defox/Development/Desktop/Vestigia`.
 Web: `/Users/defox/Development/Web/Vestigia`.
 Aplikace používá veřejné webové API katalogu a stahování pomůcek. Nepřistupuje
-k uživatelským databázím desktopu ani účtům.
+k uživatelským databázím desktopu. Přihlášení používá společný účet Vestigia.
 Git remote: `https://github.com/defoxcz/Vestigia-android`. Publikace v obchodě není nastavena.
 
 ## Debug a trvalá Release instalace
@@ -122,3 +122,48 @@ změnit proměnnou `VESTIGIA_ANDROID_SIGNING_PROPERTIES`. Zálohujte bezpečně 
 soubory: další aktualizace Release vyžadují stejný klíč. Klíč ani hesla nepatří do Gitu.
 Na jiném počítači bez konfigurace Gradle vytvoří nepodepsané Release APK;
 instalační skript jej odmítne. Nejprve přeneste bezpečně podpisovou konfiguraci.
+
+## Účet a testovací přístup
+
+Debug i Release nyní vyžadují přihlášení; není zde vývojová výjimka.
+Tlačítko **Přihlásit se / Registrovat** otevře systémový prohlížeč se stávajícím
+webovým přihlášením/registrací. Uživatel porovná osmimístný kód a potvrdí
+připojení. Heslo ani Firebase token aplikace nezískává. Registrace sama nestačí:
+web musí potvrdit aktivní účet, ověřený e-mail, individuální `testAccess` a
+zapnutý globální testovací program. Role admin ani Premium testování nenahrazují.
+
+Android využívá již nasazený společný protokol `/api/desktop/license` a
+`/cs/account/connect`. Názvy endpointů, audience `vestigia-desktop` i označení
+webového potvrzení zůstávají kvůli kompatibilitě stejné. Android si generuje
+vlastní náhodný údaj, nikdy nepřebírá přihlášení desktopu. Není nutná změna webu
+ani účtů. Registrace a reset hesla probíhají existujícím webovým postupem.
+
+Podpis RSA-SHA256 se ověřuje veřejným klíčem v assets/account-public.der
+(SPKI, převedený z veřejného klíče desktopu). Kontrolují se také audience,
+identita, vazba na náhodný údaj, časy a explicitní podepsané testovací oprávnění.
+Obálka a přihlašovací údaj se ukládají pomocí AES-256-GCM a Android Keystore
+mimo zálohování (`no_backup/account-v1.enc`). Debug a Release mají vlastní
+relaci, úložiště i klíč. Tajné údaje se nelogují ani nevkládají do URL;
+fragment odkazu obsahuje pouze SHA-256 challenge.
+
+Ověření probíhá při návratu do aplikace a každých 15 minut v popředí.
+Offline oprávnění vydané serverem platí nejvýše 24 hodin, přihlašovací relace
+nejvýše 90 dní. Neúspěšné spojení offline platnost neprodlužuje; potvrzené
+odvolání relace nebo testování přístup zablokuje. Monotónní čas omezuje návrat
+hodin během běhu, uložený nejvyšší čas mezi spuštěními. Nejde o absolutní
+ochranu proti úpravě zařízení nebo binárky. Po vypršení se zobrazí vstupní
+kontrola také nad otevřeným prohlížečem pomůcky. Bez oprávnění se neprovádí
+instalace balíčků na pozadí. Odhlášení a ztráta přístupu nikdy nemažou pomůcky.
+**Účet** v horní liště nabízí stav, ruční ověření a odhlášení. Při offline
+odhlášení se odstraní místní údaj; serverovou relaci lze odvolat pouze online.
+
+Identita, edice a testovací povolení jsou oddělené. Základ pro budoucí
+freemium/premium používá podepsaná pole `edition` a `kind`; aktuální vstup
+stále vyžaduje testovací povolení. Placené funkce ani platby zatím nejsou zapnuté.
+
+Ověření přihlašování: `./gradlew testDebugUnitTest lintDebug lintRelease` a na
+skutečném telefonu `./gradlew connectedDebugAndroidTest
+-Pandroid.testInstrumentationRunnerArguments.class=com.vestigiascriptorium.android.account.AccountDeviceTest,com.vestigiascriptorium.android.account.AccountGateUiTest`
+(příkaz zadejte na jeden řádek). Testy Keystore používají vlastní dočasný alias;
+produkční síťový test pouze ověřuje odmítnutí neschváleného náhodného požadavku.
+Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v prohlížeči.
