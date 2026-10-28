@@ -30,3 +30,8 @@
   Při nové distribuované změně zvýšit číslo buildu a commitnout je společně
   s kódem. Debug a Release stejného buildu mají shodnou verzi. Samotné ověření
   nebo opakované sestavení téže změny číslo nezvyšuje.
+
+- Testy na telefonu spouštět přes `scripts/test-device.sh CLASS[,CLASS]`. Skript
+  instaluje obě Debug APK jen s `adb install -r` a spouští instrumentaci přímo;
+  nepoužívat Gradle `connectedDebugAndroidTest`, který může cílovou testovanou
+  aplikaci po testu odinstalovat. Release se při testech nikdy nemění.

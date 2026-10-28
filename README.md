@@ -162,8 +162,7 @@ freemium/premium používá podepsaná pole `edition` a `kind`; aktuální vstup
 stále vyžaduje testovací povolení. Placené funkce ani platby zatím nejsou zapnuté.
 
 Ověření přihlašování: `./gradlew testDebugUnitTest lintDebug lintRelease` a na
-skutečném telefonu `./gradlew connectedDebugAndroidTest
--Pandroid.testInstrumentationRunnerArguments.class=com.vestigiascriptorium.android.account.AccountDeviceTest,com.vestigiascriptorium.android.account.AccountGateUiTest`
+skutečném telefonu `./scripts/test-device.sh com.vestigiascriptorium.android.account.AccountDeviceTest,com.vestigiascriptorium.android.account.AccountGateUiTest`
 (příkaz zadejte na jeden řádek). Testy Keystore používají vlastní dočasný alias;
 produkční síťový test pouze ověřuje odmítnutí neschváleného náhodného požadavku.
 Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v prohlížeči.
@@ -171,7 +170,7 @@ Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v
 ## Verzování
 
 Obě varianty používají verzi `1.0.XXXX`, kde `XXXX` je číslo buildu doplněné
-zleva nulami na čtyři číslice. Aktuální build je **1.0.0005** (`versionCode=5`);
+zleva nulami na čtyři číslice. Aktuální build je **1.0.0006** (`versionCode=6`);
 předchozí pracovní APK měly `versionCode=1`. Debug/Release se rozlišují názvem,
 ID a podpisem, nikoli příponou čísla verze. Verzi najdete také na přihlašovací
 obrazovce a v nabídce **Účet**.

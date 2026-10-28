@@ -27,7 +27,9 @@ import kotlinx.coroutines.isActive
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack: () -> Unit,previewPage: RecordPage?=null) {
+    val preparingIndex by source.preparingIndex.collectAsState()
     val language=if(copy.cs) "cs" else "en"
+    var allFields by rememberSaveable(aid.id) { mutableStateOf(false) }
     var query by rememberSaveable(aid.id) { mutableStateOf("") }
     var filter by rememberSaveable(aid.id) { mutableStateOf("") }
     var imagesOnly by rememberSaveable(aid.id) { mutableStateOf(false) }
@@ -39,14 +41,14 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
     var error by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
     val listState=rememberLazyListState();val gridState=rememberLazyGridState()
-    LaunchedEffect(source,language,query,filter,page,imagesOnly,retry,selected) {
+    LaunchedEffect(source,language,query,allFields,filter,page,imagesOnly,retry,selected) {
         if(previewPage!=null) { data=previewPage;loading=false;return@LaunchedEffect }
         loading=true;error=false
         try {
             if(selected==null) {
                 data=null // Never show rows for the previous text while the IME replacement is loading.
-                if(query.isNotEmpty()) delay(250)
-                val next=source.page(aid.id,language,query,filter,page,imagesOnly)
+                if(query.isNotEmpty()) delay(60)
+                val next=source.page(aid.id,language,query,filter,page,imagesOnly,if(allFields) SearchScope.ALL_FIELDS else SearchScope.NAMES)
                 ensureActive()
                 data=next
                 if(data!!.page!=page) page=data!!.page
@@ -72,6 +74,10 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
                 else -> {
                     OutlinedTextField(value=query,onValueChange={query=it;page=0},modifier=Modifier.fillMaxWidth().padding(horizontal=20.dp),singleLine=true,
                         label={Text(copy.t("Hledat v záznamech","Search records"))},leadingIcon={Mark(4)},trailingIcon={if(query.isNotEmpty()) TextButton(onClick={query="";page=0}) { Text(copy.t("Smazat","Clear")) }},shape=RoundedCornerShape(16.dp))
+                    Row(Modifier.fillMaxWidth().padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                        FilterChip(selected=!allFields,onClick={allFields=false;page=0},label={Text(copy.t("Pouze názvy","Names only"))})
+                        FilterChip(selected=allFields,onClick={allFields=true;page=0},label={Text(copy.t("Všechna pole","All fields"))})
+                    }
                     Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically) {
                         var expanded by remember { mutableStateOf(false) }
                         data?.let { result ->
@@ -85,7 +91,9 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
                             if(result.kind==AidViewKind.IMAGE) FilterChip(selected=imagesOnly,onClick={imagesOnly=!imagesOnly;page=0},label={Text(copy.t("S obrázkem","With images"))})
                         }
                     }
+                    if(aid.id=="places") Text(copy.t("Zadejte začátek hledaných slov.","Type the beginning of the words to find."),modifier=Modifier.padding(horizontal=20.dp),style=MaterialTheme.typography.labelSmall)
                     if(loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    if(preparingIndex) Text(copy.t("Jednorázově připravuji místní vyhledávání…","Preparing local search once…"),modifier=Modifier.padding(horizontal=20.dp),style=MaterialTheme.typography.bodySmall)
                     val result=data
                     if(result==null) Loading()
                     else if(result.total==0) Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp),contentAlignment=Alignment.Center) {

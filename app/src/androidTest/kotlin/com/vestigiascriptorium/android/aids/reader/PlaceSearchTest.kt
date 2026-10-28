@@ -38,8 +38,10 @@ class PlaceSearchTest {
             assertTrue(query,page.records.any { it.id=="1" })
             if(AidSchemas.fold(query.trim()).length>1) assertEquals(query,listOf("1"),page.records.map { it.id })
         }
-        assertEquals(setOf("1","3"),source.page("places","cs","Lundenburg","",0).records.map { it.id }.toSet())
-        assertEquals(listOf("1"),source.page("places","cs","Lundenburg","CZ",0).records.map { it.id })
+        assertEquals(listOf("3"),source.page("places","cs","Lundenburg","",0).records.map { it.id })
+        assertEquals(setOf("1","3"),source.page("places","cs","Lundenburg","",0,searchScope=SearchScope.ALL_FIELDS).records.map { it.id }.toSet())
+        assertEquals(setOf("1","2","3"),source.page("places","cs","Břeclav","",0,searchScope=SearchScope.ALL_FIELDS).records.map { it.id }.toSet())
+        assertEquals(listOf("1"),source.page("places","cs","Lundenburg","CZ",0,searchScope=SearchScope.ALL_FIELDS).records.map { it.id })
         assertEquals(0,source.page("places","cs","Břeclav","AT",0).total)
     } }
     @Test fun keyboardReplacementRefreshesTheVisiblePlaces() = fixture { source ->
@@ -57,5 +59,10 @@ class PlaceSearchTest {
         rule.onNodeWithText("Bavory").assertDoesNotExist()
         rule.onNodeWithText("Lundenburg").assertDoesNotExist()
         rule.onNodeWithText("Břeclav",useUnmergedTree=true).assertExists()
+        rule.onNodeWithText("Všechna pole").performClick()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText("Bavory").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Pouze názvy").performClick()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText("1 záznamů").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Bavory").assertDoesNotExist()
     }
 }

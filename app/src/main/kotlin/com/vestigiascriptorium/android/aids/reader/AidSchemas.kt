@@ -3,6 +3,7 @@ package com.vestigiascriptorium.android.aids.reader
 import java.text.Normalizer
 import java.util.Locale
 
+internal enum class SearchScope { NAMES, ALL_FIELDS }
 internal enum class AidViewKind { TEXT, IMAGE }
 internal data class AidField(val cs: String,val en: String,val sql: String,val type: String="text")
 internal data class AidFacet(val cs: String,val en: String,val sql: String,val optionsSql: String,val type: String="text")
@@ -48,6 +49,14 @@ internal object AidSchemas {
             }
         }
     }
+    fun allFieldsSearch(schema: AidSchema): String {
+        val extra=when(schema.imageFamily) {
+            "objects" -> listOf("(SELECT group_concat(COALESCE(c.value_text,'') || ' ' || COALESCE(c.amount,'') || ' ' || COALESCE(c.time_value,'') || ' ' || COALESCE(c.latitude,'') || ' ' || COALESCE(c.longitude,'') || ' ' || COALESCE(e.labels_json,'') || ' ' || COALESCE(u.labels_json,''),' ') FROM claims c LEFT JOIN entities e ON e.wikidata_id=c.entity_id LEFT JOIN entities u ON u.wikidata_id=REPLACE(c.unit_id,'http://www.wikidata.org/entity/','') WHERE c.object_id=o.wikidata_id AND COALESCE(c.rank,'')<>'deprecated')")
+            "monuments" -> listOf("(SELECT group_concat(COALESCE(x.labels_json,x.label),' ') FROM entities x WHERE instr(COALESCE(m.type_ids_json,'') || COALESCE(m.country_ids_json,'') || COALESCE(m.location_ids_json,'') || COALESCE(m.material_ids_json,'') || COALESCE(m.creator_ids_json,''),'\"' || x.qid || '\"')>0)","m.inception_json","(SELECT group_concat(COALESCE(x.labels_json,x.label),' ') FROM monument_person mp JOIN entities x ON x.qid=mp.person_qid WHERE mp.monument_qid=m.qid)")
+            else -> emptyList()
+        }
+        return (listOf(schema.search)+schema.fields.map { it.sql }+extra).joinToString(" || ' ' || ") { "COALESCE(($it),'')" }
+    }
     fun imageExists(s: AidSchema): String = when(s.imageFamily) {
         "heraldry" -> "EXISTS(SELECT 1 FROM images i WHERE i.wikidata_id=e.wikidata_id AND i.missing=0 AND i.display_policy IN ('public_domain','attribution_required'))"
         "objects" -> "EXISTS(SELECT 1 FROM images i WHERE i.object_id=o.wikidata_id AND i.display_policy IN ('public_domain','attribution_required'))"
@@ -64,7 +73,9 @@ internal object AidSchemas {
         "monuments" -> listOf("SELECT type_ids_json,country_ids_json,location_ids_json,material_ids_json,creator_ids_json,inception_json FROM monuments WHERE qid=?", "SELECT DISTINCT e.labels_json,e.label FROM monument_person mp JOIN entities e ON e.qid=mp.person_qid WHERE mp.monument_qid=?")
         else -> emptyList()
     }
-    fun fold(value: String): String = Normalizer.normalize(value,Normalizer.Form.NFD).replace(Regex("\\p{M}+"),"").lowercase(Locale.ROOT)
+    private val combiningMarks=Regex("\\p{M}+")
+    fun fold(value: String): String = if(value.all { it.code<128 }) value.lowercase(Locale.ROOT)
+        else combiningMarks.replace(Normalizer.normalize(value,Normalizer.Form.NFD),"").lowercase(Locale.ROOT)
     fun like(value: String): String = "%"+value.replace("\\","\\\\").replace("%","\\%").replace("_","\\_")+"%"
     fun fts(value: String): String = Regex("[\\p{L}\\p{N}]+").findAll(value).take(12).joinToString(" AND ") { "\"${it.value}\"*" }
 }

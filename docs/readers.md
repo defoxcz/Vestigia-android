@@ -20,7 +20,7 @@ návrat ze záznamu do seznamu, zdrojové odkazy a čtení pouze pro čtení:
   obraz do výchozího měřítka.
 
 Filtry odpovídají obsahu: země u místopisu, historických měr a heraldiky; jazyk
-u písařských zkratek; druh u heraldických šablon. Hledání je zpožděno o 250 ms,
+u písařských zkratek; druh u heraldických šablon. Hledání je zpožděno o 60 ms,
 ruší předchozí dotaz a probíhá na IO vlákně. U rozsáhlých numismatických a
 sfragistických dat a náhrobníků se využije existující FTS5, pokud jej systémová
 SQLite podporuje. Jinak je k dispozici textové hledání. Android 11+ podporuje
@@ -92,7 +92,7 @@ Pro fyzický telefon jsou připraveny izolované zmenšené fixture databáze:
 
 ```sh
 python3 scripts/prepare-reader-fixtures.py /cesta/k/verejnym/databazim
-./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.vestigiascriptorium.android.aids.reader.ReaderDeviceTest,com.vestigiascriptorium.android.aids.reader.ReaderUiTest,com.vestigiascriptorium.android.ui.main.LibraryUiTest
+./scripts/test-device.sh com.vestigiascriptorium.android.aids.reader.ReaderDeviceTest,com.vestigiascriptorium.android.aids.reader.ReaderUiTest,com.vestigiascriptorium.android.ui.main.LibraryUiTest
 ```
 
 Generované fixture DB jsou ignorované Gitem a patří jen do testovacího APK.
@@ -119,7 +119,7 @@ nemažou. Pokud existují, Stahování zobrazí pouze desktopovou položku s mo�
 potvrzené odinstalace, bez otevření, aktualizace a opětovného stažení.
 
 
-### Hledání obcí (1.0.0003)
+### Hledání obcí (historické chování 1.0.0003–1.0.0005)
 
 Filtr obcí porovnává aktuální i historické/jazykové názvy; text správních
 jednotek není názvem obce a při hledání se neporovnává. Proto dotaz Břeclav
@@ -142,3 +142,43 @@ Bez oprávnění k poloze a bez změny databáze; údaje místa se předají ext
 aplikaci teprve po stisknutí tlačítka. Pro ostatní pomůcky se tlačítko nepřidává.
 Manifest deklaruje viditelnost pouze aplikací pro geo: a HTTPS odkazy.
 Podklad: https://developer.android.com/guide/components/intents-common#Maps
+
+
+### Rozsah a rychlost hledání (1.0.0006)
+
+Výchozí **Pouze názvy** porovnává pouze název, který je zobrazený v seznamu.
+Historické názvy, popis ani správní jednotky v tomto režimu výsledek nerozšiřují.
+**Všechna pole** zahrnují názvy, varianty a obsah polí detailu. Změna rozsahu,
+textu (včetně návrhu IME) a země přepočítá výsledky a vrátí první stránku.
+
+Topografie používá odvozený SQLite index v cache `reader-search`, oddělený
+od stažené databáze. Názvy a všechna pole mají samostatné sloupce fulltextového indexu FTS4 s prefixovými indexy pro 1–4 znaky; diakritika
+se normalizuje jednou při přípravě, nikoli pomocí Kotlin callbacku nad každým
+záznamem při každém dotazu. Index pro řazení a země zrychlují stránkování a filtry. Příprava a načítání používají omezené dávky, aby opakované plnění Android CursorWindow neprocházelo znovu celou databázi.
+Topografie vyhledává začátky slov, nezávisle na velikosti písmen a diakritice. Více zadaných slov musí odpovídat současně.
+Při prvním otevření po aktualizaci dat se zobrazí jednorázová příprava indexu.
+Další otevření jej opakovaně používají; změna cesty/verze DB vytvoří nový index.
+Smazání cache vede jen k nové přípravě, nikoli ke ztrátě pomůcky. Příprava je
+atomická a změna dotazu ji nerestartuje. Uchovávají se maximálně dva indexy.
+
+Výkon se ověřuje na skutečném Samsungu nad plnou veřejnou databází 212 166 obcí,
+nikoli pouze nad dvousetřádkovými fixtures. Pro tento test zkopírovat veřejný ZIP
+`/tmp/vestigia-reader-fixtures/places.zip` do ignorované složky
+`app/src/androidTest/assets/performance/places.zip` a spustit:
+
+```sh
+./scripts/test-device.sh com.vestigiascriptorium.android.aids.reader.PlaceSearchTest,com.vestigiascriptorium.android.aids.reader.PlaceSearchPerformanceTest,com.vestigiascriptorium.android.aids.reader.ReaderDeviceTest
+adb logcat -d -s VestigiaSearchPerf:I '*:S'
+```
+
+Testy používají vlastní dočasné DB a cache. Kontrolují názvy vs. varianty/okres,
+rozsah v UI, diakritiku, více zemí a opětovné použití indexu. Výkonnostní limity
+pro připravený index na testovaném telefonu jsou 250 ms pro názvy a 500 ms pro
+všechna pole; první příprava se měří odděleně. Nový testovací skript neprovádí
+odinstalaci ani mazání dat žádné varianty aplikace.
+
+Naměřeno na Samsung SM-S938B (Android 17): názvy 21–85 ms, všechna pole
+20–76 ms pro postupné B → Bř → Bře → Břec → Břeclav, přes všechny země.
+Časy nezahrnují 60ms prodlevu pro psaní. Jednorázová příprava plného indexu
+byla při aktivním telefonu přibližně 11 sekund; při uspání systému může trvat
+déle. Výkonnostní test proto během měření drží dočasný CPU wake lock.

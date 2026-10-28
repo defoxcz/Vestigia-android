@@ -25,3 +25,6 @@ local.properties
 *.keystore
 *.jks
 *signing*.properties
+
+# Full public dataset used only for on-device performance measurements
+/app/src/androidTest/assets/performance/

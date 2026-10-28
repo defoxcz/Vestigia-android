@@ -37,6 +37,9 @@ class ReaderDeviceTest {
                     val filtered=source.page(id,language,"",page.options.first().value,0)
                     assertTrue(filtered.total in 1..page.total)
                 }
+                val nameMatches=source.page(id,language,page.records.first().title,"",0)
+                assertTrue("$id title-only",nameMatches.records.all { AidSchemas.fold(it.title).contains(AidSchemas.fold(page.records.first().title)) })
+                source.page(id,language,"test","",0,searchScope=SearchScope.ALL_FIELDS)
                 source.page(id,language,"%' OR 1=1 --","",0) // A bound literal, never SQL syntax.
                 if(page.kind==AidViewKind.IMAGE) {
                     val onlyImages=source.page(id,language,"","",0,true)

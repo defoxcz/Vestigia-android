@@ -33,6 +33,6 @@ class AidReaderActivity: ComponentActivity() {
 internal fun ReaderRoute(id: String,onBack: () -> Unit) {
     val context=LocalContext.current
     val copy=Copy(LocalConfiguration.current.locales[0].language=="cs")
-    val source=remember(id) { val store=AidPackageStore(File(context.noBackupFilesDir,"research-aids"));AidReaderSource { store.database(id) } }
+    val source=remember(id) { val store=AidPackageStore(File(context.noBackupFilesDir,"research-aids"));AidReaderSource(File(context.cacheDir,"reader-search")) { store.database(id) } }
     AidReaderScreen(aids.first { it.id==id },copy,source,onBack)
 }

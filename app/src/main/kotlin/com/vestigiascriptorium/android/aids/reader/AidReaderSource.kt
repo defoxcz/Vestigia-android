@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import android.os.CancellationSignal
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
@@ -19,9 +20,11 @@ internal data class FacetOption(val value: String,val label: String)
 internal data class RecordPage(val records: List<AidRecord>,val total: Int,val page: Int,val options: List<FacetOption>,val facetLabel: String?,val kind: AidViewKind)
 
 /** One reader and one page/detail contract, regardless of the underlying dataset schema. */
-internal class AidReaderSource(private val file: () -> File?) {
+internal class AidReaderSource(private val indexDirectory: File?=null,private val file: () -> File?) {
     private val mutex=Mutex()
-    suspend fun page(aid: String,language: String,query: String,filter: String,page: Int,imagesOnly: Boolean=false): RecordPage = mutex.withLock {
+    private val preparing= kotlinx.coroutines.flow.MutableStateFlow(false)
+    val preparingIndex=preparing.asStateFlow()
+    suspend fun page(aid: String,language: String,query: String,filter: String,page: Int,imagesOnly: Boolean=false,searchScope: SearchScope=SearchScope.NAMES): RecordPage = mutex.withLock {
         withContext(Dispatchers.IO) {
             val signal=CancellationSignal()
             val watcher=launch(Dispatchers.Default,start=CoroutineStart.UNDISPATCHED) {
@@ -31,20 +34,23 @@ internal class AidReaderSource(private val file: () -> File?) {
             ensureActive()
             val schema=AidSchemas.get(aid,language)
             open().use { db ->
+                if(aid=="places") {
+                    val source=File(db.path)
+                    val directory=indexDirectory ?: File(source.parentFile,"reader-index")
+                    val index=withContext(NonCancellable) {
+                        try { PlaceSearchIndex.prepare(source,db,directory) { preparing.value=it } }
+                        finally { preparing.value=false }
+                    }
+                    ensureActive()
+                    return@withContext PlaceSearchIndex.page(index,query,filter,page,searchScope,signal,language=="cs")
+                }
                 val where=mutableListOf<String>();val args=mutableListOf<String>()
                 if(query.isNotBlank()) {
-                    val fts=AidSchemas.fts(query)
-                    if (aid == "places") {
-                        // search_text also contains districts; a place-name filter must not match those.
-                        val title = if (Build.VERSION.SDK_INT >= 30) "vestigia_fold(p.canonical_name)" else "LOWER(p.canonical_name)"
-                        where += "($title LIKE ? ESCAPE '\\' OR p.id IN (SELECT place_id FROM place_names WHERE normalized_name LIKE ? ESCAPE '\\'))"
-                        args += AidSchemas.like(if (Build.VERSION.SDK_INT >= 30) AidSchemas.fold(query.trim()) else query.trim().lowercase(Locale.ROOT))
-                        args += AidSchemas.like(AidSchemas.fold(query.trim()))
-                    } else if(schema.fts!=null && fts.isNotEmpty() && hasFts5(db)) { where+=schema.fts;args+=fts }
-                    else {
-                        if(Build.VERSION.SDK_INT>=30) { where+="vestigia_fold(COALESCE(${schema.search},'')) LIKE ? ESCAPE '\\'";args+=AidSchemas.like(AidSchemas.fold(query.trim())) }
-                        else { where+="LOWER(COALESCE(${schema.search},'')) LIKE ? ESCAPE '\\'";args+=AidSchemas.like(query.trim().lowercase(Locale.ROOT)) }
-                    }
+                    val expression=if(searchScope==SearchScope.NAMES) {
+                        if(schema.titleJson!="''") "COALESCE(NULLIF(json_extract(${schema.titleJson}, '$.$language'),''), NULLIF(json_extract(${schema.titleJson}, '$.en'),''), ${schema.title})" else schema.title
+                    } else AidSchemas.allFieldsSearch(schema)
+                    if(Build.VERSION.SDK_INT>=30) { where+="vestigia_fold(COALESCE(($expression),'')) LIKE ? ESCAPE '\\'";args+=AidSchemas.like(AidSchemas.fold(query.trim())) }
+                    else { where+="LOWER(COALESCE(($expression),'')) LIKE ? ESCAPE '\\'";args+=AidSchemas.like(query.trim().lowercase(Locale.ROOT)) }
                 }
                 if(filter.isNotEmpty() && schema.facet!=null) {
                     where+=if('?' in schema.facet.sql) schema.facet.sql else "${schema.facet.sql}=?";args+=filter
@@ -104,7 +110,6 @@ internal class AidReaderSource(private val file: () -> File?) {
         if(Build.VERSION.SDK_INT>=30) db.setCustomScalarFunction("vestigia_fold") { AidSchemas.fold(it ?: "") }
         return db
     }
-    private fun hasFts5(db: SQLiteDatabase)=db.rawQuery("PRAGMA compile_options",null).use { c -> var enabled=false;while(c.moveToNext()) if(c.getString(0)=="ENABLE_FTS5") enabled=true;enabled }
     private fun images(db: SQLiteDatabase,s: AidSchema,id: String,limit: Int): Pair<List<RecordImage>,Int> {
         if(s.imageFamily==null) return emptyList<RecordImage>() to 0
         val sql=AidSchemas.imageSql(s.imageFamily)
