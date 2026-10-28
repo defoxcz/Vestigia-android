@@ -20,3 +20,8 @@ local.properties
 
 # Generated public reader test fixtures (test APK only)
 /app/src/androidTest/assets/reference-fixtures/
+
+# Private release signing material
+*.keystore
+*.jks
+*signing*.properties

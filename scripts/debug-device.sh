@@ -30,13 +30,14 @@ if [[ "$serial" == emulator-* ]]; then
   exit 1
 fi
 ./gradlew assembleDebug
+./scripts/check-apk.sh debug app/build/outputs/apk/debug/app-debug.apk
 adb -s "$serial" install -r app/build/outputs/apk/debug/app-debug.apk
 ./scripts/debug-device.sh cleanup
-adb -s "$serial" shell am force-stop com.vestigiascriptorium.android
-adb -s "$serial" shell am start -D -n com.vestigiascriptorium.android/.MainActivity
+adb -s "$serial" shell am force-stop com.vestigiascriptorium.android.debug
+adb -s "$serial" shell am start -D -n com.vestigiascriptorium.android.debug/com.vestigiascriptorium.android.MainActivity
 pid=""
 for attempt in {1..50}; do
-  pid="$(adb -s "$serial" shell pidof -s com.vestigiascriptorium.android | tr -d '\r')" || true
+  pid="$(adb -s "$serial" shell pidof -s com.vestigiascriptorium.android.debug | tr -d '\r')" || true
   [[ -n "$pid" ]] && break
   sleep 0.2
 done

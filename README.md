@@ -58,13 +58,13 @@ součástí prostředí a nepoužívají se. Další VS Code úlohy jsou dostupn
 Pro log konkrétního procesu po spuštění:
 
 ```sh
-adb -d shell pidof com.vestigiascriptorium.android
+adb -d shell pidof com.vestigiascriptorium.android.debug
 adb -d logcat --pid=ZDE_PID
 ```
 
 ## F5: automatické sestavení, instalace a debugger
 
-V panelu Run and Debug vyberte **Android: VestigiaScriptorium na telefonu**.
+V panelu Run and Debug vyberte **Android: VestigiaScriptorium Debug na telefonu**.
 Nastavte breakpoint například na prvním vykonávaném řádku `onCreate()` v
 `MainActivity.kt` a stiskněte **F5** (podle nastavení Macu **Fn+F5**).
 
@@ -95,6 +95,30 @@ Desktop: `/Users/defox/Development/Desktop/Vestigia`.
 Web: `/Users/defox/Development/Web/Vestigia`.
 Aplikace používá veřejné webové API katalogu a stahování pomůcek. Nepřistupuje
 k uživatelským databázím desktopu ani účtům.
-Application ID `com.vestigiascriptorium.android` je pracovní; před distribucí jej
-potvrdit. Git remote: `https://github.com/defoxcz/Vestigia-android`.
-Produkční podpis a publikace v obchodě nejsou nastaveny.
+Git remote: `https://github.com/defoxcz/Vestigia-android`. Publikace v obchodě není nastavena.
+
+## Debug a trvalá Release instalace
+
+| Varianta | Application ID | Název v telefonu |
+| --- | --- | --- |
+| Debug | `com.vestigiascriptorium.android.debug` | Vestigia Scriptorium Debug |
+| Release | `com.vestigiascriptorium.android.release` | Vestigia Scriptorium Release |
+
+Obě aplikace mohou běžet současně a mají samostatná data i stažené pomůcky.
+F5 a `scripts/run-device.sh` sestavují, aktualizují a restartují pouze Debug.
+Před instalací skripty ověří ID, příznak ladění a platný podpis APK.
+Instalace vždy používá `adb install -r`, nikdy odinstalaci ani mazání dat.
+Původní aplikace s ID `com.vestigiascriptorium.android` zůstává zachována;
+její data se do nových variant automaticky nepřenášejí.
+
+Release sestavíte `./gradlew assembleRelease` a nainstalujete
+`./scripts/run-release-device.sh` nebo úlohou **Android: nainstalovat a spustit Release**.
+APK je `app/build/outputs/apk/release/app-release.apk`. Release neumožňuje debugger.
+
+Trvalý podpisový klíč je lokálně v `~/.config/vestigia-android/release.keystore`.
+Konfigurace `~/.config/vestigia-android/release-signing.properties` obsahuje
+`storeFile`, `keyAlias`, `storePassword` a `keyPassword`. Cestu ke konfiguraci lze
+změnit proměnnou `VESTIGIA_ANDROID_SIGNING_PROPERTIES`. Zálohujte bezpečně oba
+soubory: další aktualizace Release vyžadují stejný klíč. Klíč ani hesla nepatří do Gitu.
+Na jiném počítači bez konfigurace Gradle vytvoří nepodepsané Release APK;
+instalační skript jej odmítne. Nejprve přeneste bezpečně podpisovou konfiguraci.

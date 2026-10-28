@@ -20,5 +20,6 @@ if [[ "$serial" == emulator-* ]]; then
   exit 1
 fi
 ./gradlew assembleDebug
+./scripts/check-apk.sh debug app/build/outputs/apk/debug/app-debug.apk
 adb -s "$serial" install -r app/build/outputs/apk/debug/app-debug.apk
-adb -s "$serial" shell am start -W -n com.vestigiascriptorium.android/.MainActivity
+adb -s "$serial" shell am start -W -n com.vestigiascriptorium.android.debug/com.vestigiascriptorium.android.MainActivity

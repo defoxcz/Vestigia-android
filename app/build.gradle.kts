@@ -1,7 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+val signingFile = file(System.getenv("VESTIGIA_ANDROID_SIGNING_PROPERTIES")
+    ?: "${System.getProperty("user.home")}/.config/vestigia-android/release-signing.properties")
+val releaseSigning = Properties().apply {
+    if (signingFile.isFile) signingFile.inputStream().use { load(it) }
 }
 
 android {
@@ -15,6 +23,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 1
         versionName = "0.1.0"
+    }
+    signingConfigs {
+        if (signingFile.isFile) create("permanentRelease") {
+            storeFile = file(releaseSigning.getProperty("storeFile"))
+            storePassword = releaseSigning.getProperty("storePassword")
+            keyAlias = releaseSigning.getProperty("keyAlias")
+            keyPassword = releaseSigning.getProperty("keyPassword")
+        }
+    }
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["applicationLabel"] = "Vestigia Scriptorium Debug"
+        }
+        release {
+            applicationIdSuffix = ".release"
+            isDebuggable = false
+            manifestPlaceholders["applicationLabel"] = "Vestigia Scriptorium Release"
+            if (signingFile.isFile) signingConfig = signingConfigs.getByName("permanentRelease")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

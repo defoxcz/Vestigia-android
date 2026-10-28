@@ -53,6 +53,21 @@
         "cleanup"
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "Android: sestavit Release APK",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "assembleRelease"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: nainstalovat a spustit Release",
+      "type": "shell",
+      "command": "./scripts/run-release-device.sh",
+      "problemMatcher": []
     }
   ],
   "options": {
