@@ -82,3 +82,15 @@ Aktualizace pro mobilní prohlížeče: aktivní katalog má 13 pomůcek bez her
 šablon. Prošlo 11 JVM testů a 9 testů prohlížečů a přechodového chování na telefonu.
 Starší šablony nejsou automaticky mazány; případná stará instalace nebo zbylé
 soubory jsou ve Stahování dostupné pouze k potvrzené odinstalaci.
+
+
+## Oznámení (od 1.0.0005)
+
+Stažení pomůcky nevyvolává žádost o oprávnění k oznámením. Aplikace oprávnění
+POST_NOTIFICATIONS nedeklaruje ani nevyžaduje. Průběh je dostupný v záložce
+Stahování. Dlouhé přenosy dál používají WorkManager a foreground službu,
+aby je Android mohl dokončit na pozadí. Služba předává systému povinnou
+notifikaci; na Androidu 13+ bez oprávnění není v oznamovací liště, ale systém
+může zobrazit informaci ve správci aktivních aplikací. Na starších verzích
+Androidu může být průběhová notifikace viditelná. Žádné obcházení systémových
+pravidel ani změny knihovny pomůcek.

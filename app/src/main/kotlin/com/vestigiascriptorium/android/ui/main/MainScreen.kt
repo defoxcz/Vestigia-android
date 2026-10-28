@@ -1,13 +1,7 @@
 package com.vestigiascriptorium.android.ui.main
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
-import android.Manifest
-import android.os.Build
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,13 +30,7 @@ fun MainScreen() {
     val library by model.state.collectAsStateWithLifecycle()
     val repository=model.repository
     val context=LocalContext.current
-    val notifications=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    VestigiaApp(library=library,onDownload={ id ->
-        if(Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
-            notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        repository.download(id)
-    },onPause=repository::pause,
+    VestigiaApp(library=library,onDownload=repository::download,onPause=repository::pause,
         onCancel=repository::cancel,onUninstall=repository::uninstall,onWifi=repository::wifiOnly,
         onRefresh=repository::refresh,onClearError=repository::clearError,
         onOpenAid={ id -> context.startActivity(AidReaderActivity.intent(context,id)) })
