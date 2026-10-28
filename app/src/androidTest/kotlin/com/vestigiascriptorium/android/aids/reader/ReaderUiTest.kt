@@ -45,7 +45,16 @@ class ReaderUiTest {
         rule.waitUntil(10_000) { rule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isEmpty() && rule.onAllNodesWithText(first.title).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithContentDescription("Zpět").performClick()
         rule.onNodeWithText("Hledat v záznamech").assertExists()
-    }    @Test fun sharedImageZoomClosesAndResets() {
+    }    @Test fun placeDetailOffersMapButton() = withReaderFixtures { root,names ->
+        val source=AidReaderSource { File(root,names.getValue("places")) }
+        val first=runBlocking { source.page("places","cs","","",0).records.first() }
+        rule.setContent { VestigiaScriptoriumTheme { AidReaderScreen(aids.first { it.id=="places" },Copy(true),source,{}) } }
+        rule.waitUntil(10_000) { rule.onAllNodesWithText(first.title).fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodesWithText(first.title)[0].performClick()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText("Zobrazit na mapě").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Zobrazit na mapě").assertIsDisplayed()
+    }
+    @Test fun sharedImageZoomClosesAndResets() {
         val bitmap=android.graphics.Bitmap.createBitmap(4,4,android.graphics.Bitmap.Config.ARGB_8888)
         val bytes=java.io.ByteArrayOutputStream().also { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }.toByteArray()
         val closed=androidx.compose.runtime.mutableStateOf(false)

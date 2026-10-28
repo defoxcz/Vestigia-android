@@ -129,3 +129,16 @@ spustí nový dotaz, oříznou okolní mezery a během načítání skryjí star
 PlaceSearchTest ověřuje postupné prefixy, diakritiku, historické názvy,
 kombinaci s filtrem země a nahrazení breclav → Břeclav s koncovou mezerou.
 Testovací databáze je samostatná dočasná kopie bez zásahu do knihovny.
+
+
+### Obce na mapě (1.0.0004)
+
+Detail obce obsahuje tlačítko Zobrazit na mapě. Předává ověřené souřadnice
+z databáze, případně hledá podle názvu a země. Android nabídne výběr aplikace
+podporující geo: odkazy i při nastavené výchozí aplikaci. Pokud mapová aplikace
+není dostupná nebo před otevřením zmizí, nabídne se webová mapa OpenStreetMap
+v prohlížeči. Pokud není ani prohlížeč, zobrazí se srozumitelná zpráva.
+Bez oprávnění k poloze a bez změny databáze; údaje místa se předají externí
+aplikaci teprve po stisknutí tlačítka. Pro ostatní pomůcky se tlačítko nepřidává.
+Manifest deklaruje viditelnost pouze aplikací pro geo: a HTTPS odkazy.
+Podklad: https://developer.android.com/guide/components/intents-common#Maps

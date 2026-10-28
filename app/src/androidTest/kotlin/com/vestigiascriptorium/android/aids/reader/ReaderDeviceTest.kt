@@ -26,6 +26,11 @@ class ReaderDeviceTest {
                 assertTrue(page.records.all { it.title.isNotBlank() })
                 val detail=source.detail(id,language,page.records.first().id)
                 assertNotNull(detail);assertTrue(detail!!.fields.isNotEmpty())
+                if(id=="places") {
+                    assertNotNull(detail.mapTarget)
+                    assertEquals(detail.title,detail.mapTarget!!.name)
+                    assertTrue(detail.mapTarget!!.webUri().startsWith("https://www.openstreetmap.org/"))
+                } else assertNull(detail.mapTarget)
                 val second=source.page(id,language,"","",1)
                 if(page.total>AidReaderSource.PAGE_SIZE) assertTrue(page.records.map { it.id }.intersect(second.records.map { it.id }.toSet()).isEmpty())
                 if(page.options.isNotEmpty()) {

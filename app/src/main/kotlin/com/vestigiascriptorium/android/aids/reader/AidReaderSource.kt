@@ -14,7 +14,7 @@ import java.util.Locale
 
 internal data class RecordField(val label: String,val value: String,val link: Boolean=false)
 internal data class RecordImage(val name: String,val data: Any,val source: String?=null,val author: String="",val license: String="",val licenseUrl: String="",val credit: String="",val terms: String="",val restrictions: String="",val online: Boolean=true)
-internal data class AidRecord(val id: String,val title: String,val summary: String,val fields: List<RecordField> = emptyList(),val images: List<RecordImage> = emptyList(),val hiddenImages: Int=0)
+internal data class AidRecord(val id: String,val title: String,val summary: String,val fields: List<RecordField> = emptyList(),val images: List<RecordImage> = emptyList(),val hiddenImages: Int=0,val mapTarget: PlaceMapTarget?=null)
 internal data class FacetOption(val value: String,val label: String)
 internal data class RecordPage(val records: List<AidRecord>,val total: Int,val page: Int,val options: List<FacetOption>,val facetLabel: String?,val kind: AidViewKind)
 
@@ -88,7 +88,12 @@ internal class AidReaderSource(private val file: () -> File?) {
                     }
                     val fields=baseFields+extraFields(db,schema,id,language)
                     val (images,hidden)=images(db,schema,id,limit=40)
-                    AidRecord(id,localized(cursor.string(3),language).ifEmpty { cursor.string(1) },cursor.string(2),fields,images,hidden)
+                    val title=localized(cursor.string(3),language).ifEmpty { cursor.string(1) }
+                    val mapTarget=if(aid=="places") {
+                        fun value(sql: String): String = schema.fields.indexOfFirst { it.sql==sql }.let { if(it<0) "" else cursor.string(it+4) }
+                        PlaceMapTarget(title,value("p.country"),value("p.latitude").toDoubleOrNull(),value("p.longitude").toDoubleOrNull())
+                    } else null
+                    AidRecord(id,title,cursor.string(2),fields,images,hidden,mapTarget)
                 }
             }
         }

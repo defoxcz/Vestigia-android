@@ -137,6 +137,7 @@ private fun RecordDetail(record: AidRecord,copy: Copy,hasImages: Boolean) {
     var zoom by remember { mutableStateOf<RecordImage?>(null) }
     LazyColumn(contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
         item { SelectionContainer { Text(record.title,style=MaterialTheme.typography.headlineMedium,fontFamily=FontFamily.Serif) } }
+        record.mapTarget?.let { target -> item { PlaceMapButton(target,copy) } }
         if(hasImages && record.images.isEmpty() && record.hiddenImages==0) item {
             Note(copy.t("U tohoto záznamu není dostupný obrázek.","No image is available for this record."))
         }
