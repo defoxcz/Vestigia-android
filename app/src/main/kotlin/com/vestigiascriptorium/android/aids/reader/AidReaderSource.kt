@@ -68,7 +68,7 @@ internal class AidReaderSource(private val indexDirectory: File?=null,private va
                         add(AidRecord(id,localized(cursor.string(3),language).ifEmpty { cursor.string(1) },cursor.string(2)))
                     }
                 }}
-                val withImages=if(schema.kind==AidViewKind.IMAGE) rows.map { it.copy(images=images(db,schema,it.id,limit=1).first) } else rows
+                val withImages=if(schema.kind==AidViewKind.IMAGE) rows.map { val preview=images(db,schema,it.id,limit=1);it.copy(images=preview.first,hiddenImages=preview.second) } else rows
                 val options=schema.facet?.let { facet -> db.rawQuery(facet.optionsSql,null).use { cursor -> buildList {
                     while(cursor.moveToNext()) { val v=cursor.string(0);if(v.isNotBlank()) add(FacetOption(v,format(v,facet.type,language))) }
                 }}} ?: emptyList()

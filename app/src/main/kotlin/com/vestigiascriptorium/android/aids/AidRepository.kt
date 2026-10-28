@@ -18,6 +18,7 @@ internal data class AidLibraryState(
     val installed: Map<String,AidMetadata> = emptyMap(),
     val jobs: Map<String,AidJob> = emptyMap(),
     val wifiOnly: Boolean=true,
+    val installedOnly: Boolean=false,
     val refreshing: Boolean=false,
     val catalogError: Boolean=false,
     val actionError: String?=null,
@@ -32,7 +33,8 @@ internal class AidRepository private constructor(private val app: Application) {
     private val prefs=app.getSharedPreferences("research-aids",Context.MODE_PRIVATE)
     val store=AidPackageStore(File(app.noBackupFilesDir,"research-aids"))
     private val catalogFile=AtomicFile(File(app.noBackupFilesDir,"research-aids-catalog.json"))
-    private val stateFlow=MutableStateFlow(AidLibraryState(wifiOnly=prefs.getBoolean("wifiOnly",true)))
+    private val preferences=AidPreferences(app)
+    private val stateFlow=MutableStateFlow(AidLibraryState(wifiOnly=prefs.getBoolean("wifiOnly",true),installedOnly=preferences.installedOnly))
     val state=stateFlow.asStateFlow()
     @Volatile private var metadata=MobileAids.withCache(
         app.assets.open("research-aids.json").bufferedReader().use { AidNetwork.parse(it.readText()) },
@@ -71,7 +73,7 @@ internal class AidRepository private constructor(private val app: Application) {
         if(store.hasFiles(MobileAids.DESKTOP_TEMPLATES) || MobileAids.DESKTOP_TEMPLATES in busy) {
             jobs[MobileAids.DESKTOP_TEMPLATES]=AidJob(if(MobileAids.DESKTOP_TEMPLATES in busy) "busy" else "retired")
         }
-        stateFlow.value=stateFlow.value.copy(metadata=metadata,installed=installed,jobs=jobs,wifiOnly=prefs.getBoolean("wifiOnly",true),busy=busy.toSet())
+        stateFlow.value=stateFlow.value.copy(metadata=metadata,installed=installed,jobs=jobs,wifiOnly=prefs.getBoolean("wifiOnly",true),installedOnly=preferences.installedOnly,busy=busy.toSet())
     }
     fun refresh() { scope.launch {
         stateFlow.value=stateFlow.value.copy(refreshing=true,catalogError=false)
@@ -126,6 +128,7 @@ internal class AidRepository private constructor(private val app: Application) {
         infos.filter { !it.state.isFinished }.flatMap { it.tags }.filter { it.startsWith("aid:") }.distinct()
             .filter { it.removePrefix("aid:") in MobileAids.ids }.forEach { tag -> download(tag.removePrefix("aid:")) }
     }
+    fun installedOnly(value: Boolean) { preferences.installedOnly=value;publish() }
     fun clearError() { stateFlow.value=stateFlow.value.copy(actionError=null) }
     private fun action(id: String, block: () -> Unit) {
         if(!busy.add(id)) return

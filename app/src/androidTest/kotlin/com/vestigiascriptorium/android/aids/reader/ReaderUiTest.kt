@@ -54,6 +54,24 @@ class ReaderUiTest {
         rule.waitUntil(10_000) { rule.onAllNodesWithText("Zobrazit na mapě").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("Zobrazit na mapě").assertIsDisplayed()
     }
+    @Test fun heraldryDetailOpensTheSharedZoomAndSupportsZoomButtons() = withReaderFixtures { root,names ->
+        val source=AidReaderSource { File(root,names.getValue("heraldry")) }
+        val row=runBlocking { source.page("heraldry","cs","","",0,imagesOnly=true).records.first() }
+        val image=runBlocking { source.detail("heraldry","cs",row.id)!!.images.first() }
+        rule.setContent { VestigiaScriptoriumTheme { AidReaderScreen(aids.first { it.id=="heraldry" },Copy(true),source,{}) } }
+        rule.waitUntil(10_000) { rule.onAllNodesWithText("S obrázkem").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("S obrázkem").performClick()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText(row.title).fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodesWithText(row.title)[0].performClick()
+        rule.waitUntil(10_000) { rule.onAllNodesWithContentDescription(image.name).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithContentDescription(image.name).performClick()
+        rule.onNodeWithText("Zavřít obrázek").assertIsDisplayed()
+        rule.onNodeWithContentDescription("Zvětšit obrázek").performClick()
+        rule.onNodeWithText("150 %").assertIsDisplayed().performClick()
+        rule.onNodeWithText("100 %").assertIsDisplayed()
+        rule.onNodeWithText("Zavřít obrázek").performClick()
+    }
+
     @Test fun sharedImageZoomClosesAndResets() {
         val bitmap=android.graphics.Bitmap.createBitmap(4,4,android.graphics.Bitmap.Config.ARGB_8888)
         val bytes=java.io.ByteArrayOutputStream().also { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }.toByteArray()

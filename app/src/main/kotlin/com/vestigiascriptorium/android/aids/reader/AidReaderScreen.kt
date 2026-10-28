@@ -129,8 +129,8 @@ private fun RecordCard(record: AidRecord,copy: Copy,image: Boolean,enabled: Bool
     OutlinedCard(onClick=onOpen,enabled=enabled,shape=RoundedCornerShape(16.dp)) {
         Column(Modifier.fillMaxWidth()) {
             if(image) {
-                if(record.images.isNotEmpty()) ReferenceImage(record.images.first(),copy,Modifier.fillMaxWidth().height(140.dp),onOpen)
-                else Box(Modifier.fillMaxWidth().height(110.dp).padding(12.dp),contentAlignment=Alignment.Center) { Text(copy.t("Bez dostupného náhledu","No available preview"),style=MaterialTheme.typography.bodySmall) }
+                if(record.images.isNotEmpty()) ReferenceImage(record.images.first(),copy,Modifier.fillMaxWidth().height(140.dp),onOpen,resolution=512)
+                else Box(Modifier.fillMaxWidth().height(110.dp).padding(12.dp),contentAlignment=Alignment.Center) { Text(if(record.hiddenImages>0) copy.t("Náhled čeká na kontrolu podmínek použití","Preview awaits reuse review") else copy.t("Bez dostupného náhledu","No available preview"),style=MaterialTheme.typography.bodySmall) }
             }
             Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                 Text(record.title,style=MaterialTheme.typography.titleMedium,fontFamily=FontFamily.Serif,maxLines=if(image) 3 else 2,overflow=TextOverflow.Ellipsis)

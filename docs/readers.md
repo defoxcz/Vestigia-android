@@ -182,3 +182,19 @@ Naměřeno na Samsung SM-S938B (Android 17): názvy 21–85 ms, všechna pole
 Časy nezahrnují 60ms prodlevu pro psaní. Jednorázová příprava plného indexu
 byla při aktivním telefonu přibližně 11 sekund; při uspání systému může trvat
 déle. Výkonnostní test proto během měření drží dočasný CPU wake lock.
+
+
+### Obrazové pomůcky (1.0.0010)
+
+Sdílené požadavky na Wikimedia Commons identifikují aplikaci pomocí User-Agent;
+původní požadavek na telefonu vracel HTTP 403. Stejná adresa a disková cache
+se používají v galerii, detailu i zoomu; náhled se dekóduje v menší velikosti.
+Klepnutí na obrázek v detailu otevře společný celoobrazovkový prohlížeč
+s přiblížením prsty, posunem a tlačítky −/+. Údaj měřítka vrací obraz na 100 %.
+Záznamy čekající na kontrolu podmínek použití mají výslovné vysvětlení místo
+prázdného náhledu; pravidla zveřejnění obrázků se nemění.
+
+Na fyzickém telefonu prošlo načtení jednoho reprezentativního obrázku pro
+každou z devíti obrazových pomůcek včetně následného načtení pouze z diskové
+cache. UI test heraldiky ověřil otevření detailu, zoom, zvětšení a reset.
+Nejde o kontrolu každého obrázku v katalogu.

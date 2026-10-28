@@ -32,7 +32,7 @@ fun MainScreen() {
     val context=LocalContext.current
     VestigiaApp(library=library,onDownload=repository::download,onPause=repository::pause,
         onCancel=repository::cancel,onUninstall=repository::uninstall,onWifi=repository::wifiOnly,
-        onRefresh=repository::refresh,onClearError=repository::clearError,
+        onInstalledOnly=repository::installedOnly,onRefresh=repository::refresh,onClearError=repository::clearError,
         onOpenAid={ id -> context.startActivity(AidReaderActivity.intent(context,id)) })
 }
 
@@ -41,7 +41,7 @@ fun MainScreen() {
 internal fun VestigiaApp(initialTab: Int = 0, initialGenealogy: Boolean = false,
     library: AidLibraryState = AidLibraryState(),
     onDownload: (String) -> Unit = {},onPause: (String) -> Unit = {},onCancel: (String) -> Unit = {},
-    onUninstall: (String) -> Unit = {},onWifi: (Boolean) -> Unit = {},onRefresh: () -> Unit = {},onClearError: () -> Unit = {},onOpenAid: (String) -> Unit = {}) {
+    onUninstall: (String) -> Unit = {},onWifi: (Boolean) -> Unit = {},onRefresh: () -> Unit = {},onClearError: () -> Unit = {},onOpenAid: (String) -> Unit = {},onInstalledOnly: (Boolean) -> Unit = {}) {
     val copy = Copy(LocalConfiguration.current.locales[0].language == "cs")
     var tab by rememberSaveable { mutableIntStateOf(initialTab) }
     var detail by rememberSaveable { mutableStateOf<String?>(null) }
@@ -89,7 +89,7 @@ internal fun VestigiaApp(initialTab: Int = 0, initialGenealogy: Boolean = false,
                         },onManage={select(2)},onOpen={onOpenAid(it)})
                         genealogy -> GenealogyScreen(copy,onCreate={info=copy.t("Nový rodokmen","New family tree")})
                         tab==0 -> ModulesScreen(copy,onGenealogy={genealogy=true},onModule={info=it})
-                        tab==1 -> AidsScreen(copy,library,onRefresh=onRefresh,onDetail={openAid(it)})
+                        tab==1 -> AidsScreen(copy,library,onRefresh=onRefresh,onDetail={openAid(it)},onInstalledOnly=onInstalledOnly)
                         else -> DownloadsScreen(copy,library,onDownload,onPause,onCancel,onUninstall,onWifi,onCatalog={select(1)},onDetail={openAid(it)})
                     }
                 }

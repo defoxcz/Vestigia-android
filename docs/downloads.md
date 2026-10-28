@@ -60,7 +60,7 @@ stáhnout. Souhrn místa se počítá z reálně nainstalovaných databází.
 - JVM: `./gradlew testDebugUnitTest` — instalace, přeinstalace, izolované mazání,
   neplatný hash, odmítnutí cest mimo archiv, známá macOS metadata, chybná velikost,
   neplatná databáze přes validační callback, zrušení a zkrácený přenos.
-- Telefon: `./gradlew connectedDebugAndroidTest` — skutečné veřejné databáze,
+- Telefon: `./scripts/test-device.sh CLASS[,CLASS]` — skutečné veřejné databáze,
   SQLite kontrola, trvalost po vytvoření nového správce, odinstalace a opětovná
   instalace; také skutečný foreground Worker a potvrzení odinstalace v GUI.
 - Testy síťových balíčků pracují v izolovaném adresáři. Test Workeru neproběhne,
@@ -117,3 +117,11 @@ places.db má 166670336 B. Následná instalace podepsané Release 1.0.0008 pomo
 `adb install -r` zachovala tutéž platnou instalaci, velikost i úspěšnou úlohu.
 Při tomto ověřeném přechodu tedy ke ztrátě pomůcky nedošlo. Testy diagnostiky
 používají výhradně vlastní TemporaryFolder.
+
+
+## Filtr nainstalovaných pomůcek (1.0.0010)
+
+Volba „Pouze nainstalované“ je uložena v soukromých SharedPreferences dané
+varianty aplikace. Platí při návratu do katalogu i po novém spuštění aplikace;
+Debug a Release ji ukládají odděleně. Ověřeno izolovaným testem zápisu na disk
+a UI testem opětovného vytvoření katalogu, bez zásahu do uživatelské knihovny.

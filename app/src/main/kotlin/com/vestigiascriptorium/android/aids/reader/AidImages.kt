@@ -16,6 +16,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import android.graphics.BitmapFactory
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -24,12 +28,26 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.disk.DiskCache
 import coil3.request.ImageRequest
+import coil3.network.NetworkHeaders
+import coil3.network.httpHeaders
+import coil3.request.CachePolicy
+import com.vestigiascriptorium.android.BuildConfig
 import coil3.svg.SvgDecoder
 import com.vestigiascriptorium.android.ui.main.Copy
 import java.io.File
 import okio.Path.Companion.toOkioPath
 
 internal object AidImages {
+    fun request(context: Context,data: Any,retry: Int=0,size: Int=1200): ImageRequest {
+        val key=when(data) {
+            is ByteArray -> java.security.MessageDigest.getInstance("SHA-256").digest(data).joinToString("") { "%02x".format(it) }
+            else -> data.toString()
+        }
+        return ImageRequest.Builder(context).data(data).size(size)
+            .httpHeaders(NetworkHeaders.Builder().set("User-Agent","VestigiaScriptoriumAndroid/${BuildConfig.VERSION_NAME} (+https://vestigiascriptorium.com)").build())
+            .diskCacheKey("aid-image-v2:$key").memoryCacheKey("aid-image-v2:$key:$retry")
+            .diskCachePolicy(if(retry>0) CachePolicy.WRITE_ONLY else CachePolicy.ENABLED).build()
+    }
     @Volatile private var instance: ImageLoader?=null
     fun loader(context: Context): ImageLoader = instance ?: synchronized(this) {
         instance ?: ImageLoader.Builder(context.applicationContext).components { add(SvgDecoder.Factory()) }
@@ -39,17 +57,13 @@ internal object AidImages {
 }
 
 @Composable
-internal fun ReferenceImage(image: RecordImage,copy: Copy,modifier: Modifier=Modifier,onOpen: (() -> Unit)?=null) {
+internal fun ReferenceImage(image: RecordImage,copy: Copy,modifier: Modifier=Modifier,onOpen: (() -> Unit)?=null,resolution: Int=1200) {
     val context=LocalContext.current
     var failed by remember(image.data) { mutableStateOf(false) }
     var loading by remember(image.data) { mutableStateOf(true) }
     var retry by remember(image.data) { mutableIntStateOf(0) }
-    val request=remember(image.data,retry) {
-        val key=when(val data=image.data) {
-            is ByteArray -> java.security.MessageDigest.getInstance("SHA-256").digest(data).joinToString("") { "%02x".format(it) }
-            else -> data.toString()
-        }
-        ImageRequest.Builder(context).data(image.data).memoryCacheKey("aid-image:$key:$retry").size(1200).build()
+    val request=remember(image.data,retry,resolution) {
+        AidImages.request(context,image.data,retry,resolution)
     }
     Box(modifier.background(Color(0xFFF8F8F5)).then(if(onOpen!=null && !failed) Modifier.clickable(onClick=onOpen) else Modifier),contentAlignment=Alignment.Center) {
         val preview=LocalInspectionMode.current
@@ -71,19 +85,27 @@ internal fun ReferenceImage(image: RecordImage,copy: Copy,modifier: Modifier=Mod
 internal fun ImageZoom(image: RecordImage,copy: Copy,onClose: () -> Unit) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    var viewport by remember { mutableStateOf(IntSize.Zero) }
+    fun bounded(value: Offset): Offset {
+        val x=viewport.width*(scale-1f)/2f
+        val y=viewport.height*(scale-1f)/2f
+        return Offset(value.x.coerceIn(-x,x),value.y.coerceIn(-y,y))
+    }
     val transform=rememberTransformableState { zoom,pan,_ ->
         scale=(scale*zoom).coerceIn(1f,5f)
-        offset=if(scale==1f) Offset.Zero else Offset((offset.x+pan.x).coerceIn(-1000f,1000f),(offset.y+pan.y).coerceIn(-1000f,1000f))
+        offset=if(scale==1f) Offset.Zero else bounded(offset+pan)
     }
     Dialog(onDismissRequest=onClose,properties=DialogProperties(usePlatformDefaultWidth=false)) {
         Surface(color=MaterialTheme.colorScheme.background,modifier=Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                 Row(Modifier.fillMaxWidth().padding(8.dp),horizontalArrangement=Arrangement.SpaceBetween) {
                     TextButton(onClick=onClose) { Text(copy.t("Zavřít obrázek","Close image")) }
-                    TextButton(onClick={scale=1f;offset=Offset.Zero}) { Text("100 %") }
+                    TextButton(onClick={scale=(scale-.5f).coerceAtLeast(1f);offset=bounded(offset)},modifier=Modifier.semantics { contentDescription=copy.t("Zmenšit obrázek","Zoom out") }) { Text("−") }
+                    TextButton(onClick={scale=(scale+.5f).coerceAtMost(5f);offset=bounded(offset)},modifier=Modifier.semantics { contentDescription=copy.t("Zvětšit obrázek","Zoom in") }) { Text("+") }
+                    TextButton(onClick={scale=1f;offset=Offset.Zero}) { Text("${(scale*100).toInt()} %") }
                 }
-                Box(Modifier.weight(1f).fillMaxWidth().clipToBounds().transformable(transform)) {
-                    ReferenceImage(image,copy,Modifier.fillMaxSize().graphicsLayer { scaleX=scale;scaleY=scale;translationX=offset.x;translationY=offset.y })
+                Box(Modifier.weight(1f).fillMaxWidth().clipToBounds().onSizeChanged { viewport=it }.transformable(transform)) {
+                    ReferenceImage(image,copy,Modifier.fillMaxSize().graphicsLayer { scaleX=scale;scaleY=scale;translationX=offset.x;translationY=offset.y },resolution=2600)
                 }
                 Text(copy.t("Přiblížení dvěma prsty · tažením posunete","Pinch to zoom · drag to pan"),modifier=Modifier.padding(16.dp),style=MaterialTheme.typography.bodySmall)
             }

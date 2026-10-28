@@ -10,15 +10,17 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.vestigiascriptorium.android.aids.AidLibraryState
 
 @Composable
-internal fun AidsScreen(copy: Copy,library: AidLibraryState,onRefresh: () -> Unit,onDetail: (String) -> Unit) {
+internal fun AidsScreen(copy: Copy,library: AidLibraryState,onRefresh: () -> Unit,onDetail: (String) -> Unit,onInstalledOnly: (Boolean) -> Unit = {}) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableIntStateOf(-1) }
-    var offline by rememberSaveable { mutableStateOf(false) }
+    val offline=library.installedOnly
     val filtered=aids.filter { aid ->
         (category==-1 || aid.category==category) && (!offline || library.installed.containsKey(aid.id)) &&
             (copy.title(aid)+" "+copy.description(aid)).contains(query,ignoreCase=true)
@@ -37,7 +39,7 @@ internal fun AidsScreen(copy: Copy,library: AidLibraryState,onRefresh: () -> Uni
         }}
         item { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
             Text(copy.t("Pouze nainstalované","Installed only"),modifier=Modifier.padding(top=12.dp))
-            Switch(checked=offline,onCheckedChange={offline=it})
+            Switch(checked=offline,onCheckedChange=onInstalledOnly,modifier=Modifier.semantics { contentDescription=copy.t("Pouze nainstalované","Installed only") })
         }}
         if(filtered.isEmpty()) item { Note(copy.t("Žádné odpovídající pomůcky. Zkuste změnit hledání nebo filtr.","No matching research aids. Try changing the search or filters.")) }
         items(filtered,key={it.id}) { aid ->
