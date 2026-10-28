@@ -94,3 +94,26 @@ notifikaci; na Androidu 13+ bez oprávnění není v oznamovací liště, ale sy
 může zobrazit informaci ve správci aktivních aplikací. Na starších verzích
 Androidu může být průběhová notifikace viditelná. Žádné obcházení systémových
 pravidel ani změny knihovny pomůcek.
+
+
+## Ověřování zachování knihovny (1.0.0008)
+
+Hlavní lišta výslovně ukazuje DEBUG nebo RELEASE. Varianty nemají společné
+úložiště. Chybějící pomůcku nelze bez porovnání stavu před a po aktualizaci
+považovat za důkaz smazání při instalaci APK.
+
+`VestigiaAidStorage` zapisuje při otevření knihovny pouze variantu/verzi,
+existenci složky, validitu ukazatele a metadat, názvy a velikosti souborů a
+stavy úloh WorkManageru. Při dokončení/chybě stažení uvede stav a fázi chyby.
+Nezapisuje obsah databází, přihlášení ani podepsané stahovací URL. Metoda
+`AidPackageStore.storageStatus` je pouze pro čtení; diagnostika neobnovuje
+ukazatele, nesmazává soubory a neprovádí automatické opakované stažení.
+
+Na skutečném telefonu byla před kontrolou Release bez adresáře research-aids
+(i bez historie stahovacích úloh); v Debug byla pomůcka přítomná. Starší příčina
+se tím neprokázala. Následně byla přes UI výslovně stažena Historická topografie
+v Release 1.0.0007: WorkManager SUCCEEDED, hash archivu začíná ebd33372,
+places.db má 166670336 B. Následná instalace podepsané Release 1.0.0008 pomocí
+`adb install -r` zachovala tutéž platnou instalaci, velikost i úspěšnou úlohu.
+Při tomto ověřeném přechodu tedy ke ztrátě pomůcky nedošlo. Testy diagnostiky
+používají výhradně vlastní TemporaryFolder.

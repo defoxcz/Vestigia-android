@@ -81,4 +81,17 @@ class AidPackageStoreTest {
         assertNull(store.installed("test"))
         assertTrue(File(root,"test").listFiles()!!.none { it.name.startsWith("stage-") })
     }
+    @Test fun storageDiagnosticsAreReadOnlyAndIdentifyIncompletePackages() {
+        val root=temp.newFolder();val store=AidPackageStore(root)
+        assertTrue(store.storageStatus("test").startsWith("directory-missing"))
+        val archive=zip(bytes());val metadata=meta(archive)
+        store.install(metadata,{ByteArrayInputStream(archive)},{_,_ ->})
+        val before=store.database("test")!!.readBytes()
+        assertTrue(store.storageStatus("test").startsWith("installed"))
+        assertArrayEquals(before,store.database("test")!!.readBytes())
+        File(root,"test/current").delete()
+        assertTrue(store.storageStatus("test").startsWith("pointer-missing-or-unreadable"))
+        assertTrue(File(root,"test/versions/${metadata.sha256}/test.db").isFile)
+    }
+
 }

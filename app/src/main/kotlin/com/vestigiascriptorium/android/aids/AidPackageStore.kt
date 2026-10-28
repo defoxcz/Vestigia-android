@@ -54,6 +54,27 @@ internal class AidPackageStore(private val root: File) {
         val meta=readMetadata(File(version,"metadata.properties")) ?: return@run null
         if(meta.id!=id || meta.sha256!=hash || File(version,meta.file).length()!=meta.size) null else meta
     }
+    /** Read-only diagnostics: filenames, metadata validity and lengths; never reads database contents. */
+    fun storageStatus(id: String): String {
+        val dir=directory(id)
+        if(!dir.exists()) return "directory-missing rootExists=${root.exists()} otherAids=${root.listFiles()?.filter { it.isDirectory }?.joinToString { it.name } ?: "none"}"
+        val versions=File(dir,"versions").listFiles()?.filter { it.isDirectory } ?: emptyList()
+        val summary=versions.joinToString(",") { version ->
+            val files=version.listFiles()?.filter { it.isFile }?.joinToString(";") { "${it.name}:${it.length()}" } ?: "unreadable"
+            "${version.name.take(8)}[$files]"
+        }
+        val pointer=File(dir,"current")
+        val hash=runCatching { pointer.readText().trim() }.getOrNull()
+        val reason=when {
+            hash==null -> "pointer-missing-or-unreadable"
+            !hash.matches(Regex("[a-f0-9]{64}")) -> "pointer-invalid"
+            !File(dir,"versions/$hash/metadata.properties").isFile -> "metadata-missing"
+            readMetadata(File(dir,"versions/$hash/metadata.properties"))==null -> "metadata-invalid"
+            installed(id)==null -> "database-or-metadata-mismatch"
+            else -> "installed"
+        }
+        return "$reason versions=${versions.size} files=$summary"
+    }
     fun hasFiles(id: String): Boolean = directory(id).listFiles()?.isNotEmpty()==true
     fun database(id: String): File? = installed(id)?.let { File(directory(id),"versions/${it.sha256}/${it.file}") }
 

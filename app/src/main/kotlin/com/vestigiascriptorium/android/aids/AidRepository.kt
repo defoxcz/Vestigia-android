@@ -40,7 +40,12 @@ internal class AidRepository private constructor(private val app: Application) {
     private val busy=java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     @Volatile private var infos: List<WorkInfo> = emptyList()
     init {
-        scope.launch { work.getWorkInfosByTagFlow(TAG).collect { infos=it;publish() } }
+        android.util.Log.i("VestigiaAidStorage", "package=${app.packageName} version=${com.vestigiascriptorium.android.BuildConfig.VERSION_NAME} places=${store.storageStatus("places")}")
+        scope.launch {
+            val history=work.getWorkInfosByTag(TAG).get()
+            android.util.Log.i("VestigiaAidStorage", "package=${app.packageName} placesControl=${prefs.getString("state:places",null)} work="+history.joinToString { "${it.tags.firstOrNull { tag -> tag.startsWith("aid:") }}:${it.state}:${it.outputData.getString("error")}" })
+            work.getWorkInfosByTagFlow(TAG).collect { infos=it;publish() }
+        }
         scope.launch { while(isActive) { publish();delay(750) } }
         scope.launch { work.cancelUniqueWork("aid:${MobileAids.DESKTOP_TEMPLATES}").result.get() }
         refresh()

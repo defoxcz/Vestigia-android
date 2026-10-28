@@ -20,19 +20,23 @@ internal class AidWorker(context: Context,params: WorkerParameters): CoroutineWo
         val jobContext=currentCoroutineContext()
         val account = com.vestigiascriptorium.android.account.AccountManager.get(applicationContext)
         val check={ jobContext.ensureActive();if(isStopped) throw CancellationException();if(!account.accessNow()) throw AccountRequired() }
+        var phase="starting-service"
         try {
             setForeground(notification(id))
+            phase="catalog"
             var meta=runCatching { repo.refreshNow()[id] }.getOrNull() ?: repo.metadata(id) ?: throw AidFailure("unavailable")
             var lastProgress=0L
             var changed=false
             while(true) {
                 try {
                     val selected=meta
-                    repo.store.install(selected,source={ AidNetwork.archive(selected) },validate=::validateDatabase,check=check,progress={ bytes,phase ->
+                    phase="package"
+                    repo.store.install(selected,source={ AidNetwork.archive(selected) },validate=::validateDatabase,check=check,progress={ bytes,progressPhase ->
+                        phase=progressPhase
                         check()
                         val now=System.currentTimeMillis()
-                        if(phase!="active" || now-lastProgress>300) {
-                            setProgressAsync(workDataOf("phase" to phase,"bytes" to bytes,"total" to selected.archiveSize))
+                        if(progressPhase!="active" || now-lastProgress>300) {
+                            setProgressAsync(workDataOf("phase" to progressPhase,"bytes" to bytes,"total" to selected.archiveSize))
                             lastProgress=now
                         }
                     })
@@ -43,11 +47,13 @@ internal class AidWorker(context: Context,params: WorkerParameters): CoroutineWo
                     meta=repo.refreshNow()[id] ?: throw AidFailure("unavailable")
                 }
             }
+            android.util.Log.i("VestigiaAidStorage", "package=${applicationContext.packageName} aid=$id download=completed ${repo.store.storageStatus(id)}")
             Result.success()
         } catch(error: CancellationException) { throw error }
         catch (_: AccountRequired) { Result.retry() }
         catch(error: Exception) {
             val code=(error as? AidFailure)?.code ?: "network"
+            android.util.Log.w("VestigiaAidStorage", "package=${applicationContext.packageName} aid=$id download=failed phase=$phase code=$code type=${error.javaClass.simpleName}")
             Result.failure(workDataOf("error" to code))
         }
     }
