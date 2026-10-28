@@ -12,6 +12,14 @@ val releaseSigning = Properties().apply {
     if (signingFile.isFile) signingFile.inputStream().use { load(it) }
 }
 
+val appVersion = Properties().apply {
+    rootProject.file("version.properties").inputStream().use { load(it) }
+}
+val appBuildNumber = appVersion.getProperty("buildNumber")?.toIntOrNull()
+    ?: error("version.properties must contain an integer buildNumber")
+require(appBuildNumber in 1..9999) { "buildNumber must be between 1 and 9999" }
+val appVersionName = "1.0.${appBuildNumber.toString().padStart(4, '0')}"
+
 android {
     namespace = "com.vestigiascriptorium.android"
     compileSdk = 36
@@ -21,8 +29,8 @@ android {
         minSdk = 26
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appBuildNumber
+        versionName = appVersionName
     }
     signingConfigs {
         if (signingFile.isFile) create("permanentRelease") {
@@ -35,7 +43,6 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
             manifestPlaceholders["applicationLabel"] = "Vestigia Scriptorium Debug"
         }
         release {
@@ -49,7 +56,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
 }
 
 kotlin {

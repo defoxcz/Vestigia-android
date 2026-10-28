@@ -1,5 +1,6 @@
 package com.vestigiascriptorium.android.account
 
+import com.vestigiascriptorium.android.BuildConfig
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
@@ -59,6 +60,7 @@ private fun AccountPanel(manager: AccountManager, state: AccountState, compact: 
             Text("VESTIGIA", style = MaterialTheme.typography.headlineLarge, fontFamily = FontFamily.Serif)
             Text("Scriptorium · testovací verze", style = MaterialTheme.typography.titleMedium)
         }
+        Text("Verze ${BuildConfig.VERSION_NAME} · ${if (BuildConfig.DEBUG) "Debug" else "Release"}", style = MaterialTheme.typography.labelMedium)
         if (!state.ready) { CircularProgressIndicator(); return@Column }
         if (state.email.isNotBlank()) Text(state.email)
         Text(if (state.allowed) "Testování povoleno" else "Pro vstup potřebujete aktivní účet s ověřeným e-mailem a povoleným testováním.")

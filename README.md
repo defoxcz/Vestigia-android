@@ -167,3 +167,19 @@ skutečném telefonu `./gradlew connectedDebugAndroidTest
 (příkaz zadejte na jeden řádek). Testy Keystore používají vlastní dočasný alias;
 produkční síťový test pouze ověřuje odmítnutí neschváleného náhodného požadavku.
 Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v prohlížeči.
+
+## Verzování
+
+Obě varianty používají verzi `1.0.XXXX`, kde `XXXX` je číslo buildu doplněné
+zleva nulami na čtyři číslice. Aktuální build je **1.0.0002** (`versionCode=2`);
+předchozí pracovní APK měly `versionCode=1`. Debug/Release se rozlišují názvem,
+ID a podpisem, nikoli příponou čísla verze. Verzi najdete také na přihlašovací
+obrazovce a v nabídce **Účet**.
+
+Jediný zdroj čísla je kořenový `version.properties`, položka `buildNumber`.
+Před každým novým distribuovaným buildem číslo zvýšit a commitnout se změnami.
+Gradle z něj odvodí `versionName` i `versionCode`; F5 i všechny sestavovací
+skripty používají stejnou hodnotu. Opakované sestavení téhož buildu ani lint
+číslo automaticky nemění. Debug a Release stejného buildu mají shodnou verzi.
+Podporovaný rozsah je 1–9999. Před přechodem na další řadu zachovat rostoucí
+Android `versionCode`.

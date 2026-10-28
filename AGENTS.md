@@ -25,3 +25,8 @@
   nečíst přihlašovací údaje desktopu nebo webového prohlížeče.
   Testy používají vlastní dočasný Keystore alias a soubor; skutečnou relaci
   nikdy nemažou. Úspěšný test nepřihlášeného vstupu není důkaz přihlášení účtu.
+
+- Verze aplikace: `1.0.XXXX`, zdroj `version.properties` (`buildNumber`).
+  Při nové distribuované změně zvýšit číslo buildu a commitnout je společně
+  s kódem. Debug a Release stejného buildu mají shodnou verzi. Samotné ověření
+  nebo opakované sestavení téže změny číslo nezvyšuje.
