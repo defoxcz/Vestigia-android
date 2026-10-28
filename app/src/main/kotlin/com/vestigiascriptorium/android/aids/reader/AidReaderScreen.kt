@@ -62,7 +62,7 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
     }
     LaunchedEffect(page) { listState.scrollToItem(0);gridState.scrollToItem(0) }
     BackHandler(enabled=selected!=null) { selected=null;record=null }
-    Scaffold(topBar={TopAppBar(title={Text(copy.title(aid),maxLines=1,overflow=TextOverflow.Ellipsis)},navigationIcon={IconButton(onClick={if(selected!=null) {selected=null;record=null} else onBack()},modifier=Modifier.semantics { contentDescription=copy.t("Zpět","Back") }) { Mark(5) }})}) { padding ->
+    Scaffold(topBar={TopAppBar(title={Column { Text(copy.title(aid),maxLines=1,overflow=TextOverflow.Ellipsis);com.vestigiascriptorium.android.ui.AppVersionLabel() }},navigationIcon={IconButton(onClick={if(selected!=null) {selected=null;record=null} else onBack()},modifier=Modifier.semantics { contentDescription=copy.t("Zpět","Back") }) { Mark(5) }})}) { padding ->
         Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize().imePadding()) {
             when {
                 error -> Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
