@@ -14,6 +14,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.vestigiascriptorium.android.ui.main.Mark
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -60,7 +63,7 @@ internal fun PeopleScreen(tree: FamilyTree,c: Copy,onBack: ()->Unit,onSelect: (P
     val listState=rememberLazyListState()
     LaunchedEffect(query) {listState.requestScrollToItem(0)}
     val filtered=remember(rows,query) {PeopleIndex.filter(rows,query)}
-    Scaffold(topBar={TopAppBar(title={Column {Text(c.t("Osoby","People"));AppVersionLabel()}},navigationIcon={TextButton(onClick=onBack) {Text(c.t("Zpět","Back"))}})}) {padding ->
+    Scaffold(topBar={TopAppBar(title={Column {Text(c.t("Osoby","People"));AppVersionLabel()}},navigationIcon={IconButton(onClick=onBack,modifier=Modifier.semantics {contentDescription=c.t("Zpět","Back")}) {Mark(5)}})}) {padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding().padding(horizontal=16.dp)) {
             Text(tree.title,style=MaterialTheme.typography.titleMedium,modifier=Modifier.padding(vertical=8.dp))
             ExposedDropdownMenuBox(expanded=focused && query.isNotBlank() && dismissed!=query && filtered.isNotEmpty(),onExpandedChange={dismissed=if(it)null else query}) {

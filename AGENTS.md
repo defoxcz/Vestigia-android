@@ -35,3 +35,9 @@
   instaluje obě Debug APK jen s `adb install -r` a spouští instrumentaci přímo;
   nepoužívat Gradle `connectedDebugAndroidTest`, který může cílovou testovanou
   aplikaci po testu odinstalovat. Release se při testech nikdy nemění.
+
+- Po každém úspěšném sestavení Release zveřejnit podepsané APK na webu v R2
+  `vestigia-downloads/vestigia-installations/testing/`. Ověřit veřejnou dostupnost
+  a SHA-256. Předchozí Android APK zachovat v `vestigia-installations/archive/android/`;
+  v testing ponechat právě jednu aktuální Android verzi. Při přesunu v R2 přes
+  AWS CLI používat `--copy-props none`. Tajné údaje nepatří do repozitáře.
