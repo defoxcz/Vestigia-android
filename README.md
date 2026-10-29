@@ -2,8 +2,9 @@
 
 Samostatná aplikace v Kotlinu a Jetpack Compose. Hlavní obrazovka obsahuje všech
 šest modulů desktopu: Genealogie, Rukopisy, Heraldika, Sfragistika, Epigrafika a
-Paleografika. Genealogie má zatím vstupní obrazovku; editory jednotlivých modulů
-budou implementovány postupně. Na hlavní obrazovce nejsou štítky Připravujeme.
+Paleografika. Genealogie umožňuje založit lokální rodokmen, vytvářet osoby a události
+v grafu vazeb, připojovat příbuzné a citace/doklady u osob a používat Zpět/Znovu.
+Ostatní editory budou implementovány postupně. Na hlavní obrazovce nejsou štítky Připravujeme.
 
 Badatelské pomůcky se skutečně stahují, ověřují a instalují. Správce zobrazuje
 reálný průběh, síťovou podmínku, chyby a nainstalované balíčky. Odinstalace maže
@@ -13,7 +14,7 @@ Nainstalované pomůcky se otevírají přímo do společného prohlížeče: te
 nebo obrazová galerie, hledání, filtry, stránkování, detaily a zvětšení obrázků.
 Jsou samostatnými funkcemi a nevyžadují otevření žádného pracovního modulu.
 Podrobnosti: [Prohlížeče](docs/readers.md), [Stahování a odinstalace](docs/downloads.md),
-[Návrh GUI](docs/gui-design.md).
+[Návrh GUI](docs/gui-design.md), [Genealogie](docs/genealogy.md).
 Minimum Android 8.0 (API 26), compile/target SDK 36.
 
 ## Otevření ve VS Code
@@ -170,7 +171,7 @@ Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v
 ## Verzování
 
 Obě varianty používají verzi `1.0.XXXX`, kde `XXXX` je číslo buildu doplněné
-zleva nulami na čtyři číslice. Aktuální build je **1.0.0011** (`versionCode=11`);
+zleva nulami na čtyři číslice. Aktuální build je **1.0.0012** (`versionCode=12`);
 předchozí pracovní APK měly `versionCode=1`. Debug/Release se rozlišují názvem,
 ID a podpisem, nikoli příponou čísla verze. Verze je vlevo v záhlaví hlavní obrazovky i prohlížeče pomůcek, společně
 s označením DEBUG/RELEASE. Najdete ji také na přihlašovací obrazovce a v nabídce **Účet**.

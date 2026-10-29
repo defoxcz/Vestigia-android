@@ -69,24 +69,3 @@ private fun TreeSketch() {
         drawLine(ink,Offset(w*.5f,h*.49f),Offset(w*.5f,h*.7f),2f)
     }
 }
-
-@Composable
-internal fun GenealogyScreen(copy: Copy,onCreate: () -> Unit) {
-    LazyColumn(contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
-        item { Eyebrow(copy.t("MODUL 01 / GENEALOGIE","MODULE 01 / GENEALOGY")) }
-        item { Heading(copy.t("Genealogie","Genealogy"),copy.t("Prostor pro rodokmeny, osoby a prameny, které je spojují.","A place for family trees, people and the sources connecting them.")) }
-        item {
-            Card(colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer),shape=RoundedCornerShape(24.dp)) {
-                Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
-                    TreeSketch()
-                    Text(copy.t("Váš první rodokmen","Your first family tree"),style=MaterialTheme.typography.headlineSmall,fontFamily=FontFamily.Serif)
-                    Text(copy.t("Začněte jedním člověkem. Postupně přidáte vztahy, životní události a doklady.","Start with one person. Add relationships, life events and evidence over time."))
-                    Button(onClick=onCreate) { Text(copy.t("Nový rodokmen · návrh","New family tree · prototype")) }
-                }
-            }
-        }
-        item { SectionTitle(copy.t("Vše kolem jednoho výzkumu","One connected research project")) }
-        item { Note(copy.t("Rodokmeny → Osoby → Detail osoby\n\nRodinné vazby, události, místa a citace pramenů patří k jednomu projektu. Diagram doplní přehledný seznam osob vhodný pro telefon.","Family trees → People → Person details\n\nRelationships, events, places and source citations belong to one project. A phone-friendly people list will complement the tree diagram.")) }
-        item { Pill(copy.t("Návrh vstupu do modulu · editor bude následovat","Module entry concept · editor comes next")) }
-    }
-}

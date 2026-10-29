@@ -87,8 +87,9 @@ je třeba ověřit prototypem na skutečném telefonu.
 Rodokmen → první osoba → graf → editor v panelu → přidání/připojení rodiče,
 partnera nebo dítěte → události a role → dokumentace u osoby. Od začátku lokální
 uložení, transakce a Zpět/Znovu, zachování pracovní plochy. Následuje hledání
-osob, větší grafy a ověřený přenos dat s desktopem. Toto je návrh; genealogický
-editor, graf ani import nejsou v současné Android aplikaci implementované.
+osob, větší grafy a ověřený přenos dat s desktopem. První pracovní celek grafu a editoru je implementovaný od 1.0.0012;
+aktuální ovládání a omezení popisuje [genealogy.md](genealogy.md). Import,
+pokročilé uspořádání a desktopová kompatibilita zatím implementované nejsou.
 
 ## Badatelské pomůcky a správce stahování
 
