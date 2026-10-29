@@ -23,8 +23,8 @@ Graf se posouvá po pozadí prstem a přibližuje dvěma prsty. Delší podržen
 zahájí přesun. Přizpůsobit zahrne všechny boxy do dostupné pracovní plochy.
 Osoby v horní liště otevřou samostatnou aktivitu se seznamem a našeptáváním;
 výběr vrátí uživatele do grafu a otevře přehled vybrané osoby.
-Běžné editace nepřeskládávají ostatní boxy. Osoby a události mají vlastní boxy,
-čáry představují účast osoby v konkrétní roli události.
+Běžné editace nepřeskládávají ostatní boxy. Osoby a běžné události mají vlastní boxy. Úplný partnerský vztah/sňatek
+se zobrazuje přímou spojnicí osob; ostatní čáry představují účast v roli události.
 
 Na telefonu je přehled/editor ve vysouvacím spodním panelu, na širokém okně
 v pravém panelu. Uložit potvrdí návrh; zavření změněného editoru žádá potvrzení
@@ -144,3 +144,41 @@ sestavení obou variant a Lint Debug/Release prošly. Testy pracovaly jen
 s vlastními dočasnými rodokmeny. Seznam osob byl vizuálně zkontrolován
 ze snímku skutečného telefonu. Locale varianty byly ověřeny jednotkově;
 systémové jazykové nastavení telefonu se při testech neměnilo.
+
+
+## Obsah osobních boxů a přímé partnerské spojnice (1.0.0015)
+
+Box osoby ukazuje pouze letopočty, například `* 1820  + 1890`. Pokud je znám
+jen jeden z obou roků, zobrazí pouze tento údaj. Když oba chybí, použije období
+z atributů připomínán od/do (také jako letopočty). Původní přesné či historické
+zápisy se tím nemění a jsou nadále dostupné v editoru.
+
+Následují jednotliví partneři: `Partner: jméno`, `2. partner: jméno` atd.
+U každého se ukazuje datum svatby v systémovém locale, případně jen uložený rok.
+Chybějící datum je `Svatba: —`. Za datum svatby se považuje pouze datum události
+`genealogy.marriage`, nikoli libovolné datum záznamu partnerského vztahu.
+Partneři se řadí podle známých svateb, u nedatovaných podle pořadí záznamů.
+Číslování bez známých dat tedy není důkaz historického pořadí vztahů. Opakované
+sňatky se stejnou osobou zůstávají u jednoho partnera s více daty; stejná osoba
+se kvůli souběhu partnerského záznamu a sňatku nevypisuje dvakrát.
+
+Úplné partnerské záznamy a sňatky se nevykreslují jako boxy. Každou dvojici
+spojuje jedna přímá čára. Klepnutí na ni otevře přednostně datovaný sňatek, jinak
+existující vztah; střed čáry má také přístupný cíl pro čtečku obrazovky. Všechny
+původní záznamy lze samostatně otevřít i v přehledu událostí u osoby. V editoru
+vztahu lze výslovně zvolit Sňatek a zadat Datum svatby. Neúplná událost, které
+chybí druhá osoba, si ponechá viditelný box, aby šla opravit.
+
+Jde o projekci stávajících dat, nikoli migraci nebo mazání vztahů. Uplatní se
+i na již uložené rodokmeny. Boxy mají výšku podle skutečně vysázených textů
+a všech partnerů; kotvy čar, ořez viewportu, posun, výběr a Přizpůsobit používají
+jejich aktuální rozměry. Skryté uložené pozice partnerských záznamů neovlivňují
+přizpůsobení grafu. Existující ruční pozice ostatních boxů se nepřeskládávají.
+
+Ověření 1.0.0015: 35 JVM testů, tři databázové testy na fyzickém telefonu,
+Debug/Release build a Lint obou variant prošly. Nové UI scénáře pro partnerskou
+spojnici, datum svatby, posun grafu a obsah boxů jsou připravené v
+`PartnerGraphUiTest`. Jejich běh spolu s dosavadními GUI scénáři byl zastaven
+kontrolou zamčeného telefonu ještě před otevřením obrazovek; vizuální a dotykové
+ověření nové podoby proto zatím není dokončené. Testovací databáze jsou izolované,
+uživatelské rodokmeny ani pomůcky se při testech neotevírají a nemažou.

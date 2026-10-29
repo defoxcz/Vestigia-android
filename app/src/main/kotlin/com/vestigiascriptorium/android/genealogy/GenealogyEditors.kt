@@ -25,7 +25,7 @@ internal fun NameDialog(c: Copy,busy: Boolean,onDismiss: ()->Unit,onCreate: (Str
 }
 
 @Composable
-internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,String,String)->Unit,onRelative: ()->Unit,onEvidence: ()->Unit,onEvent: (String)->Unit,onOpen: (Evidence)->Unit) {
+internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,String,String)->Unit,onRelative: ()->Unit,onEvidence: ()->Unit,onOpenEvent: (String)->Unit,onEvent: (String)->Unit,onOpen: (Evidence)->Unit) {
     var editing by rememberSaveable(person.id) {mutableStateOf(isNew)}
     var given by rememberSaveable(person.id) {mutableStateOf(person.givenName)}
     var middle by rememberSaveable(person.id) {mutableStateOf(person.middleName)}
@@ -69,7 +69,7 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
                 Text(c.t("Události a vazby","Events and relationships"),style=MaterialTheme.typography.titleMedium)
                 OutlinedButton(enabled=!busy,onClick=onRelative) {Text(c.t("Přidat příbuzného","Add relative"))}
                 tree.events.filter {person.id in it.roles.values}.forEach {event ->
-                    Text(listOf(event.title.ifBlank {eventLabel(event.kind,c)},GenealogyDates.format(event.date),event.place).filter {it.isNotBlank()}.joinToString(" · "))
+                    TextButton(enabled=!busy,onClick={onOpenEvent(event.id)}) {Text(listOf(event.title.ifBlank {eventLabel(event.kind,c)},GenealogyDates.format(event.date),event.place).filter {it.isNotBlank()}.joinToString(" · "))}
                     event.roles.forEach {(role,id) -> if(id!=person.id) Text("${eventRoleLabel(event.kind,role,c)}: ${tree.people.firstOrNull {it.id==id}?.name.orEmpty()}",style=MaterialTheme.typography.bodySmall)}
                 }
                 var eventKind by rememberSaveable(person.id) {mutableStateOf("genealogy.mentioned")}
@@ -109,7 +109,8 @@ internal fun EventPanel(tree: FamilyTree,event: LifeEvent,c: Copy,busy: Boolean,
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             Choice(c.t("Typ události","Event type"),GenealogyEdits.kinds.filter {GenealogyEdits.rolesFor(it)==GenealogyEdits.rolesFor(event.kind)},kind,{kind=it}) {eventLabel(it,c)}
             OutlinedTextField(title,{title=it},Modifier.fillMaxWidth(),label={Text(c.t("Název události","Event title"))})
-            GenealogyDateField(c.t("Datum události","Event date"),date,c) {v,ok ->date=v;validDate=ok}
+            GenealogyDateField(if(kind=="genealogy.marriage")c.t("Datum svatby","Wedding date") else c.t("Datum události","Event date"),date,c) {v,ok ->date=v;validDate=ok}
+            if(kind=="genealogy.spousal-record")Text(c.t("Pro doloženou svatbu zvolte typ Sňatek a vyplňte datum svatby.","For a documented wedding, select Marriage and enter its date."),style=MaterialTheme.typography.bodySmall)
             OutlinedTextField(place,{place=it},Modifier.fillMaxWidth(),label={Text(c.t("Místo události","Event place"))})
             OutlinedTextField(note,{note=it},Modifier.fillMaxWidth(),label={Text(c.t("Poznámka k události","Event note"))},minLines=2)
             Text(c.t("Osoby a role","People and roles"),style=MaterialTheme.typography.titleMedium)

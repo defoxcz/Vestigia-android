@@ -40,6 +40,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     var draftId by rememberSaveable {mutableStateOf(newId())}
     var editorSession by rememberSaveable {mutableStateOf(newId())}
     var graphSize by remember {mutableStateOf(IntSize.Zero)}
+    var nodeBounds by remember(tree?.id) {mutableStateOf<Map<String,GraphBox>>(emptyMap())}
     val density=LocalDensity.current.density
     var fullEditor by rememberSaveable {mutableStateOf(false)}
     var dirty by remember {mutableStateOf(false)}
@@ -62,7 +63,10 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         val p=tree?.people?.firstOrNull {it.id==id};val e=tree?.events?.firstOrNull {it.id==id}
         val x=p?.x ?: e?.x ?: 0f;val y=p?.y ?: e?.y ?: 0f
         val zoom=state.view.zoom
-        controller.view(state.view.copy(selected=id,x=graphSize.width/density/2-(x+98)*zoom,y=30-y*zoom))
+        val bounds=nodeBounds[id]
+        if(bounds==null && tree?.let {t ->GenealogyPresentation(t).connections.any {c ->c.events.any {it.id==id}}}==true)
+            controller.view(state.view.copy(selected=id))
+        else controller.view(state.view.copy(selected=id,x=graphSize.width/density/2-(x+(bounds?.width ?: 244f)/2)*zoom,y=30-y*zoom))
         editor=id;dirty=false;fullEditor=false
     }
     LaunchedEffect(selectedPerson,state.ready,tree?.id,graphSize) {
@@ -89,7 +93,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         if(person!=null) PersonPanel(currentTree,person,id=="new",copy,state.busy,onDirty={dirty=it},onClose=::closeEditor,
             onExpand={fullEditor=true},
             onSave={p,b,d -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
-            onRelative={relative=person.id},onEvidence={evidence=person.id},onEvent={kind ->
+            onRelative={relative=person.id},onEvidence={evidence=person.id},onOpenEvent={eventId ->editor=eventId;fullEditor=true;dirty=false},onEvent={kind ->
                 val old=currentTree.events.firstOrNull {it.kind==kind && it.roles["subject"]==person.id && kind!="genealogy.mentioned"}
                 if(old!=null) {editor=old.id;dirty=false}
                 else {pending=true;pendingRevision=state.revision;controller.edit {it.copy(events=it.events+LifeEvent(kind=kind,roles=mapOf("subject" to person.id),x=person.x+260,y=person.y+120)).also(GenealogyEdits::validate)}}
@@ -107,11 +111,12 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             TextButton(enabled=state.undo && !state.busy && editor==null,onClick=controller::undo) {Text(copy.t("Zpět","Undo"))}
             TextButton(enabled=state.redo && !state.busy && editor==null,onClick=controller::redo) {Text(copy.t("Znovu","Redo"))}
             TextButton(enabled=!state.busy && tree.people.isNotEmpty(),onClick={
-                val nodes=tree.people.map {it.x to it.y}+tree.events.map {it.x to it.y}
+                val nodes=nodeBounds.values.toList()
+                if(nodes.isEmpty())return@TextButton
                 val width=graphSize.width/density
                 val height=graphSize.height/density
-                val minX=nodes.minOf {it.first};val minY=nodes.minOf {it.second}
-                val maxX=nodes.maxOf {it.first}+196;val maxY=nodes.maxOf {it.second}+88
+                val minX=nodes.minOf {it.x};val minY=nodes.minOf {it.y}
+                val maxX=nodes.maxOf {it.x+it.width};val maxY=nodes.maxOf {it.y+it.height}
                 val scale=minOf((width-40)/(maxX-minX),(height-40)/(maxY-minY),1f).coerceIn(.2f,3f)
                 controller.view(state.view.copy(x=20-minX*scale,y=20-minY*scale,zoom=scale))
             }) {Text(copy.t("Přizpůsobit","Fit"))}
@@ -127,7 +132,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         }
         else Row(Modifier.padding(padding).fillMaxSize()) {
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                GenealogyGraph(tree,state.view,copy,controller::view,::select,{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy)
+                GenealogyGraph(tree,state.view,copy,controller::view,::select,{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy,onBounds={nodeBounds=it})
                 if(tree.people.isEmpty()) Column(Modifier.align(Alignment.Center).padding(32.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
                     Text(copy.t("Přidejte první osobu","Add the first person"),style=MaterialTheme.typography.headlineSmall)
                     Text(copy.t("Graf nevyžaduje stránku matriky ani jiný doklad.","The graph does not require a register page or evidence."))

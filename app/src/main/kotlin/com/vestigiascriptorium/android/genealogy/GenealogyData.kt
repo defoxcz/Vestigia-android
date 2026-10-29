@@ -61,11 +61,13 @@ internal object GenealogyEdits {
         "genealogy.spousal-record","genealogy.marriage" -> listOf("subject","subject2")
         else -> listOf("subject")
     }
-    fun freePosition(tree: FamilyTree,x: Float,y: Float): Pair<Float,Float> {
-        val occupied=tree.people.map {it.x to it.y}+tree.events.map {it.x to it.y}
+    fun freePosition(tree: FamilyTree,x: Float,y: Float,width: Float=244f,height: Float=88f): Pair<Float,Float> {
+        val presentation=GenealogyPresentation(tree)
+        val occupied=tree.people.map {GraphBox(it.x,it.y,244f,88f+presentation.person(it.id).partners.size*54f)}+
+            presentation.visibleEvents.map {GraphBox(it.x,it.y,196f,88f)}
         for(i in 0..10000) {
-            val px=x+(i%5)*250f;val py=y+(i/5)*150f
-            if(occupied.none {kotlin.math.abs(it.first-px)<220 && kotlin.math.abs(it.second-py)<112}) return px to py
+            val px=x+(i%5)*300f;val py=y+(i/5)*180f
+            if(occupied.none {px+width+24>it.x && px<it.x+it.width+24 && py+height+24>it.y && py<it.y+it.height+24}) return px to py
         }
         throw GenealogyProblem("invalid")
     }
@@ -82,7 +84,7 @@ internal object GenealogyEdits {
         listOf("genealogy.birth" to birth,"genealogy.death" to death).forEach { (kind,date) ->
             val old=next.events.firstOrNull {it.kind==kind && it.roles["subject"]==value.id}
             if(old!=null) next=next.copy(events=next.events.map {if(it.id==old.id) it.copy(date=date.trim()) else it})
-            else if(date.isNotBlank()) {val p=freePosition(next,position.first+260,position.second+if(kind.endsWith("birth")) -100 else 100);next=next.copy(events=next.events+LifeEvent(kind=kind,date=date.trim(),roles=mapOf("subject" to value.id),x=p.first,y=p.second))}
+            else if(date.isNotBlank()) {val p=freePosition(next,position.first+260,position.second+if(kind.endsWith("birth")) -100 else 100,width=196f);next=next.copy(events=next.events+LifeEvent(kind=kind,date=date.trim(),roles=mapOf("subject" to value.id),x=p.first,y=p.second))}
         }
         validate(next);return next
     }
