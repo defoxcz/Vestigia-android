@@ -11,20 +11,22 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 
-internal data class GenealogyState(val revision: Long=0,val ready: Boolean=false,val busy: Boolean=false,val trees: List<Pair<String,String>> = emptyList(),val tree: FamilyTree?=null,val view: GraphView=GraphView(),val undo: Boolean=false,val redo: Boolean=false,val error: String?=null)
+internal data class GenealogyState(val revision: Long=0,val ready: Boolean=false,val busy: Boolean=false,val trees: List<Pair<String,String>> = emptyList(),val tree: FamilyTree?=null,val view: GraphView=GraphView(),val undo: Boolean=false,val redo: Boolean=false,val error: String?=null,val importPreview: ImportPreview?=null)
 internal class GenealogyController(private val store: GenealogyStore,private val scope: CoroutineScope) {
+    val media=GenealogyMedia(File(store.root,"media"))
     private val mutable=MutableStateFlow(GenealogyState())
     val state=mutable.asStateFlow()
     private val lock=Mutex()
     private val past=ArrayDeque<FamilyTree>();private val future=ArrayDeque<FamilyTree>()
     private var viewJob: Job?=null
+    @Volatile private var importCanceled=false
     init {run { val trees=store.list();val id=store.last();val tree=id?.takeIf {key -> trees.any {it.first==key} }?.let(store::read)
         mutable.value=GenealogyState(ready=true,trees=trees,tree=tree,view=tree?.let {store.view(it.id)} ?: GraphView()) } }
     private fun run(action: suspend ()->Unit) {scope.launch {lock.withLock {
         mutable.update {it.copy(busy=true,error=null)}
         try {withContext(Dispatchers.IO) {action()}}
         catch(e: CancellationException) {throw e}
-        catch(e: Exception) {mutable.update {it.copy(error=(e as? GenealogyProblem)?.code ?: "storage")}}
+        catch(e: Exception) {mutable.update {it.copy(error=(e as? GenealogyProblem)?.code ?: (e as? ImportProblem)?.let {"import:"+it.reason} ?: "storage")}}
         finally {mutable.update {it.copy(ready=true,busy=false,undo=past.isNotEmpty(),redo=future.isNotEmpty())}}
     }}}
     fun clearError() {mutable.update {it.copy(error=null)}}
@@ -40,6 +42,23 @@ internal class GenealogyController(private val store: GenealogyStore,private val
         store.save(after) // Publish/record history only after the transaction succeeds.
         past.addLast(before);while(past.size>40)past.removeFirst();future.clear()
         val list=store.list();mutable.update {it.copy(revision=it.revision+1,tree=after,trees=list)}
+    }
+    fun prepareImport(resolver: android.content.ContentResolver,uri: android.net.Uri,title: String,folder: android.net.Uri?,cache: File) {
+        importCanceled=false
+        run {
+        mutable.value.importPreview?.root?.deleteRecursively()
+        mutable.update {it.copy(importPreview=null)}
+        val job=kotlin.coroutines.coroutineContext
+        val preview=GenealogyImporter.prepare(resolver,uri,title,folder,cache) {if(importCanceled)throw CancellationException();job.ensureActive()}
+        mutable.update {it.copy(importPreview=preview)}
+        }
+    }
+    fun cancelImport() {importCanceled=true;run {mutable.value.importPreview?.root?.deleteRecursively();mutable.update {it.copy(importPreview=null)}}}
+    fun commitImport(selected: Set<String>)=run {
+        val preview=mutable.value.importPreview ?: return@run
+        val imported=GenealogyImporter.commit(preview,selected,store,media)
+        val first=imported.first();store.last(first.id);past.clear();future.clear()
+        val trees=store.list();mutable.update {it.copy(revision=it.revision+1,importPreview=null,tree=first,trees=trees,view=GraphView())}
     }
     fun undo()=history(past,future)
     fun redo()=history(future,past)

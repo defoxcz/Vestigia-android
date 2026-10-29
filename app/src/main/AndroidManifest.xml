@@ -23,6 +23,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VestigiaScriptorium">
+        <provider android:name=".genealogy.GenealogyFileProvider" android:authorities="${applicationId}.genealogy-media" android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".genealogy.PeopleActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".genealogy.GenealogyActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".aids.reader.AidReaderActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />

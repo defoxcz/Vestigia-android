@@ -16,6 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.vestigiascriptorium.android.ui.main.Copy
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.ensureActive
 
 @Composable
 internal fun NameDialog(c: Copy,busy: Boolean,onDismiss: ()->Unit,onCreate: (String)->Unit) {
@@ -25,7 +29,18 @@ internal fun NameDialog(c: Copy,busy: Boolean,onDismiss: ()->Unit,onCreate: (Str
 }
 
 @Composable
-internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,String,String)->Unit,onRelative: ()->Unit,onEvidence: ()->Unit,onOpenEvent: (String)->Unit,onEvent: (String)->Unit,onOpen: (Evidence)->Unit) {
+internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,String,String)->Unit,onRelative: ()->Unit,onEvidence: ()->Unit,onOpenEvent: (String)->Unit,onEvent: (String)->Unit,onOpen: (Evidence)->Unit,media: GenealogyMedia?=null) {
+    val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    var portrait by rememberSaveable(person.id) {mutableStateOf(person.portrait)}
+    var photoBusy by remember {mutableStateOf(false)}
+    var photoError by remember {mutableStateOf(false)}
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri ->if(uri!=null && media!=null)scope.launch {
+        photoBusy=true;photoError=false
+        try {portrait=withContext(Dispatchers.IO) {val job=kotlin.coroutines.coroutineContext;media.add(context.contentResolver.openInputStream(uri) ?: error("image")) {job.ensureActive()}}}
+        catch(e: Exception) {if(e is kotlinx.coroutines.CancellationException)throw e;photoError=true}
+        finally {photoBusy=false}
+    }}
     var editing by rememberSaveable(person.id) {mutableStateOf(isNew)}
     var given by rememberSaveable(person.id) {mutableStateOf(person.givenName)}
     var middle by rememberSaveable(person.id) {mutableStateOf(person.middleName)}
@@ -41,17 +56,24 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
     val deathValue=tree.events.firstOrNull {it.kind=="genealogy.death" && it.roles["subject"]==person.id}?.date.orEmpty()
     var birth by rememberSaveable(person.id) {mutableStateOf(birthValue)}
     var death by rememberSaveable(person.id) {mutableStateOf(deathValue)}
-    val changed=given!=person.givenName || middle!=person.middleName || surname!=person.surname || mentionedFrom!=person.mentionedFrom || mentionedTo!=person.mentionedTo || !datesValid || note!=person.note || gender!=person.gender || birth!=birthValue || death!=deathValue
+    val changed=portrait!=person.portrait || photoBusy || given!=person.givenName || middle!=person.middleName || surname!=person.surname || mentionedFrom!=person.mentionedFrom || mentionedTo!=person.mentionedTo || !datesValid || note!=person.note || gender!=person.gender || birth!=birthValue || death!=deathValue
     LaunchedEffect(changed) {onDirty(changed)}
     Column(Modifier.fillMaxSize().padding(20.dp).imePadding(),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         Text(if(isNew)c.t("Nová osoba","New person") else person.name,style=MaterialTheme.typography.titleLarge)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
             TextButton(enabled=!busy,onClick=onClose) {Text(c.t("Zavřít","Close"))}
-            if(editing) Button(enabled=!busy && named && datesValid,onClick={onSave(person.copy(givenName=given,middleName=middle,surname=surname,mentionedFrom=mentionedFrom,mentionedTo=mentionedTo,gender=gender,note=note),birth,death)}) {Text(c.t("Uložit osobu","Save person"))}
+            if(editing) Button(enabled=!busy && !photoBusy && named && datesValid,onClick={onSave(person.copy(portrait=portrait,givenName=given,middleName=middle,surname=surname,mentionedFrom=mentionedFrom,mentionedTo=mentionedTo,gender=gender,note=note),birth,death)}) {Text(c.t("Uložit osobu","Save person"))}
             else Button(enabled=!busy,onClick={editing=true;onExpand()}) {Text(c.t("Upravit","Edit"))}
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(14.dp)) {
+            if(portrait.isNotEmpty())PersonPortrait(portrait,media,c,Modifier.fillMaxWidth().height(160.dp))
             if(editing) {
+                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(enabled=!busy && !photoBusy && media!=null,onClick={picker.launch(arrayOf("image/*"))}) {Text(if(portrait.isEmpty())c.t("Vložit obrázek","Add portrait") else c.t("Změnit obrázek","Change portrait"))}
+                    if(portrait.isNotEmpty())TextButton(enabled=!busy && !photoBusy,onClick={portrait=""}) {Text(c.t("Odstranit obrázek","Remove portrait"))}
+                }
+                if(photoBusy)LinearProgressIndicator(Modifier.fillMaxWidth())
+                if(photoError)Text(c.t("Obrázek nelze načíst. Vyberte podporovaný obrázek do 32 MB.","Unable to read image. Choose a supported image up to 32 MB."),color=MaterialTheme.colorScheme.error)
                 if(person.legacyName.isNotBlank())Text(c.t("Dosavadní celé jméno: ","Legacy full name: ")+person.legacyName,style=MaterialTheme.typography.bodySmall)
                 NameFields(given,middle,surname,c,{given=it},{middle=it},{surname=it})
                 Choice(c.t("Pohlaví","Gender"),listOf("unknown","male","female"),gender,{gender=it}) {when(it) {"male" -> c.t("Muž","Male");"female" -> c.t("Žena","Female");else -> c.t("Neurčeno","Unknown")}}

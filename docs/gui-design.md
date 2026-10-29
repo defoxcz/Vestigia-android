@@ -89,8 +89,9 @@ Rodokmen → první osoba → graf → editor v panelu → přidání/připojen�
 partnera nebo dítěte → události a role → dokumentace u osoby. Od začátku lokální
 uložení, transakce a Zpět/Znovu, zachování pracovní plochy. Následuje hledání
 osob, větší grafy a ověřený přenos dat s desktopem. První pracovní celek grafu a editoru je implementovaný od 1.0.0012;
-aktuální ovládání a omezení popisuje [genealogy.md](genealogy.md). Import,
-pokročilé uspořádání a desktopová kompatibilita zatím implementované nejsou.
+aktuální ovládání a omezení popisuje [genealogy.md](genealogy.md). Od 1.0.0018 jsou dostupné portréty osob a import GEDCOM 5.5.1, GEDCOM 7,
+GEDZIP 7 a genealogických grafů `.vestigia`; [postup a omezení](imports.md).
+Synchronizace a export desktopového projektu zatím implementované nejsou.
 
 ## Badatelské pomůcky a správce stahování
 

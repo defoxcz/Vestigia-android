@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider android:name="com.vestigiascriptorium.android.genealogy.PhotoFixtureProvider"
+            android:authorities="com.vestigiascriptorium.android.debug.test.photo-fixture"
+            android:exported="true" />
+    </application>
+</manifest>

@@ -4,13 +4,13 @@ import java.util.UUID
 
 internal fun newId()=UUID.randomUUID().toString()
 internal data class Person(val id: String=newId(),val givenName: String="",val gender: String="unknown",val note: String="",val x: Float=0f,val y: Float=0f,
-    val middleName: String="",val surname: String="",val mentionedFrom: String="",val mentionedTo: String="",val legacyName: String="") {
+    val middleName: String="",val surname: String="",val mentionedFrom: String="",val mentionedTo: String="",val legacyName: String="",val portrait: String="") {
     val name: String get()=listOf(givenName,middleName,surname).filter {it.isNotBlank()}.joinToString(" ").ifBlank {legacyName}
 }
 
 internal data class LifeEvent(val id: String=newId(),val kind: String="genealogy.mentioned",val title: String="",val date: String="",val place: String="",val note: String="",val roles: Map<String,String> = emptyMap(),val x: Float=0f,val y: Float=0f)
 internal data class Evidence(val id: String=newId(),val person: String,val caption: String,val note: String="",val file: String="",val mime: String="application/octet-stream")
-internal data class FamilyTree(val id: String=newId(),val title: String,val people: List<Person> = emptyList(),val events: List<LifeEvent> = emptyList(),val evidence: List<Evidence> = emptyList())
+internal data class FamilyTree(val id: String=newId(),val title: String,val people: List<Person> = emptyList(),val events: List<LifeEvent> = emptyList(),val evidence: List<Evidence> = emptyList(),val importSource: String="")
 internal data class GraphView(val x: Float=30f,val y: Float=40f,val zoom: Float=1f,val selected: String?=null)
 internal enum class Relative { FATHER,MOTHER,SPOUSE,CHILD_AS_FATHER,CHILD_AS_MOTHER }
 internal class GenealogyProblem(val code: String): IllegalArgumentException(code)
@@ -26,6 +26,7 @@ internal object GenealogyEdits {
         check(tree.people.all {it.name.isNotBlank() && it.x.isFinite() && it.y.isFinite()},"name")
         check(tree.people.all {GenealogyDates.canonical(it.mentionedFrom) && GenealogyDates.canonical(it.mentionedTo)},"date")
         check(tree.people.all {GenealogyDates.ordered(it.mentionedFrom,it.mentionedTo)},"dateRange")
+        check(tree.people.all {it.portrait.isEmpty() || it.portrait.matches(Regex("[a-f0-9]{64}\\.img"))},"image")
         val parents=mutableMapOf<String,MutableSet<String>>()
         val parentSlots=mutableMapOf<Pair<String,String>,String>()
         tree.events.forEach { event ->
@@ -53,7 +54,7 @@ internal object GenealogyEdits {
             parents[id].orEmpty().forEach { parent -> counts[parent]=counts.getValue(parent)-1;if(counts[parent]==0) queue.add(parent) }
         }
         check(visited==people.size,"cycle")
-        check(tree.evidence.all {it.person in people && it.caption.isNotBlank() && (it.file.isEmpty() || it.file.startsWith("content://"))},"invalid")
+        check(tree.evidence.all {it.person in people && it.caption.isNotBlank() && (it.file.isEmpty() || (it.file.startsWith("content://") || it.file.matches(Regex("managed:[a-f0-9]{64}\\.(img|bin)"))))},"invalid")
     }
     val kinds=listOf("genealogy.parentage","genealogy.spousal-record","genealogy.birth","genealogy.baptism","genealogy.marriage","genealogy.death","genealogy.burial","genealogy.mentioned")
     fun rolesFor(kind: String)=when(kind) {

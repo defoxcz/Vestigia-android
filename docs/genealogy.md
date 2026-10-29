@@ -52,10 +52,11 @@ Podklady: desktopové `registergraphdata.h`, `eventrelationships.{h,cpp}`,
   vazba na sebe a cykly rodičovství. Neplatná změna nevstoupí do úložiště ani
   historie. Validace platí také při přímé změně role v editoru události.
 
-Android formát je **samostatný formát v2 s načítáním v1**, nikoli kompatibilní desktopový projekt.
-Stabilní UUID, osoby, události, role, citace a geometrie jsou oddělené. Automatický
-import/export desktopu, GEDCOM, normalizované výřezy, portréty, synchronizace,
-pokročilé typy vztahů a automatické uspořádání nejsou v této etapě implementované.
+Android formát je **samostatný formát v3 s načítáním v1 a v2**, nikoli kompatibilní desktopový projekt.
+Stabilní UUID, osoby, události, role, citace a geometrie jsou oddělené. Import GEDCOM 5.5.1, GEDCOM 7, GEDZIP 7 a desktopových genealogických grafů
+Vestigia popisuje [imports.md](imports.md). Editor podporuje vložení, změnu
+a odebrání portrétu; portrét zobrazuje také box osoby. Export, synchronizace,
+normalizované výřezy a pokročilé typy vztahů zatím implementované nejsou.
 Datum zadané v editoru osoby aktualizuje její první odpovídající událost, ostatní
 role a vlastnosti této události zachovává.
 
@@ -206,3 +207,21 @@ telefonu. Testy nadále používají jen izolované dočasné rodokmeny.
 Finální sestavení 1.0.0016: 35 JVM testů a Lint Debug/Release prošly. Čtyři
 UI scénáře po opravě prošly; dva partnerské scénáře byly následně zopakovány
 s doplněnou kontrolou celého řádku i trojnásobného přiblížení, opět úspěšně.
+
+## Portréty a import (1.0.0018)
+
+Portréty jsou vlastní kopie v `noBackupFilesDir/genealogy/media`, nejvýše 32 MiB
+na soubor. Odebrání obrázku od osoby je vratná editace; originál ani vlastní
+kopie pro historii se nemažou. Galerie nevyžaduje plošné oprávnění k fotografiím.
+Importované doklady jsou vlastní kopie a při otevření se předává pouze dočasné
+oprávnění ke čtení jednoho souboru. Ručně přidané doklady nadále používají SAF odkaz.
+
+Ověření: 6 nových JVM scénářů GEDCOM včetně kódování, neplatných vazeb a
+4 000 osob; 5 instrumentačních testů importu a úložiště a 2 UI scénáře
+portrétu (vložení, odebrání, Undo) a potvrzení importu na fyzickém Samsungu.
+Testy používají výhradně vlastní dočasná data.
+
+Finální sestavení 1.0.0018: 41 JVM testů, Lint Debug/Release a osm
+databázových testů na zařízení prošly. Po odemčení telefonu prošlo také všech osm UI scénářů: graf a editor,
+partnerství, seznam osob a portrét/import. Aktualizace obou variant používá
+výhradně instalaci `-r` se zachováním dat.

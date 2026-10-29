@@ -55,7 +55,7 @@ internal fun lifeDates(tree: FamilyTree,id: String)=listOf("genealogy.birth" to 
 private data class BoxLine(val text: String,val title: Boolean=false,val limit: Int=Int.MAX_VALUE)
 
 @Composable
-internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: (GraphView)->Unit,onSelect: (String)->Unit,onMove: (String,Float,Float)->Unit,modifier: Modifier=Modifier,enabled: Boolean=true,onBounds: (Map<String,GraphBox>)->Unit={}) {
+internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: (GraphView)->Unit,onSelect: (String)->Unit,onMove: (String,Float,Float)->Unit,modifier: Modifier=Modifier,enabled: Boolean=true,onBounds: (Map<String,GraphBox>)->Unit={},media: GenealogyMedia?=null) {
     val density=LocalDensity.current
     val latest by rememberUpdatedState(view)
     val latestSelect by rememberUpdatedState(onSelect)
@@ -165,6 +165,7 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 shape=RoundedCornerShape((12*view.zoom).dp),border=if(view.selected==id)androidx.compose.foundation.BorderStroke(2.dp,primary) else null,
                 colors=CardDefaults.cardColors(containerColor=if(id in people)MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(Modifier.padding((10*view.zoom).dp),verticalArrangement=Arrangement.spacedBy((5*view.zoom).dp)) {
+                    people[id]?.portrait?.takeIf {it.isNotBlank()}?.let {PersonPortrait(it,media,copy,Modifier.fillMaxWidth().height((112*view.zoom).dp))}
                     lines.getValue(id).forEach {line ->Text(line.text,letterSpacing=0.sp,fontSize=((if(line.title)14 else 11)*view.zoom).sp,lineHeight=((if(line.title)17 else 14)*view.zoom).sp,maxLines=line.limit,overflow=TextOverflow.Ellipsis,color=if(line.title)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)}
                 }
             }

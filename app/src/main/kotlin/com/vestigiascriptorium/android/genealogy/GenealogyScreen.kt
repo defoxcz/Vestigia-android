@@ -36,6 +36,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     val state by controller.state.collectAsStateWithLifecycle()
     val tree=state.tree
     val latestBusy by rememberUpdatedState(state.busy)
+    var importing by rememberSaveable {mutableStateOf(false)}
     var create by rememberSaveable {mutableStateOf(false)}
     var editor by rememberSaveable {mutableStateOf<String?>(null)}
     var draftId by rememberSaveable {mutableStateOf(newId())}
@@ -92,14 +93,14 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         val id=editor ?: return
         val person=if(id=="new") Person(id=draftId,x=(-state.view.x+40)/state.view.zoom,y=(-state.view.y+40)/state.view.zoom) else currentTree.people.firstOrNull {it.id==id}
         if(person!=null) PersonPanel(currentTree,person,id=="new",copy,state.busy,onDirty={dirty=it},onClose=::closeEditor,
-            onExpand={fullEditor=true},
+            onExpand={fullEditor=true},media=controller.media,
             onSave={p,b,d -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
             onRelative={relative=person.id},onEvidence={evidence=person.id},onOpenEvent={eventId ->editor=eventId;fullEditor=true;dirty=false},onEvent={kind ->
                 val old=currentTree.events.firstOrNull {it.kind==kind && it.roles["subject"]==person.id && kind!="genealogy.mentioned"}
                 if(old!=null) {editor=old.id;dirty=false}
                 else {pending=true;pendingRevision=state.revision;controller.edit {it.copy(events=it.events+LifeEvent(kind=kind,roles=mapOf("subject" to person.id),x=person.x+260,y=person.y+120)).also(GenealogyEdits::validate)}}
             },onOpen={doc ->
-                try {context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(doc.file),doc.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))}
+                try {context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(if(doc.file.startsWith("managed:"))GenealogyFileProvider.uri(context,doc.file.removePrefix("managed:")) else Uri.parse(doc.file),doc.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))}
                 catch(_: Exception) {localError=copy.t("Doklad nelze otevřít. Soubor mohl být přesunut nebo chybí vhodná aplikace.","Unable to open evidence. The file may have moved or no suitable app is installed.")}
             })
         else currentTree.events.firstOrNull {it.id==id}?.let {event -> EventPanel(currentTree,event,copy,state.busy,{dirty=it},::closeEditor,{value -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.event(it,value)}})}
@@ -129,11 +130,12 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             item {Text(copy.t("Vaše rodokmeny","Your family trees"),style=MaterialTheme.typography.headlineMedium)}
             item {Text(copy.t("Začněte osobou. Prameny můžete připojit později.","Start with a person. Attach sources later."))}
             item {Button(enabled=!state.busy,onClick={create=true}) {Text(copy.t("Nový rodokmen","New family tree"))}}
+            item {OutlinedButton(enabled=!state.busy,onClick={importing=true}) {Text(copy.t("Importovat rodokmen","Import family tree"))}}
             items(state.trees,key={it.first}) {(id,title) -> OutlinedCard(onClick={controller.open(id)},enabled=!state.busy,modifier=Modifier.fillMaxWidth()) {Text(title,Modifier.padding(20.dp),style=MaterialTheme.typography.titleLarge)}}
         }
         else Row(Modifier.padding(padding).fillMaxSize()) {
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                GenealogyGraph(tree,state.view,copy,controller::view,::select,{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy,onBounds={nodeBounds=it})
+                GenealogyGraph(tree,state.view,copy,controller::view,::select,{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy,onBounds={nodeBounds=it},media=controller.media)
                 if(tree.people.isEmpty()) Column(Modifier.align(Alignment.Center).padding(32.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
                     Text(copy.t("Přidejte první osobu","Add the first person"),style=MaterialTheme.typography.headlineSmall)
                     Text(copy.t("Graf nevyžaduje stránku matriky ani jiný doklad.","The graph does not require a register page or evidence."))
@@ -146,6 +148,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     // The same editor is used in the bottom sheet and the wide-window side panel.
     if(tree!=null && editor!=null && !wide) ModalBottomSheet(onDismissRequest=::closeEditor,sheetState=sheetState) {Box(Modifier.fillMaxWidth().fillMaxHeight(.9f).imePadding()) {Panel()}}
     // Wide panels are composed below to avoid separate editor state implementations.
+    if(importing || state.importPreview!=null) GenealogyImportDialog(controller,state,copy,onDismiss={importing=false;controller.cancelImport()})
     if(create) NameDialog(copy,state.busy,onDismiss={create=false},onCreate={controller.create(it);create=false})
     if(discard) AlertDialog(onDismissRequest={discard=false},title={Text(copy.t("Zahodit změny?","Discard changes?"))},text={Text(copy.t("Rozpracované údaje nejsou uložené.","The edited details have not been saved."))},confirmButton={TextButton(onClick={discard=false;dismissEditor()}) {Text(copy.t("Zahodit","Discard"))}},dismissButton={TextButton(onClick={discard=false}) {Text(copy.t("Pokračovat v úpravách","Keep editing"))}})
     relative?.let {id -> if(tree!=null) RelativeDialog(tree,id,copy,state.busy,onDismiss={relative=null},onSave={existing,newPerson,kind ->
@@ -164,7 +167,9 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     (state.error?.let {problem(it,copy)} ?: localError)?.let {message -> AlertDialog(onDismissRequest={controller.clearError();localError=null},title={Text(copy.t("Změnu nelze dokončit","Unable to complete change"))},text={Text(message)},confirmButton={TextButton(onClick={controller.clearError();localError=null}) {Text("OK")}})}
 }
 
-private fun problem(code: String,c: Copy)=when(code) {
+private fun problem(code: String,c: Copy)=if(code.startsWith("import:"))code.removePrefix("import:") else when(code) {
+    "image" -> c.t("Vybraný soubor není podporovaný obrázek.","The selected file is not a supported image.")
+    "imageSize" -> c.t("Obrázek přesahuje limit 32 MB.","The image exceeds the 32 MB limit.")
     "date" -> c.t("Zadejte platné celé datum nebo čtyřmístný rok.","Enter a valid full date or four-digit year.")
     "dateRange" -> c.t("Údaj připomínán do nesmí předcházet údaji od.","Mentioned until cannot precede mentioned from.")
     "name" -> c.t("Vyplňte název rodokmenu a jméno osoby.","Enter a tree title and a person's name.")

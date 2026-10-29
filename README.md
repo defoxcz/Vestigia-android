@@ -4,6 +4,9 @@ Samostatná aplikace v Kotlinu a Jetpack Compose. Hlavní obrazovka obsahuje vš
 šest modulů desktopu: Genealogie, Rukopisy, Heraldika, Sfragistika, Epigrafika a
 Paleografika. Genealogie umožňuje založit lokální rodokmen, vytvářet osoby a události
 v grafu vazeb, připojovat příbuzné a citace/doklady u osob a používat Zpět/Znovu.
+Editor osoby podporuje vlastní portrét, který zobrazuje i box grafu. Import podporuje
+GEDCOM 5.5.1, GEDCOM 7, GEDZIP 7 a genealogické grafy desktopového `.vestigia`.
+Postup a omezení: [Import rodokmenů](docs/imports.md).
 Ostatní editory budou implementovány postupně. Na hlavní obrazovce nejsou štítky Připravujeme.
 
 Badatelské pomůcky se skutečně stahují, ověřují a instalují. Správce zobrazuje
@@ -171,7 +174,7 @@ Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v
 ## Verzování
 
 Obě varianty používají verzi `1.0.XXXX`, kde `XXXX` je číslo buildu doplněné
-zleva nulami na čtyři číslice. Aktuální build je **1.0.0017** (`versionCode=17`);
+zleva nulami na čtyři číslice. Aktuální build je **1.0.0018** (`versionCode=18`);
 předchozí pracovní APK měly `versionCode=1`. Debug/Release se rozlišují názvem,
 ID a podpisem, nikoli příponou čísla verze. Verze je vlevo v záhlaví hlavní obrazovky i prohlížeče pomůcek, společně
 s označením DEBUG/RELEASE. Najdete ji také na přihlašovací obrazovce a v nabídce **Účet**.
