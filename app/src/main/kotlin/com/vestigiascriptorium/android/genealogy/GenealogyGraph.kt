@@ -14,6 +14,9 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -54,7 +57,6 @@ private data class BoxLine(val text: String,val title: Boolean=false,val limit: 
 @Composable
 internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: (GraphView)->Unit,onSelect: (String)->Unit,onMove: (String,Float,Float)->Unit,modifier: Modifier=Modifier,enabled: Boolean=true,onBounds: (Map<String,GraphBox>)->Unit={}) {
     val density=LocalDensity.current
-    var size by remember {mutableStateOf(IntSize.Zero)}
     val latest by rememberUpdatedState(view)
     val latestSelect by rememberUpdatedState(onSelect)
     val ink=MaterialTheme.colorScheme.outline
@@ -86,22 +88,38 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
             if(text.isNotBlank())add(BoxLine(text,limit=2))
         })}
     }}
-    val boxes=remember(lines,density,tree.people,tree.events) {buildMap {
-        fun box(id: String,x: Float,y: Float,person: Boolean) {
-            val width=if(person)244f else 196f
-            val content=lines.getValue(id)
-            val height=20+content.sumOf {line -> textMeasurer.measure(line.text,TextStyle(letterSpacing=0.sp,fontSize=(if(line.title)14 else 11).sp,lineHeight=(if(line.title)17 else 14).sp),maxLines=line.limit,constraints=Constraints(maxWidth=((width-20)*density.density).roundToInt())).size.height.toDouble() }/density.density+(content.size-1)*5
-            put(id,GraphBox(x,y,width,maxOf(88f,height.toFloat()+2)))
+    var measuredSizes by remember(tree.id) {mutableStateOf<Map<String,IntSize>>(emptyMap())}
+    val positions=remember(presentation) {buildMap {
+        tree.people.forEach {put(it.id,GraphBox(it.x,it.y,244f,88f))}
+        presentation.visibleEvents.forEach {put(it.id,GraphBox(it.x,it.y,196f,88f))}
+    }}
+    val boxes=remember(positions,measuredSizes,density,view.zoom) {positions.mapValues {(id,box) ->
+        measuredSizes[id]?.let {box.copy(height=it.height/(density.density*view.zoom))} ?: box
+    }}
+    // Measure cards with a fixed world width and unbounded height. Their actual content
+    // supplies the geometry, including system font metrics and all partner rows.
+    val measureCards=remember(positions,density,view.zoom) {MeasurePolicy {measurables,constraints ->
+        val cards=measurables.map {measurable ->
+            val id=measurable.layoutId as String
+            val box=positions.getValue(id)
+            val width=(box.width*view.zoom*density.density).roundToInt().coerceAtLeast(1)
+            id to measurable.measure(Constraints(minWidth=width,maxWidth=width,minHeight=(88*view.zoom*density.density).roundToInt().coerceAtLeast(1)))
         }
-        tree.people.forEach {box(it.id,it.x,it.y,true)}
-        presentation.visibleEvents.forEach {box(it.id,it.x,it.y,false)}
+        layout(constraints.maxWidth,constraints.maxHeight) {
+            val camera=latest
+            cards.forEach {(id,card) ->
+                val box=positions.getValue(id)
+                val drag=liveDrag?.takeIf {it.first==id}?.second ?: Offset.Zero
+                card.place(((box.x+drag.x)*camera.zoom*density.density+camera.x*density.density).roundToInt(),((box.y+drag.y)*camera.zoom*density.density+camera.y*density.density).roundToInt())
+            }
+        }
     }}
     LaunchedEffect(boxes) {onBounds(boxes)}
     fun liveBox(id: String): GraphBox {val b=boxes.getValue(id);val delta=liveDrag?.takeIf {it.first==id}?.second ?: Offset.Zero;return b.copy(x=b.x+delta.x,y=b.y+delta.y)}
     fun screen(point: GraphPoint)=Offset((point.x*view.zoom+view.x)*density.density,(point.y*view.zoom+view.y)*density.density)
     val currentBoxes by rememberUpdatedState(boxes)
     val currentConnections by rememberUpdatedState(presentation.connections)
-    Box(modifier.clipToBounds().onSizeChanged {size=it}
+    Box(modifier.clipToBounds()
         .pointerInput(tree.id,density.density) {detectTransformGestures {centroid,pan,zoom,_ ->
             val old=latest;val next=(old.zoom*zoom).coerceIn(.2f,3f);val focus=centroid/density.density
             val moved=focus-(focus-Offset(old.x,old.y))*(next/old.zoom)+pan/density.density
@@ -138,11 +156,11 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 .testTag("partner-link-${connection.editId}").clickable(enabled=enabled,role=Role.Button) {onSelect(connection.editId)}
                 .semantics {contentDescription=copy.t("Upravit vztah: ","Edit relationship: ")+people.getValue(connection.first).name+" – "+people.getValue(connection.second).name})
         }
-        boxes.forEach {(id,box) -> key(id) {
+        Layout(modifier=Modifier.matchParentSize(),measurePolicy=measureCards,content={
+        positions.forEach {(id,box) -> key(id) {
             var drag by remember(id,box.x,box.y) {mutableStateOf(Offset.Zero)}
-            val visible=(box.x+box.width+drag.x)*view.zoom+view.x>0 && (box.y+box.height+drag.y)*view.zoom+view.y>0 && (box.x+drag.x)*view.zoom+view.x<size.width/density.density && (box.y+drag.y)*view.zoom+view.y<size.height/density.density
-            if(visible) Card(enabled=enabled,onClick={onSelect(id)},modifier=Modifier.offset {IntOffset(((box.x+drag.x)*view.zoom*density.density+view.x*density.density).roundToInt(),((box.y+drag.y)*view.zoom*density.density+view.y*density.density).roundToInt())}
-                .size((box.width*view.zoom).dp,(box.height*view.zoom).dp).testTag("genealogy-node-$id")
+            Card(enabled=enabled,onClick={onSelect(id)},modifier=Modifier.layoutId(id).testTag("genealogy-node-$id")
+                .onSizeChanged {actual ->if(measuredSizes[id]!=actual)measuredSizes=measuredSizes+(id to actual)}
                 .pointerInput(id,box.x,box.y,enabled) {if(enabled)detectDragGesturesAfterLongPress(onDragStart={drag=Offset.Zero},onDragCancel={drag=Offset.Zero;liveDrag=null},onDragEnd={onMove(id,box.x+drag.x,box.y+drag.y)}) {change,amount ->change.consume();drag+=amount/(density.density*latest.zoom);liveDrag=id to drag}},
                 shape=RoundedCornerShape((12*view.zoom).dp),border=if(view.selected==id)androidx.compose.foundation.BorderStroke(2.dp,primary) else null,
                 colors=CardDefaults.cardColors(containerColor=if(id in people)MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.secondaryContainer)) {
@@ -151,5 +169,6 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 }
             }
         }}
+        })
     }
 }

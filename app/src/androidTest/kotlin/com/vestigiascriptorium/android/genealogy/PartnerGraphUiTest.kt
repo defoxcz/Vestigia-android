@@ -1,6 +1,8 @@
 package com.vestigiascriptorium.android.genealogy
 
 import androidx.compose.ui.test.*
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -56,14 +58,24 @@ class PartnerGraphUiTest {
             LifeEvent(kind="genealogy.death",date="1880-05-06",roles=mapOf("subject" to a.id),x=800f,y=250f),
             LifeEvent(kind="genealogy.marriage",date="1825",roles=mapOf("subject" to a.id,"subject2" to b.id)),
             LifeEvent(kind="genealogy.marriage",date="1850",roles=mapOf("subject" to a.id,"subject2" to c.id))))
-        rule.setContent {VestigiaScriptoriumTheme {GenealogyGraph(tree,GraphView(),Copy(true),{}, {}, {_,_,_ ->})}}
+        val camera=mutableStateOf(GraphView())
+        rule.setContent {VestigiaScriptoriumTheme {GenealogyGraph(tree,camera.value,Copy(true),{camera.value=it}, {}, {_,_,_ ->})}}
         rule.onNodeWithText("* 1800  + 1880").assertIsDisplayed()
         rule.onNodeWithText("Partner: Anna").assertIsDisplayed()
         rule.onNodeWithText("2. partner: Marie").assertIsDisplayed()
         rule.onAllNodesWithText("Svatba: 1850")[0].assertIsDisplayed()
         rule.onNodeWithText("připomínán 1830–1880").assertIsDisplayed()
+        val last=rule.onAllNodesWithText("Svatba: 1850",useUnmergedTree=true)[0].getUnclippedBoundsInRoot()
+        val reference=rule.onNodeWithText("Partner: Anna",useUnmergedTree=true).getUnclippedBoundsInRoot()
+        Assert.assertTrue("Last wedding row is clipped: $last vs $reference",last.bottom-last.top>=reference.bottom-reference.top-1.dp)
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         rule.waitForIdle()
         InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap ->File(context.cacheDir,"partner-box-test.png").outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}}
+        rule.runOnIdle {camera.value=camera.value.copy(zoom=3f)}
+        val zoomed=rule.onNodeWithTag("genealogy-node-a",useUnmergedTree=true).getUnclippedBoundsInRoot()
+        Assert.assertTrue("Zoomed card must retain its world width",zoomed.right-zoomed.left>700.dp)
+        val zoomedLast=rule.onAllNodesWithText("Svatba: 1850",useUnmergedTree=true)[0].getUnclippedBoundsInRoot()
+        val zoomedReference=rule.onNodeWithText("Partner: Anna",useUnmergedTree=true).getUnclippedBoundsInRoot()
+        Assert.assertTrue("Last row must also fit at 3x zoom",zoomedLast.bottom-zoomedLast.top>=zoomedReference.bottom-zoomedReference.top-1.dp)
     }
 }

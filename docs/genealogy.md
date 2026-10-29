@@ -182,3 +182,27 @@ spojnici, datum svatby, posun grafu a obsah boxů jsou připravené v
 kontrolou zamčeného telefonu ještě před otevřením obrazovek; vizuální a dotykové
 ověření nové podoby proto zatím není dokončené. Testovací databáze jsou izolované,
 uživatelské rodokmeny ani pomůcky se při testech neotevírají a nemažou.
+
+## Dokončení ověření a oprava výšky boxů (1.0.0016)
+
+Po odemčení telefonu prošly všechny čtyři UI scénáře partnerského grafu
+a dosavadního genealogického editoru. Vizuální kontrola přesto odhalila,
+že předběžně spočtená výška v 1.0.0015 ořízla spodní řádek druhého partnera.
+Nová kontrola skutečné výšky jednotlivých textových řádků chybu zopakovala
+(poslední řádek měl asi 8 dp oproti 14 dp u stejného stylu).
+
+Boxy nyní měří přímo Compose Layout podle přirozené výšky skutečného obsahu,
+s pevnou šířkou grafového boxu a bez horního omezení výšky obrazovkou. Odpadl
+předběžný součet textových metrik. Skutečné rozměry sdílejí kotvy spojnic,
+dotykové cíle a Přizpůsobit. Rozměry přiblíženého boxu se neomezují na šířku
+viewportu; ořezává se až zobrazená část celé grafové plochy.
+
+Nová kontrola po opravě prošla, stejně jako opakování obou partnerských UI
+scénářů včetně trojnásobného přiblížení. Ověřeny jsou také fyzické klepnutí na
+spojnici, změna Partnerský vztah → Sňatek, uložení data svatby a následný posun
+grafu. Boxy a celé poslední řádky byly znovu vizuálně zkontrolovány ze snímku
+telefonu. Testy nadále používají jen izolované dočasné rodokmeny.
+
+Finální sestavení 1.0.0016: 35 JVM testů a Lint Debug/Release prošly. Čtyři
+UI scénáře po opravě prošly; dva partnerské scénáře byly následně zopakovány
+s doplněnou kontrolou celého řádku i trojnásobného přiblížení, opět úspěšně.
