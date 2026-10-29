@@ -41,6 +41,7 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
     var error by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
     val listState=rememberLazyListState();val gridState=rememberLazyGridState()
+    var displayedPage by remember(aid.id) { mutableIntStateOf(page) }
     LaunchedEffect(source,language,query,allFields,filter,page,imagesOnly,retry,selected) {
         if(previewPage!=null) { data=previewPage;loading=false;return@LaunchedEffect }
         loading=true;error=false
@@ -50,6 +51,12 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
                 if(query.isNotEmpty()) delay(60)
                 val next=source.page(aid.id,language,query,filter,page,imagesOnly,if(allFields) SearchScope.ALL_FIELDS else SearchScope.NAMES)
                 ensureActive()
+                if(next.page!=displayedPage) {
+                    // Apply to the next measurement, after the replacement rows are composed.
+                    listState.requestScrollToItem(0)
+                    gridState.requestScrollToItem(0)
+                }
+                displayedPage=next.page
                 data=next
                 if(data!!.page!=page) page=data!!.page
             } else {
@@ -60,7 +67,6 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
         catch(_: Exception) { if(isActive) error=true else throw CancellationException() }
         finally { if(isActive) loading=false }
     }
-    LaunchedEffect(page) { listState.scrollToItem(0);gridState.scrollToItem(0) }
     BackHandler(enabled=selected!=null) { selected=null;record=null }
     Scaffold(topBar={TopAppBar(title={Column { Text(copy.title(aid),maxLines=1,overflow=TextOverflow.Ellipsis);com.vestigiascriptorium.android.ui.AppVersionLabel() }},navigationIcon={IconButton(onClick={if(selected!=null) {selected=null;record=null} else onBack()},modifier=Modifier.semantics { contentDescription=copy.t("Zpět","Back") }) { Mark(5) }})}) { padding ->
         Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize().imePadding()) {

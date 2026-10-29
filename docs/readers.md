@@ -198,3 +198,11 @@ Na fyzickém telefonu prošlo načtení jednoho reprezentativního obrázku pro
 každou z devíti obrazových pomůcek včetně následného načtení pouze z diskové
 cache. UI test heraldiky ověřil otevření detailu, zoom, zvětšení a reset.
 Nejde o kontrolu každého obrázku v katalogu.
+
+
+### Stránkování (1.0.0011)
+
+Další i předchozí stránka začíná první položkou bez zachovaného posunu
+z minulé stránky. Sdílená oprava platí pro textový seznam i obrazovou galerii:
+po dokončení dotazu se vyžádá začátek pro následující měření nového obsahu.
+Návrat z detailu v rámci stejné stránky zachovává dosavadní posun.

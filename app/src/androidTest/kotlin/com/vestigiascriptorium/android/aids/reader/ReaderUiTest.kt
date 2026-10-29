@@ -72,6 +72,27 @@ class ReaderUiTest {
         rule.onNodeWithText("Zavřít obrázek").performClick()
     }
 
+    @Test fun textPaginationStartsAtFirstRecordInBothDirections() = paginationStartsAtFirstRecord("historical-units")
+    @Test fun galleryPaginationStartsAtFirstRecordInBothDirections() = paginationStartsAtFirstRecord("sigillography")
+
+    private fun paginationStartsAtFirstRecord(id: String) = withReaderFixtures { root,names ->
+        val source=AidReaderSource { File(root,names.getValue(id)) }
+        val pages=runBlocking { (0..1).map { source.page(id,"cs","","",it) } }
+        org.junit.Assert.assertTrue(pages.all { it.records.size>20 })
+        rule.setContent { VestigiaScriptoriumTheme { AidReaderScreen(aids.first {it.id==id},Copy(true),source,{}) } }
+        fun checkPage(index: Int) {
+            rule.waitUntil(10_000) { rule.onAllNodesWithText(pages[index].records.first().title).fetchSemanticsNodes().isNotEmpty() }
+            rule.onAllNodesWithText(pages[index].records.first().title)[0].assertIsDisplayed()
+            rule.onNode(hasScrollAction()).performScrollToIndex(20)
+            rule.onAllNodesWithText(pages[index].records.first().title).assertCountEquals(0)
+        }
+        checkPage(0)
+        rule.onNodeWithText("Další").performClick()
+        checkPage(1)
+        rule.onNodeWithText("Předchozí").performClick()
+        checkPage(0)
+    }
+
     @Test fun sharedImageZoomClosesAndResets() {
         val bitmap=android.graphics.Bitmap.createBitmap(4,4,android.graphics.Bitmap.Config.ARGB_8888)
         val bytes=java.io.ByteArrayOutputStream().also { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }.toByteArray()
