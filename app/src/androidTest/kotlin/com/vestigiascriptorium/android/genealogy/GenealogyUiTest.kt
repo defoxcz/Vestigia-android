@@ -27,13 +27,16 @@ class GenealogyUiTest {
             rule.onNodeWithText("Název rodokmenu").performTextInput("Testovací rodina")
             rule.onNodeWithText("Vytvořit").performClick()
             waitText("+ Osoba");rule.onNodeWithText("+ Osoba").performClick()
-            rule.onNodeWithText("Jméno osoby").performTextInput("Anna Nováková")
+            rule.onNodeWithText("Jméno").performTextInput("Anna")
+            rule.onNodeWithText("Druhé jméno").performScrollTo().performTextInput("Marie")
+            rule.onNodeWithText("Příjmení").performScrollTo().performTextInput("Nováková")
             rule.onNodeWithText("Uložit osobu").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.size==1 && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
-            rule.onNodeWithText("Anna Nováková").performClick()
+            rule.onNodeWithText("Anna Marie Nováková").performClick()
             waitText("Přidat příbuzného");rule.onNodeWithText("Přidat příbuzného").performClick()
-            rule.onNodeWithText("Jméno nové osoby").performTextInput("Jan Novák")
+            rule.onNodeWithText("Jméno").performScrollTo().performTextInput("Jan")
+            rule.onNodeWithText("Příjmení").performScrollTo().performTextInput("Novák")
             rule.onNodeWithText("Připojit osobu").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.size==2 && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Připojit osobu").fetchSemanticsNodes().isEmpty()}
@@ -54,7 +57,7 @@ class GenealogyUiTest {
     @Test fun editedDraftSurvivesRestorationAndCitationIsStoredWithPerson() {
         val root=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"genealogy-draft-${newId()}")
         val store=GenealogyStore(root)
-        val p=Person(name="Anna Nováková")
+        val p=Person(givenName="Anna",surname="Nováková")
         val tree=FamilyTree(title="Rodina",people=listOf(p))
         store.save(tree);store.last(tree.id)
         val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
@@ -71,17 +74,21 @@ class GenealogyUiTest {
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit doklad").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithText(p.name).performClick()
             rule.onNodeWithText("Upravit").performClick()
-            rule.onNodeWithText("Jméno osoby").performTextReplacement("Anna Nováková upravená")
-            rule.onNodeWithText("Datum narození").performScrollTo().performTextInput("kolem 1820")
+            rule.onNodeWithText("Jméno").performTextReplacement("Anna upravená")
+            rule.onNodeWithContentDescription("Datum narození · Pouze rok").performScrollTo().performClick()
+            field("Datum narození").performScrollTo().performTextInput("1820")
+            rule.onNodeWithContentDescription("Připomínán od · Pouze rok").performScrollTo().performClick()
+            field("Připomínán od").performScrollTo().performTextInput("1780")
+            field("Připomínán do").performScrollTo().performTextInput(GenealogyDates.format("1835-06-11"))
             restore.emulateSavedInstanceStateRestore()
-            rule.onNodeWithText("Jméno osoby").assertTextContains("Anna Nováková upravená")
-            rule.onNodeWithText("Datum narození").assertTextContains("kolem 1820")
+            rule.onNodeWithText("Jméno").assertTextContains("Anna upravená")
+            field("Datum narození").assertTextContains("1820")
             androidx.test.espresso.Espresso.closeSoftKeyboard()
             screenshot("genealogy-editor-test.png",hasAnyDescendant(hasText("Uložit osobu")))
             rule.onNodeWithText("Zavřít").performClick()
             rule.onNodeWithText("Pokračovat v úpravách").performClick()
             rule.onNodeWithText("Uložit osobu").performClick()
-            rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.name=="Anna Nováková upravená" && !controller.state.value.busy}
+            rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.name=="Anna upravená Nováková" && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithText("Přizpůsobit").performClick()
             rule.onNodeWithText("Narození").performClick()
@@ -91,7 +98,9 @@ class GenealogyUiTest {
             val stored=store.read(tree.id)
             Assert.assertEquals("Matrika 12, strana 45",stored.evidence.single().caption)
             Assert.assertEquals(p.id,stored.evidence.single().person)
-            Assert.assertEquals("kolem 1820",stored.events.single().date)
+            Assert.assertEquals("1820",stored.events.single().date)
+            Assert.assertEquals("1780",stored.people.single().mentionedFrom)
+            Assert.assertEquals("1835-06-11",stored.people.single().mentionedTo)
             Assert.assertEquals("Břeclav",stored.events.single().place)
         } finally {scope.cancel();store.close();root.deleteRecursively()}
     }
@@ -102,5 +111,6 @@ class GenealogyUiTest {
         val bitmap=InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         File(target.cacheDir,name).outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
     }
+    private fun field(label: String)=rule.onNode(hasSetTextAction() and hasText(label))
     private fun waitText(value: String) {rule.waitUntil(10_000) {rule.onAllNodesWithText(value).fetchSemanticsNodes().isNotEmpty()}}
 }

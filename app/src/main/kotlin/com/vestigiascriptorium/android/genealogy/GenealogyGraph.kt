@@ -46,7 +46,7 @@ internal fun eventRoleLabel(kind: String,role: String,c: Copy)=if(role=="subject
     "genealogy.spousal-record","genealogy.marriage" -> c.t("Partner","Partner")
     else -> roleLabel(role,c)
 } else if(role=="subject2") c.t("Partner","Partner") else roleLabel(role,c)
-internal fun lifeDates(tree: FamilyTree,id: String)=listOf("genealogy.birth" to "*", "genealogy.death" to "†").mapNotNull { (kind,mark) -> tree.events.firstOrNull {it.kind==kind && it.roles["subject"]==id && it.date.isNotBlank()}?.let {"$mark ${it.date}"} }.joinToString(" · ")
+internal fun lifeDates(tree: FamilyTree,id: String)=listOf("genealogy.birth" to "*", "genealogy.death" to "†").mapNotNull { (kind,mark) -> tree.events.firstOrNull {it.kind==kind && it.roles["subject"]==id && it.date.isNotBlank()}?.let {"$mark ${GenealogyDates.format(it.date)}"} }.joinToString(" · ")
 
 @Composable
 internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: (GraphView)->Unit,onSelect: (String)->Unit,onMove: (String,Float,Float)->Unit,modifier: Modifier=Modifier,enabled: Boolean=true) {
@@ -59,7 +59,8 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
     var liveDrag by remember(tree.id) {mutableStateOf<Pair<String,Offset>?>(null)}
     LaunchedEffect(tree) {liveDrag=null}
     val points=remember(tree.people) {tree.people.associate {it.id to Offset(it.x,it.y)}}
-    val dates=remember(tree.events) {tree.people.associate {it.id to lifeDates(tree,it.id)}}
+    val locale=java.util.Locale.getDefault(java.util.Locale.Category.FORMAT)
+    val dates=remember(tree.events,locale) {tree.people.associate {it.id to lifeDates(tree,it.id)}}
     fun delta(id: String)=liveDrag?.takeIf {it.first==id}?.second ?: Offset.Zero
     Box(modifier.onSizeChanged {size=it}.pointerInput(tree.id) {
         detectTransformGestures { centroid,pan,zoom,_ ->
@@ -107,7 +108,7 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 }
             }
         }
-        tree.events.filter {visible(it.x,it.y)}.forEach {e -> key(e.id) {Node(e.id,e.x,e.y,e.title.ifBlank {eventLabel(e.kind,copy)},listOf(e.date,e.place).filter {it.isNotBlank()}.joinToString(" · "),true)} }
+        tree.events.filter {visible(it.x,it.y)}.forEach {e -> key(e.id) {Node(e.id,e.x,e.y,e.title.ifBlank {eventLabel(e.kind,copy)},listOf(GenealogyDates.format(e.date),e.place).filter {it.isNotBlank()}.joinToString(" · "),true)} }
         tree.people.filter {visible(it.x,it.y)}.forEach {p -> key(p.id) {Node(p.id,p.x,p.y,p.name,dates[p.id].orEmpty(),false)} }
     }
 }

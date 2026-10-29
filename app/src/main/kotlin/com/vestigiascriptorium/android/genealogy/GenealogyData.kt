@@ -3,7 +3,11 @@ package com.vestigiascriptorium.android.genealogy
 import java.util.UUID
 
 internal fun newId()=UUID.randomUUID().toString()
-internal data class Person(val id: String=newId(),val name: String="",val gender: String="unknown",val note: String="",val x: Float=0f,val y: Float=0f)
+internal data class Person(val id: String=newId(),val givenName: String="",val gender: String="unknown",val note: String="",val x: Float=0f,val y: Float=0f,
+    val middleName: String="",val surname: String="",val mentionedFrom: String="",val mentionedTo: String="",val legacyName: String="") {
+    val name: String get()=listOf(givenName,middleName,surname).filter {it.isNotBlank()}.joinToString(" ").ifBlank {legacyName}
+}
+
 internal data class LifeEvent(val id: String=newId(),val kind: String="genealogy.mentioned",val title: String="",val date: String="",val place: String="",val note: String="",val roles: Map<String,String> = emptyMap(),val x: Float=0f,val y: Float=0f)
 internal data class Evidence(val id: String=newId(),val person: String,val caption: String,val note: String="",val file: String="",val mime: String="application/octet-stream")
 internal data class FamilyTree(val id: String=newId(),val title: String,val people: List<Person> = emptyList(),val events: List<LifeEvent> = emptyList(),val evidence: List<Evidence> = emptyList())
@@ -20,6 +24,8 @@ internal object GenealogyEdits {
         check(ids.toSet().size==ids.size && ids.all {it.isNotBlank()},"invalid")
         val people=tree.people.map {it.id}.toSet()
         check(tree.people.all {it.name.isNotBlank() && it.x.isFinite() && it.y.isFinite()},"name")
+        check(tree.people.all {GenealogyDates.canonical(it.mentionedFrom) && GenealogyDates.canonical(it.mentionedTo)},"date")
+        check(tree.people.all {GenealogyDates.ordered(it.mentionedFrom,it.mentionedTo)},"dateRange")
         val parents=mutableMapOf<String,MutableSet<String>>()
         val parentSlots=mutableMapOf<Pair<String,String>,String>()
         tree.events.forEach { event ->
@@ -64,8 +70,15 @@ internal object GenealogyEdits {
         throw GenealogyProblem("invalid")
     }
     fun person(tree: FamilyTree,value: Person,birth: String,death: String): FamilyTree {
+        val previous=tree.people.firstOrNull {it.id==value.id}
+        val oldBirth=tree.events.firstOrNull {it.kind=="genealogy.birth" && it.roles["subject"]==value.id}?.date.orEmpty()
+        val oldDeath=tree.events.firstOrNull {it.kind=="genealogy.death" && it.roles["subject"]==value.id}?.date.orEmpty()
+        listOf(birth to oldBirth,death to oldDeath,value.mentionedFrom to previous?.mentionedFrom.orEmpty(),value.mentionedTo to previous?.mentionedTo.orEmpty()).forEach {(date,old) ->
+            if(date!=old && !GenealogyDates.canonical(date))throw GenealogyProblem("date")
+        }
+        if(!GenealogyDates.ordered(value.mentionedFrom,value.mentionedTo))throw GenealogyProblem("dateRange")
         val position=if(tree.people.any {it.id==value.id}) value.x to value.y else freePosition(tree,value.x,value.y)
-        var next=tree.copy(people=tree.people.filterNot {it.id==value.id}+value.copy(name=value.name.trim(),x=position.first,y=position.second))
+        var next=tree.copy(people=tree.people.filterNot {it.id==value.id}+value.copy(givenName=value.givenName.trim(),middleName=value.middleName.trim(),surname=value.surname.trim(),legacyName=if(listOf(value.givenName,value.middleName,value.surname).any {it.isNotBlank()})"" else value.legacyName,x=position.first,y=position.second))
         listOf("genealogy.birth" to birth,"genealogy.death" to death).forEach { (kind,date) ->
             val old=next.events.firstOrNull {it.kind==kind && it.roles["subject"]==value.id}
             if(old!=null) next=next.copy(events=next.events.map {if(it.id==old.id) it.copy(date=date.trim()) else it})
@@ -89,6 +102,11 @@ internal object GenealogyEdits {
             else (old ?: LifeEvent(kind="genealogy.parentage",roles=mapOf("subject" to child),x=(p.x+q.x)/2+160,y=(p.y+q.y)/2)).let {it.copy(roles=it.roles+(role to parent))}
         val position=if(old==null)freePosition(tree,event.x,event.y) else event.x to event.y
         return tree.copy(events=tree.events.filterNot {it.id==event.id}+event.copy(x=position.first,y=position.second)).also(::validate)
+    }
+    fun event(tree: FamilyTree,value: LifeEvent): FamilyTree {
+        val old=tree.events.first {it.id==value.id}
+        if(value.date!=old.date && !GenealogyDates.canonical(value.date))throw GenealogyProblem("date")
+        return tree.copy(events=tree.events.map {if(it.id==value.id)value else it}).also(::validate)
     }
     fun move(tree: FamilyTree,id: String,x: Float,y: Float)=tree.copy(people=tree.people.map {if(it.id==id)it.copy(x=x,y=y) else it},events=tree.events.map {if(it.id==id)it.copy(x=x,y=y) else it}).also(::validate)
 }

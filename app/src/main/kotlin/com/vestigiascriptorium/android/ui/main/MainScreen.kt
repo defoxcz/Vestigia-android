@@ -122,8 +122,8 @@ fun DarkModulesPreview() { VestigiaScriptoriumTheme(darkTheme=true) { VestigiaAp
 fun GenealogyPreview() { VestigiaScriptoriumTheme {
     com.vestigiascriptorium.android.genealogy.GenealogyGraph(
         com.vestigiascriptorium.android.genealogy.FamilyTree(title="Rodina Novákových",people=listOf(
-            com.vestigiascriptorium.android.genealogy.Person(id="anna",name="Anna Nováková",x=30f,y=260f),
-            com.vestigiascriptorium.android.genealogy.Person(id="jan",name="Jan Novák",x=30f,y=20f)),events=listOf(
+            com.vestigiascriptorium.android.genealogy.Person(id="anna",givenName="Anna Nováková",x=30f,y=260f),
+            com.vestigiascriptorium.android.genealogy.Person(id="jan",givenName="Jan Novák",x=30f,y=20f)),events=listOf(
             com.vestigiascriptorium.android.genealogy.LifeEvent(kind="genealogy.parentage",roles=mapOf("subject" to "anna","genealogy.father" to "jan"),x=180f,y=140f))),
         com.vestigiascriptorium.android.genealogy.GraphView(),Copy(true),{}, {}, {_,_,_ ->},Modifier.fillMaxSize())
 } }

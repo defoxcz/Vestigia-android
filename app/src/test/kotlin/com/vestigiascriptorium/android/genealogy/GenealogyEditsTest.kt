@@ -4,9 +4,9 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GenealogyEditsTest {
-    private val child=Person(id="child",name="Dítě")
-    private val father=Person(id="father",name="Otec")
-    private val mother=Person(id="mother",name="Matka")
+    private val child=Person(id="child",givenName="Dítě")
+    private val father=Person(id="father",givenName="Otec")
+    private val mother=Person(id="mother",givenName="Matka")
     private val tree=FamilyTree(title="Rod",people=listOf(child,father,mother))
     @Test fun relativesUseUndatedSharedParentageAndDoNotInventBirthOrMarriage() {
         val withFather=GenealogyEdits.relate(tree,child.id,father.id,Relative.FATHER)
@@ -34,8 +34,8 @@ class GenealogyEditsTest {
     }
     @Test fun personDateEditPreservesOtherBirthRolesAndGeometry() {
         val born=tree.copy(events=listOf(LifeEvent(kind="genealogy.birth",date="1820",roles=mapOf("subject" to child.id,"genealogy.father" to father.id),x=99f,y=11f)))
-        val result=GenealogyEdits.person(born,child.copy(name="Nové jméno"),"kolem 1821","")
-        assertEquals("kolem 1821",result.events.single().date)
+        val result=GenealogyEdits.person(born,child.copy(givenName="Nové jméno"),"1821","")
+        assertEquals("1821",result.events.single().date)
         assertEquals(born.events.single().roles,result.events.single().roles)
         assertEquals(99f,result.events.single().x)
         assertEquals("Nové jméno",result.people.last().name)
@@ -44,6 +44,14 @@ class GenealogyEditsTest {
         val moved=GenealogyEdits.move(tree,child.id,240f,-50f)
         assertEquals(tree.events,moved.events);assertEquals(240f,moved.people.first().x)
         problem("invalid") {GenealogyEdits.validate(tree.copy(evidence=listOf(Evidence(person="missing",caption="Doklad"))))}
+    }
+    @Test fun mentionDatesRejectInvalidOrderAndKeepYearPrecision() {
+        val person=child.copy(givenName="Jan",middleName="Karel",surname="Novák",mentionedFrom="1820",mentionedTo="1820-02-03")
+        val result=GenealogyEdits.person(tree,person,"","")
+        assertEquals("Jan Karel Novák",result.people.last().name)
+        assertEquals("1820",result.people.last().mentionedFrom)
+        problem("dateRange") {GenealogyEdits.person(tree,person.copy(mentionedFrom="1821"),"","")}
+        problem("date") {GenealogyEdits.person(tree,person.copy(mentionedFrom="0000"),"","")}
     }
     private fun problem(expected: String,action: ()->Unit) {try {action();fail("Expected $expected")} catch(e: GenealogyProblem) {assertEquals(expected,e.code)}}
 }

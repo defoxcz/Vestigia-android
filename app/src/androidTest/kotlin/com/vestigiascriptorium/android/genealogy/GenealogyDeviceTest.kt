@@ -13,7 +13,7 @@ import java.io.File
 class GenealogyDeviceTest {
     @Test fun reopenPreservesRelationshipsEvidenceAndViewAndRejectsInvalidSave() {
         isolated {root ->
-            val p=Person(name="Anna",note="Poznámka",x=-200f,y=300f);val father=Person(name="Jan")
+            val p=Person(givenName="Anna",note="Poznámka",x=-200f,y=300f);val father=Person(givenName="Jan")
             val tree=GenealogyEdits.relate(FamilyTree(title="Zkušební rod",people=listOf(p,father)),p.id,father.id,Relative.FATHER).let {it.copy(evidence=listOf(Evidence(person=p.id,caption="Matrika 12, str. 45",note="Citace bez souboru")))}
             val view=GraphView(-25f,43f,.75f,p.id)
             GenealogyStore(root).use {store ->
@@ -31,7 +31,7 @@ class GenealogyDeviceTest {
                     val controller=GenealogyController(store,scope)
                     suspend fun waitFor(test: (GenealogyState)->Boolean)=withTimeout(10_000) {controller.state.first {it.ready && !it.busy && test(it)}}
                     waitFor {it.tree==null};controller.create("Rodina");val created=waitFor {it.tree!=null}.tree!!
-                    val p=Person(name="Anna");val q=Person(name="Jan")
+                    val p=Person(givenName="Anna");val q=Person(givenName="Jan")
                     controller.edit {it.copy(people=listOf(p,q))};waitFor {it.revision==1L}
                     controller.edit {GenealogyEdits.relate(it,p.id,q.id,Relative.FATHER)};val linked=waitFor {it.revision==2L}.tree!!
                     controller.edit {GenealogyEdits.relate(it,q.id,p.id,Relative.FATHER)};assertEquals("cycle",waitFor {it.error!=null}.error)
@@ -40,6 +40,33 @@ class GenealogyDeviceTest {
                     controller.redo();assertEquals(linked,waitFor {it.revision==4L}.tree);assertEquals(linked,store.read(created.id))
                     controller.closeTree();waitFor {it.tree==null};controller.open(created.id);assertEquals(linked,waitFor {it.tree!=null}.tree)
                 } finally {scope.cancel()}
+            }
+        }
+    }
+    @Test fun legacyV1NamesDatesRolesAndIdsSurviveAnEditAndV2Reopen() {
+        isolated {root ->
+            val legacy="""{"format":1,"id":"legacy-tree","title":"Starý rod","people":[{"id":"p","name":"Jan Karel de Novák","gender":"male","note":"Původní poznámka","x":12,"y":34}],"events":[{"id":"birth","kind":"genealogy.birth","title":"","date":"kolem 1820","place":"","note":"","roles":{"subject":"p"},"x":150,"y":80}],"evidence":[]}"""
+            GenealogyStore(root).close()
+            android.database.sqlite.SQLiteDatabase.openDatabase(File(root,"genealogy.sqlite").path,null,0).use {db ->
+                db.execSQL("INSERT INTO trees(id,title,payload) VALUES(?,?,?)",arrayOf("legacy-tree","Starý rod",legacy))
+                db.version=1
+            }
+            GenealogyStore(root).use {store ->
+                val old=store.read("legacy-tree")
+                assertEquals("Jan Karel de Novák",old.people.single().legacyName)
+                val edited=GenealogyEdits.person(old,old.people.single().copy(note="Nová poznámka"),"kolem 1820","")
+                store.save(edited)
+            }
+            GenealogyStore(root).use {store ->
+                val reopened=store.read("legacy-tree")
+                assertEquals("Jan Karel de Novák",reopened.people.single().name)
+                assertEquals("p",reopened.people.single().id)
+                assertEquals("kolem 1820",reopened.events.single().date)
+                assertEquals(mapOf("subject" to "p"),reopened.events.single().roles)
+                val split=GenealogyEdits.person(reopened,reopened.people.single().copy(givenName="Jan",middleName="Karel",surname="de Novák",mentionedFrom="1840",mentionedTo="1870-01-02"),"kolem 1820","")
+                store.save(split)
+                assertEquals("",store.read("legacy-tree").people.single().legacyName)
+                assertEquals("Karel",store.read("legacy-tree").people.single().middleName)
             }
         }
     }

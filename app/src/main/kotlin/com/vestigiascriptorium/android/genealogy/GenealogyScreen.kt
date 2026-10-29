@@ -31,7 +31,7 @@ import com.vestigiascriptorium.android.ui.main.Copy
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExit: ()->Unit) {
+internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExit: ()->Unit,onPeople: (String)->Unit={},selectedPerson: String?=null,onSelectionConsumed: ()->Unit={}) {
     val state by controller.state.collectAsStateWithLifecycle()
     val tree=state.tree
     val latestBusy by rememberUpdatedState(state.busy)
@@ -46,7 +46,6 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     var discard by remember {mutableStateOf(false)}
     var relative by rememberSaveable {mutableStateOf<String?>(null)}
     var evidence by rememberSaveable {mutableStateOf<String?>(null)}
-    var search by rememberSaveable {mutableStateOf(false)}
     var pending by remember {mutableStateOf(false)}
     var pendingRevision by remember {mutableLongStateOf(0)}
     val editorStates=rememberSaveableStateHolder()
@@ -65,6 +64,12 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         val zoom=state.view.zoom
         controller.view(state.view.copy(selected=id,x=graphSize.width/density/2-(x+98)*zoom,y=30-y*zoom))
         editor=id;dirty=false;fullEditor=false
+    }
+    LaunchedEffect(selectedPerson,state.ready,tree?.id,graphSize) {
+        if(selectedPerson!=null && state.ready && tree!=null && graphSize.width>0) {
+            if(tree.people.any {it.id==selectedPerson})select(selectedPerson)
+            onSelectionConsumed()
+        }
     }
     // Keep drafts visible if saving fails. Close only after a successful committed command.
     LaunchedEffect(state.revision,state.error) {
@@ -92,12 +97,12 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
                 try {context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(doc.file),doc.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))}
                 catch(_: Exception) {localError=copy.t("Doklad nelze otevřít. Soubor mohl být přesunut nebo chybí vhodná aplikace.","Unable to open evidence. The file may have moved or no suitable app is installed.")}
             })
-        else currentTree.events.firstOrNull {it.id==id}?.let {event -> EventPanel(currentTree,event,copy,state.busy,{dirty=it},::closeEditor,{value -> pending=true;pendingRevision=state.revision;controller.edit {it.copy(events=it.events.map {e -> if(e.id==value.id)value else e}).also(GenealogyEdits::validate)}})}
+        else currentTree.events.firstOrNull {it.id==id}?.let {event -> EventPanel(currentTree,event,copy,state.busy,{dirty=it},::closeEditor,{value -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.event(it,value)}})}
     }
     @Composable fun Panel() {editor?.let {id -> editorStates.SaveableStateProvider(editorSession) {EditorBody()}}}
     Scaffold(topBar={TopAppBar(title={Column {Text(tree?.title ?: copy.t("Rodokmeny","Family trees"),maxLines=1,overflow=TextOverflow.Ellipsis);AppVersionLabel()}},
         navigationIcon={TextButton(enabled=!state.busy,onClick={if(editor!=null)closeEditor() else if(tree!=null)controller.closeTree() else onExit()},modifier=Modifier.semantics {contentDescription=copy.t("Zpět","Back")}) {Text("‹")}},
-        actions={if(tree!=null) TextButton(enabled=!state.busy,onClick={search=true}) {Text(copy.t("Osoby","People"))}})},
+        actions={if(tree!=null) TextButton(enabled=!state.busy && editor==null,onClick={onPeople(tree.id)}) {Text(copy.t("Osoby","People"))}})},
         bottomBar={if(tree!=null) Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=8.dp),horizontalArrangement=Arrangement.SpaceBetween) {
             TextButton(enabled=state.undo && !state.busy && editor==null,onClick=controller::undo) {Text(copy.t("Zpět","Undo"))}
             TextButton(enabled=state.redo && !state.busy && editor==null,onClick=controller::redo) {Text(copy.t("Znovu","Redo"))}
@@ -137,7 +142,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     // Wide panels are composed below to avoid separate editor state implementations.
     if(create) NameDialog(copy,state.busy,onDismiss={create=false},onCreate={controller.create(it);create=false})
     if(discard) AlertDialog(onDismissRequest={discard=false},title={Text(copy.t("Zahodit změny?","Discard changes?"))},text={Text(copy.t("Rozpracované údaje nejsou uložené.","The edited details have not been saved."))},confirmButton={TextButton(onClick={discard=false;dismissEditor()}) {Text(copy.t("Zahodit","Discard"))}},dismissButton={TextButton(onClick={discard=false}) {Text(copy.t("Pokračovat v úpravách","Keep editing"))}})
-    relative?.let {id -> if(tree!=null) RelativeDialog(tree,id,copy,state.busy,onDismiss={relative=null},onSave={existing,name,kind ->
+    relative?.let {id -> if(tree!=null) RelativeDialog(tree,id,copy,state.busy,onDismiss={relative=null},onSave={existing,newPerson,kind ->
         pending=true;pendingRevision=state.revision
         controller.edit {before ->
             val selected=before.people.first {it.id==id}
@@ -145,16 +150,17 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             val dy=if(kind in listOf(Relative.FATHER,Relative.MOTHER)) -250f else if(kind==Relative.SPOUSE) 0f else 250f
             val dx=if(kind==Relative.MOTHER || kind==Relative.SPOUSE) 300f else -50f
             val pos=GenealogyEdits.freePosition(before,selected.x+dx,selected.y+dy)
-            val withPerson=if(existing!=null) before else before.copy(people=before.people+Person(id=other,name=name.trim(),x=pos.first,y=pos.second))
+            val withPerson=if(existing!=null) before else before.copy(people=before.people+newPerson.copy(id=other,x=pos.first,y=pos.second))
             GenealogyEdits.relate(withPerson,id,other,kind)
         }
     })}
     evidence?.let {id -> EvidenceDialog(id,copy,state.busy,onDismiss={evidence=null},onSave={doc ->pending=true;pendingRevision=state.revision;controller.edit {it.copy(evidence=it.evidence+doc).also(GenealogyEdits::validate)}})}
-    if(search && tree!=null) PeopleDialog(tree,copy,onDismiss={search=false},onSelect={p ->search=false;select(p.id)})
     (state.error?.let {problem(it,copy)} ?: localError)?.let {message -> AlertDialog(onDismissRequest={controller.clearError();localError=null},title={Text(copy.t("Změnu nelze dokončit","Unable to complete change"))},text={Text(message)},confirmButton={TextButton(onClick={controller.clearError();localError=null}) {Text("OK")}})}
 }
 
 private fun problem(code: String,c: Copy)=when(code) {
+    "date" -> c.t("Zadejte platné celé datum nebo čtyřmístný rok.","Enter a valid full date or four-digit year.")
+    "dateRange" -> c.t("Údaj připomínán do nesmí předcházet údaji od.","Mentioned until cannot precede mentioned from.")
     "name" -> c.t("Vyplňte název rodokmenu a jméno osoby.","Enter a tree title and a person's name.")
     "self" -> c.t("Osoba nemůže být svým vlastním příbuzným ani obsadit dvě role v jedné události.","A person cannot be related to themselves or occupy two roles in one event.")
     "cycle" -> c.t("Vazba by vytvořila cyklus rodičovství.","The relationship would create an ancestry cycle.")

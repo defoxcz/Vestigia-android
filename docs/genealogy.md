@@ -7,8 +7,9 @@ oprávnění, stejně jako pomůcky. Nepřidává žádnou výjimku přihlášen
 ## Práce s rodokmenem
 
 1. Moduly → Genealogie → Nový rodokmen. Vyplnit název.
-2. + Osoba otevře editor. Povinné je jméno, volitelné pohlaví, životní data a
-   poznámky. Data mohou být neúplná nebo přibližná; ukládají se jako zadaný text.
+2. + Osoba otevře editor. Jméno je rozdělené na jméno, druhé jméno a příjmení; stačí alespoň jedna
+   neprázdná část. Volitelné jsou pohlaví, životní data, připomínán od/do a
+   poznámky. Data podporují celé datum nebo samotný rok podle systémového locale.
 3. Uložit osobu vloží box do grafu. Klepnutí na box otevře přehled a akci Upravit.
 4. Přidat příbuzného nabídne otce, matku, partnera nebo dítě s výslovně vybranou
    rodičovskou rolí. Je možné vyhledat a připojit existující osobu nebo ji založit.
@@ -20,7 +21,8 @@ oprávnění, stejně jako pomůcky. Nepřidává žádnou výjimku přihlášen
 
 Graf se posouvá po pozadí prstem a přibližuje dvěma prsty. Delší podržení boxu
 zahájí přesun. Přizpůsobit zahrne všechny boxy do dostupné pracovní plochy.
-Osoby v horní liště otevřou hledatelný seznam; výběr přesune graf k osobě.
+Osoby v horní liště otevřou samostatnou aktivitu se seznamem a našeptáváním;
+výběr vrátí uživatele do grafu a otevře přehled vybrané osoby.
 Běžné editace nepřeskládávají ostatní boxy. Osoby a události mají vlastní boxy,
 čáry představují účast osoby v konkrétní roli události.
 
@@ -50,7 +52,7 @@ Podklady: desktopové `registergraphdata.h`, `eventrelationships.{h,cpp}`,
   vazba na sebe a cykly rodičovství. Neplatná změna nevstoupí do úložiště ani
   historie. Validace platí také při přímé změně role v editoru události.
 
-Android formát je **samostatný formát v1**, nikoli kompatibilní desktopový projekt.
+Android formát je **samostatný formát v2 s načítáním v1**, nikoli kompatibilní desktopový projekt.
 Stabilní UUID, osoby, události, role, citace a geometrie jsou oddělené. Automatický
 import/export desktopu, GEDCOM, normalizované výřezy, portréty, synchronizace,
 pokročilé typy vztahů a automatické uspořádání nejsou v této etapě implementované.
@@ -97,3 +99,48 @@ vizuálně zkontrolovány ze snímků telefonu. Jeden meziběh UI runneru ztrati
 Compose hierarchii; následné úplné opakování obou UI scénářů prošlo.
 Sestavení Debug/Release a Lint obou variant prošly. Tablet a otevírání konkrétních
 externích poskytovatelů dokladů nebyly fyzicky ověřené.
+
+
+## Jména, data a samostatný seznam osob (1.0.0013)
+
+Jméno má `givenName`, `middleName`, `surname`. Stejná pole mají nová osoba
+a průvodce připojením příbuzného. Původní celá jména z formátu v1 jsou uložena
+beze změny v `legacyName`; aplikace neodhaduje rozdělení víceslovných příjmení.
+V editoru se ukáže dosavadní zápis. Vyplnění strukturovaných polí jej při uložení
+nahradí. Samotná změna poznámky původní jméno zachová. UUID, vazby, doklady
+a geometrie se nemění. Staré záznamy se převádějí až při běžném uložení,
+bez hromadného přepisování knihovny.
+
+Sdílený datumový editor v osobě i události má přesnost Celé datum / Pouze rok.
+Používá pořadí a oddělovače systémového formátovacího locale, čtyřmístný rok
+a kontrolu skutečného kalendářního dne (včetně přestupných let). Uložení je
+nezávislé na locale: ISO `YYYY-MM-DD`, případně `YYYY`. Samotný rok se nikdy
+nepřevádí na 1. leden. Přepnutí roku na celé datum vyžaduje doplnění nového
+data; prázdný údaj znamená neznámé. Neplatný vstup blokuje Uložit. Starší
+volné zápisy typu kolem 1820 zůstávají beze změny; pro nahrazení uživatel
+výslovně zvolí novou přesnost. Nejde o novou podporu jiných kalendářů.
+
+Připomínán od/do jsou samostatné atributy osoby, také s přesností dne nebo roku.
+Kontroluje se pořadí intervalu; rok představuje celý rok pro porovnání mezí,
+nikoli vymyšlené uložené datum.
+
+`PeopleActivity` čte aktuální uložený rodokmen v IO vlákně a zachovává společnou
+kontrolu účtu. Seznam má sloupce Příjmení, Jméno (včetně druhého jména), Rok.
+Primárně se řadí podle příjmení s locale-aware kolací. Rok je rok narození,
+jinak Připomínán od s označením př. Hledání porovnává jméno a orientační rok,
+ignoruje velikost písmen a diakritiku a více slov musí odpovídat současně.
+Našeptávač nabízí nejvýše šest konkrétních osob; doporučení i seznam vycházejí
+z aktuálního textu včetně nahrazení návrhem IME. Výběr pracuje s UUID a vrací
+se přes výsledek aktivity k osobě v původním grafu, bez ztráty historie.
+
+JVM testy pokrývají cs-CZ, en-US, en-GB, de-DE a fr-FR, přesnost roku, neplatné
+dny, interval připomínání, řazení a hledání. Device test ověřuje načtení v1,
+úpravu a opětovné načtení v2 se zachovaným celým jménem a historickým datem.
+UI testy navíc ověřují tři části jména, připomínání, obnovu návrhu, přepínače
+přesnosti, živé našeptávání a nahrazení textu s diakritikou.
+
+Ověření 1.0.0013: všech 31 JVM testů, sedm genealogických device/UI testů,
+sestavení obou variant a Lint Debug/Release prošly. Testy pracovaly jen
+s vlastními dočasnými rodokmeny. Seznam osob byl vizuálně zkontrolován
+ze snímku skutečného telefonu. Locale varianty byly ověřeny jednotkově;
+systémové jazykové nastavení telefonu se při testech neměnilo.
