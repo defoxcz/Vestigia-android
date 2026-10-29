@@ -10,10 +10,10 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.vestigiascriptorium.android.ui.BackButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,7 +68,7 @@ internal fun AidReaderScreen(aid: Aid,copy: Copy,source: AidReaderSource,onBack:
         finally { if(isActive) loading=false }
     }
     BackHandler(enabled=selected!=null) { selected=null;record=null }
-    Scaffold(topBar={TopAppBar(title={Column { Text(copy.title(aid),maxLines=1,overflow=TextOverflow.Ellipsis);com.vestigiascriptorium.android.ui.AppVersionLabel() }},navigationIcon={IconButton(onClick={if(selected!=null) {selected=null;record=null} else onBack()},modifier=Modifier.semantics { contentDescription=copy.t("Zpět","Back") }) { Mark(5) }})}) { padding ->
+    Scaffold(topBar={TopAppBar(title={Column { Text(copy.title(aid),maxLines=1,overflow=TextOverflow.Ellipsis);com.vestigiascriptorium.android.ui.AppVersionLabel() }},navigationIcon={BackButton(onClick={if(selected!=null) {selected=null;record=null} else onBack()},label=copy.t("Zpět","Back"))})}) { padding ->
         Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize().imePadding()) {
             when {
                 error -> Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {

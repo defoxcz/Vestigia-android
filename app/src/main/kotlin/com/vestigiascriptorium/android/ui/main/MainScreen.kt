@@ -12,6 +12,7 @@ import com.vestigiascriptorium.android.aids.AidLibraryModel
 import com.vestigiascriptorium.android.aids.AidLibraryState
 import com.vestigiascriptorium.android.aids.AidNetwork
 import com.vestigiascriptorium.android.aids.reader.AidReaderActivity
+import com.vestigiascriptorium.android.ui.BackButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -65,7 +66,7 @@ internal fun VestigiaApp(initialTab: Int = 0,
                     Text("SCRIPTORIUM",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     com.vestigiascriptorium.android.ui.AppVersionLabel()
                 }},
-                navigationIcon={if(detail!=null) IconButton(onClick={detail=null},modifier=Modifier.semantics { contentDescription=copy.t("Zpět","Back") }) { Mark(5) }},
+                navigationIcon={if(detail!=null) BackButton(onClick={detail=null},label=copy.t("Zpět","Back"))},
                 actions={ com.vestigiascriptorium.android.account.AccountButton(); TextButton(onClick={info=copy.t("Soukromé bádání","Private research")}) { Text(copy.t("Moje bádání","My research")) } }
             )
         },

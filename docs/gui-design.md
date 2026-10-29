@@ -19,7 +19,8 @@ modul desktopu.
 
 Telefon má tři stálé cíle: Moduly, Pomůcky, Stahování. Od šířky okna 700 dp se
 spodní navigace mění na boční lištu. Detaily podporují horní tlačítko Zpět i
-systémové gesto. Inkoustová modř, světlý papír a patkové nadpisy doplňují čitelné
+systémové gesto. Všechny aktivity používají společnou komponentu `BackButton`
+se stejnou šipkou, dotykovou plochou a lokalizovaným přístupným popiskem. Inkoustová modř, světlý papír a patkové nadpisy doplňují čitelné
 systémové popisky. Podporován je tmavý režim, čeština a angličtina.
 
 ## Genealogie jako další pracovní modul

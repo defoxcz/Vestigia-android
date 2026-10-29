@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
+import com.vestigiascriptorium.android.ui.BackButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
@@ -105,7 +106,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     }
     @Composable fun Panel() {editor?.let {id -> editorStates.SaveableStateProvider(editorSession) {EditorBody()}}}
     Scaffold(topBar={TopAppBar(title={Column {Text(tree?.title ?: copy.t("Rodokmeny","Family trees"),maxLines=1,overflow=TextOverflow.Ellipsis);AppVersionLabel()}},
-        navigationIcon={TextButton(enabled=!state.busy,onClick={if(editor!=null)closeEditor() else if(tree!=null)controller.closeTree() else onExit()},modifier=Modifier.semantics {contentDescription=copy.t("Zpět","Back")}) {Text("‹")}},
+        navigationIcon={BackButton(enabled=!state.busy,onClick={if(editor!=null)closeEditor() else if(tree!=null)controller.closeTree() else onExit()},label=copy.t("Zpět","Back"))},
         actions={if(tree!=null) TextButton(enabled=!state.busy && editor==null,onClick={onPeople(tree.id)}) {Text(copy.t("Osoby","People"))}})},
         bottomBar={if(tree!=null) Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=8.dp),horizontalArrangement=Arrangement.SpaceBetween) {
             TextButton(enabled=state.undo && !state.busy && editor==null,onClick=controller::undo) {Text(copy.t("Zpět","Undo"))}
