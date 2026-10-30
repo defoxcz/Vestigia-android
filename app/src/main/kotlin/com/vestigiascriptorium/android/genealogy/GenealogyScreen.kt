@@ -49,6 +49,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     var discard by remember {mutableStateOf(false)}
     var relative by rememberSaveable {mutableStateOf<String?>(null)}
     var evidence by rememberSaveable {mutableStateOf<String?>(null)}
+    var relativeAfterSave by rememberSaveable {mutableStateOf<String?>(null)}
     var pending by remember {mutableStateOf(false)}
     var pendingRevision by remember {mutableLongStateOf(0)}
     val editorStates=rememberSaveableStateHolder()
@@ -66,7 +67,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         val x=p?.x ?: e?.x ?: 0f;val y=p?.y ?: e?.y ?: 0f
         val zoom=state.view.zoom
         val bounds=nodeBounds[id]
-        if(bounds==null && tree?.let {t ->GenealogyPresentation(t).connections.any {c ->c.events.any {it.id==id}}}==true)
+        if(bounds==null && e!=null)
             controller.view(state.view.copy(selected=id))
         else controller.view(state.view.copy(selected=id,x=graphSize.width/density/2-(x+(bounds?.width ?: 244f)/2)*zoom,y=30-y*zoom))
         editor=id;dirty=false;fullEditor=false
@@ -83,9 +84,9 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             if(editor=="new") state.tree?.people?.firstOrNull {it.id==draftId}?.let {p ->
                 controller.view(state.view.copy(selected=p.id,x=30-p.x*state.view.zoom,y=40-p.y*state.view.zoom))
             }
-            dismissEditor();relative=null;evidence=null;pending=false
+            dismissEditor();relative=relativeAfterSave;relativeAfterSave=null;evidence=null;pending=false
         }
-        else if(pending && state.error!=null) pending=false
+        else if(pending && state.error!=null) {pending=false;relativeAfterSave=null}
     }
     BackHandler {when {evidence!=null -> evidence=null;relative!=null -> relative=null;editor!=null -> closeEditor();tree!=null -> controller.closeTree();else -> onExit()}}
     @Composable fun EditorBody() {
@@ -95,6 +96,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         if(person!=null) PersonPanel(currentTree,person,id=="new",copy,state.busy,onDirty={dirty=it},onClose=::closeEditor,
             onExpand={fullEditor=true},media=controller.media,
             onSave={p,b,d -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
+            onSaveAndRelative={p,b,d ->relativeAfterSave=p.id;pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
             onRelative={relative=person.id},onEvidence={evidence=person.id},onOpenEvent={eventId ->editor=eventId;fullEditor=true;dirty=false},onEvent={kind ->
                 val old=currentTree.events.firstOrNull {it.kind==kind && it.roles["subject"]==person.id && kind!="genealogy.mentioned"}
                 if(old!=null) {editor=old.id;dirty=false}

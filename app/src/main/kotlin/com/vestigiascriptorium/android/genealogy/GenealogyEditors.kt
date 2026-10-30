@@ -29,7 +29,7 @@ internal fun NameDialog(c: Copy,busy: Boolean,onDismiss: ()->Unit,onCreate: (Str
 }
 
 @Composable
-internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,String,String)->Unit,onRelative: ()->Unit,onEvidence: ()->Unit,onOpenEvent: (String)->Unit,onEvent: (String)->Unit,onOpen: (Evidence)->Unit,media: GenealogyMedia?=null) {
+internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,String,String)->Unit,onRelative: ()->Unit,onEvidence: ()->Unit,onOpenEvent: (String)->Unit,onEvent: (String)->Unit,onOpen: (Evidence)->Unit,media: GenealogyMedia?=null,onSaveAndRelative: (Person,String,String)->Unit={_,_,_->}) {
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var portrait by rememberSaveable(person.id) {mutableStateOf(person.portrait)}
@@ -82,6 +82,8 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
                 GenealogyDateField(c.t("Připomínán od","Mentioned from"),mentionedFrom,c) {v,ok ->mentionedFrom=v;validDates=validDates+("from" to ok)}
                 GenealogyDateField(c.t("Připomínán do","Mentioned until"),mentionedTo,c) {v,ok ->mentionedTo=v;validDates=validDates+("to" to ok)}
                 if(!GenealogyDates.ordered(mentionedFrom,mentionedTo))Text(c.t("Připomínán do nesmí předcházet údaji od.","Mentioned until cannot precede mentioned from."),color=MaterialTheme.colorScheme.error)
+                OutlinedButton(enabled=!busy && !photoBusy && named && datesValid,onClick={onSaveAndRelative(person.copy(portrait=portrait,givenName=given,middleName=middle,surname=surname,mentionedFrom=mentionedFrom,mentionedTo=mentionedTo,gender=gender,note=note),birth,death)}) {Text(c.t("Přidat příbuzného","Add relative"))}
+                Text(c.t("Uloží osobu a otevře výběr příbuzného.","Saves the person and opens the relative picker."),style=MaterialTheme.typography.bodySmall)
                 OutlinedTextField(note,{note=it},Modifier.fillMaxWidth(),label={Text(c.t("Poznámky k osobě","Person notes"))},minLines=3)
             } else {
                 lifeDates(tree,person.id).takeIf {it.isNotBlank()}?.let {Text(it)}
@@ -97,7 +99,7 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
                 var eventKind by rememberSaveable(person.id) {mutableStateOf("genealogy.mentioned")}
                 Choice(c.t("Nová událost","New event"),GenealogyEdits.kinds.filter {it !in listOf("genealogy.parentage","genealogy.spousal-record","genealogy.marriage")},eventKind,{eventKind=it}) {eventLabel(it,c)}
                 TextButton(enabled=!busy,onClick={onEvent(eventKind)}) {Text(c.t("Přidat událost","Add event"))}
-                Text(c.t("Údaje události upravíte klepnutím na její box v grafu.","Tap an event box in the graph to edit its details."),style=MaterialTheme.typography.bodySmall)
+                Text(c.t("Údaje události upravíte v tomto seznamu u osoby.","Edit event details in this person’s event list."),style=MaterialTheme.typography.bodySmall)
                 HorizontalDivider()
                 Text(c.t("Dokumentace","Documentation"),style=MaterialTheme.typography.titleMedium)
                 tree.evidence.filter {it.person==person.id}.forEach {doc ->
@@ -162,8 +164,22 @@ internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolea
     AlertDialog(onDismissRequest=onDismiss,title={Text(c.t("Přidat příbuzného","Add relative"))},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         Choice(c.t("Vztah k vybrané osobě","Relationship to selected person"),Relative.entries.toList(),kind,{kind=it}) {when(it) {
             Relative.FATHER ->c.t("Otec","Father");Relative.MOTHER ->c.t("Matka","Mother");Relative.SPOUSE ->c.t("Partner / partnerka","Partner");Relative.CHILD_AS_FATHER ->c.t("Dítě · vybraná osoba je otec","Child · selected person is father");Relative.CHILD_AS_MOTHER ->c.t("Dítě · vybraná osoba je matka","Child · selected person is mother")}}
-        OutlinedTextField(query,{query=it},Modifier.fillMaxWidth(),label={Text(c.t("Hledat existující osobu","Find existing person"))},singleLine=true)
-        Choice(c.t("Osoba","Person"),listOf("")+tree.people.filter {it.id!=person && (it.name.contains(query,true) || it.id==existing)}.take(60).map {it.id},existing,{existing=it}) {id -> tree.people.firstOrNull {it.id==id}?.let {"${it.name} ${lifeDates(tree,id)}"} ?: c.t("Vytvořit novou osobu","Create new person")}
+        OutlinedTextField(query,{query=it;existing=""},Modifier.fillMaxWidth(),label={Text(c.t("Hledat existující osobu","Find existing person"))},singleLine=true)
+        val rows=remember(tree) {PeopleIndex.rows(tree,java.util.Locale.getDefault()).filter {it.person.id!=person}}
+        val matches=remember(rows,query) {PeopleIndex.filter(rows,query)}
+        if(query.isNotBlank() && existing.isEmpty()) {
+            if(matches.isEmpty())Text(c.t("Žádná odpovídající osoba","No matching person"))
+            matches.take(20).forEach {row ->
+                TextButton(modifier=Modifier.fillMaxWidth(),onClick={existing=row.person.id;query=row.person.name}) {
+                    Text(listOf(row.person.name,row.year?.toString().orEmpty()).filter {it.isNotEmpty()}.joinToString(" · "))
+                }
+            }
+            if(matches.size>20)Text(c.t("Zpřesněte hledání pro další osoby.","Refine the search for more people."))
+        }
+        if(existing.isNotEmpty()) {
+            Text(c.t("Vybraná osoba: ","Selected person: ")+tree.people.first {it.id==existing}.name)
+            TextButton(onClick={existing="";query=""}) {Text(c.t("Vytvořit novou osobu","Create new person"))}
+        }
         if(existing.isEmpty())NameFields(given,middle,surname,c,{given=it},{middle=it},{surname=it})
         Text(c.t("Uloží se záznam vztahu. Datum ani matriční doklad nejsou povinné.","A relationship record will be saved. No date or register page is required."),style=MaterialTheme.typography.bodySmall)
     }},confirmButton={TextButton(enabled=!busy && (existing.isNotEmpty() || listOf(given,middle,surname).any {it.isNotBlank()}),onClick={onSave(existing.takeIf {it.isNotEmpty()},Person(givenName=given.trim(),middleName=middle.trim(),surname=surname.trim()),kind)}) {Text(c.t("Připojit osobu","Connect person"))}},dismissButton={TextButton(enabled=!busy,onClick=onDismiss) {Text(c.t("Zrušit","Cancel"))}})

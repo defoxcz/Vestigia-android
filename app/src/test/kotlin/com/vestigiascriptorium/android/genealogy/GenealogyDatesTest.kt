@@ -13,6 +13,14 @@ class GenealogyDatesTest {
         assertEquals("1820-02-03",GenealogyDates.parse("2/3/1820","date",Locale.US))
         assertEquals("1820-03-02",GenealogyDates.parse("02/03/1820","date",Locale.UK))
     }
+    @Test fun unpaddedDayAndMonthRemainStrictCalendarDatesInLocaleOrder() {
+        assertEquals("1691-03-21",GenealogyDates.parse("21.3.1691","date",Locale.forLanguageTag("cs-CZ")))
+        assertEquals("1691-03-21",GenealogyDates.parse("21.03.1691","date",Locale.forLanguageTag("cs-CZ")))
+        assertEquals("1691-03-02",GenealogyDates.parse("2/3/1691","date",Locale.UK))
+        assertEquals("1691-02-03",GenealogyDates.parse("2/3/1691","date",Locale.US))
+        assertNull(GenealogyDates.parse("31.4.1691","date",Locale.forLanguageTag("cs-CZ")))
+        assertNull(GenealogyDates.parse("29.2.1691","date",Locale.forLanguageTag("cs-CZ")))
+    }
     @Test fun yearPrecisionAndInvalidDatesDoNotBecomeInventedFullDates() {
         assertEquals("1820",GenealogyDates.parse("1820","year",Locale.US))
         assertNull(GenealogyDates.full("1820"));assertNull(GenealogyDates.parse("1820","date",Locale.US))

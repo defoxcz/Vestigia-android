@@ -22,7 +22,7 @@ internal object GenealogyDates {
         if(mode=="year") return yearOnly(value)?.toString()?.padStart(4,'0')
         if(mode!="date") return null
         return try {
-            LocalDate.parse(value.replace(Regex("\\s+"),""),DateTimeFormatter.ofPattern(pattern(locale).replace(Regex("\\s+"),""),locale).withResolverStyle(ResolverStyle.STRICT))
+            LocalDate.parse(value.replace(Regex("\\s+"),""),DateTimeFormatter.ofPattern(pattern(locale).replace(Regex("\\s+"),"").replace(Regex("d+"),"d").replace(Regex("M+"),"M"),locale).withResolverStyle(ResolverStyle.STRICT))
                 .takeIf {it.year in 1..9999}?.toString()
         } catch(_: Exception) {null}
     }

@@ -16,15 +16,15 @@ oprávnění, stejně jako pomůcky. Nepřidává žádnou výjimku přihlášen
    Založení osoby a vazby je jedna transakce a jedna operace Zpět.
 5. Dokumentace u osoby uloží citaci/popisek a poznámku, volitelně odkaz na soubor
    vybraný systémovým dialogem. Soubor je možné otevřít v příslušné aplikaci.
-6. Box události otevře editor typu, názvu, data, místa, poznámky a osob v rolích.
+6. Událost v přehledu osoby otevře editor typu, názvu, data, místa, poznámky a osob v rolích.
    Typ lze změnit pouze na typ se stejnou sadou podporovaných rolí.
 
 Graf se posouvá po pozadí prstem a přibližuje dvěma prsty. Delší podržení boxu
 zahájí přesun. Přizpůsobit zahrne všechny boxy do dostupné pracovní plochy.
 Osoby v horní liště otevřou samostatnou aktivitu se seznamem a našeptáváním;
 výběr vrátí uživatele do grafu a otevře přehled vybrané osoby.
-Běžné editace nepřeskládávají ostatní boxy. Osoby a běžné události mají vlastní boxy. Úplný partnerský vztah/sňatek
-se zobrazuje přímou spojnicí osob; ostatní čáry představují účast v roli události.
+Běžné editace nepřeskládávají ostatní boxy. Vlastní boxy mají pouze osoby. Rodičovské i partnerské vztahy se zobrazují
+přímými spojnicemi osob. Události zůstávají datovými záznamy bez vlastních boxů.
 
 Na telefonu je přehled/editor ve vysouvacím spodním panelu, na širokém okně
 v pravém panelu. Uložit potvrdí návrh; zavření změněného editoru žádá potvrzení
@@ -225,3 +225,31 @@ Finální sestavení 1.0.0018: 41 JVM testů, Lint Debug/Release a osm
 databázových testů na zařízení prošly. Po odemčení telefonu prošlo také všech osm UI scénářů: graf a editor,
 partnerství, seznam osob a portrét/import. Aktualizace obou variant používá
 výhradně instalaci `-r` se zachováním dat.
+
+## Editor osoby a graf (1.0.0019)
+
+Celé datum přijímá den a měsíc s jednou i dvěma číslicemi (např. `21.3.1691`
+a `21.03.1691`). Pořadí i oddělovače určuje locale systému; kontrola skutečných
+kalendářních dnů a přesnost Pouze rok zůstávají zachované.
+
+**Přidat příbuzného** je dostupné také při zakládání a editaci osoby. Akce uloží
+platné údaje osoby a ihned otevře výběr příbuzného. Pokud uživatel výběr zruší,
+uložená osoba a její změny zůstanou zachované. Neplatné datum nebo prázdné jméno
+akci blokuje. Selhání zápisu ponechá návrh v editoru a výběr neotevře.
+
+Pole **Hledat existující osobu** zobrazuje výsledky přímo pod zadávaným textem.
+Používá společný PeopleIndex: více slov, bez rozlišení diakritiky a velikosti
+písmen, jméno i rok narození/připomínán od. Klepnutí vybere konkrétní UUID;
+další změna textu včetně nahrazení klávesnicí starý výběr zruší. Prvních 20
+výsledků doprovází výzva ke zpřesnění při větším počtu.
+
+V grafu jsou pouze boxy osob. Rodiče se propojují přímo s dítětem; více záznamů
+narození/křtu/rodičovství pro tutéž vazbu nevytváří další čáry. Údaje událostí,
+role, geometrie a UUID v databázi zůstávají zachované; jejich editory se otevírají
+z přehledu osoby. Přizpůsobení a hledání volného místa ignorují skryté události.
+
+Ověření 1.0.0019: 43 JVM testů a Lint obou variant prošly; sestavení Debug,
+Release a instrumentačních testů prošlo. Nový UI scénář pokrývá založení osoby
+přes Přidat příbuzného, datum bez nul, vyhledání bez diakritiky, nahrazení dotazu,
+připojení existujícího UUID a nepřítomnost boxů událostí. Jeho spuštění na
+telefonu zatím nebylo možné: zařízení není připojeno k ADB.

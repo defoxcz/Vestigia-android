@@ -6,6 +6,7 @@ internal data class PartnerConnection(val first: String,val second: String,val e
         ?: events.firstOrNull {it.kind=="genealogy.marriage"}?.id ?: events.first().id
     val weddingDates: List<String> get()=events.filter {it.kind=="genealogy.marriage"}.map {it.date}.filter {it.isNotBlank()}.distinct().sortedBy(::dateOrder)
 }
+internal data class ParentConnection(val parent: String,val child: String,val role: String)
 internal data class PartnerEntry(val person: Person,val connection: PartnerConnection)
 internal data class PersonBoxData(val years: String,val partners: List<PartnerEntry>)
 internal data class GraphBox(val x: Float,val y: Float,val width: Float,val height: Float)
@@ -18,8 +19,13 @@ internal class GenealogyPresentation(val tree: FamilyTree) {
     }.groupBy {it.roles.values.sorted()}.map {(ids,events) ->PartnerConnection(ids[0],ids[1],events)}
     private val order=tree.events.mapIndexed {index,event ->event.id to index}.toMap()
     private val connectionsByPerson=connections.flatMap {listOf(it.first to it,it.second to it)}.groupBy({it.first},{it.second})
-    private val hidden=connections.flatMap {it.events}.map {it.id}.toSet()
-    val visibleEvents=tree.events.filterNot {it.id in hidden}
+    // Events remain editable through the person; only people have graph cards.
+    val parents=tree.events.filter {it.kind in setOf("genealogy.birth","genealogy.baptism","genealogy.parentage")}.flatMap {event ->
+        val child=event.roles["subject"]
+        if(child !in people)emptyList() else listOf("genealogy.father","genealogy.mother").mapNotNull {role ->
+            event.roles[role]?.takeIf {it in people}?.let {ParentConnection(it,child!!,role)}
+        }
+    }.distinct()
     private val lifeEvents=tree.events.filter {it.kind in listOf("genealogy.birth","genealogy.death")}.groupBy {it.roles["subject"]}
     fun person(id: String,cs: Boolean=true): PersonBoxData {
         val subject=people.getValue(id)

@@ -23,7 +23,6 @@ class GenealogyPresentationTest {
         val incomplete=LifeEvent(kind="genealogy.spousal-record",roles=mapOf("subject" to "a"))
         val source=tree.copy(events=listOf(relation,incomplete))
         val view=GenealogyPresentation(source)
-        assertEquals(listOf(incomplete),view.visibleEvents)
         assertEquals("rel",view.connections.single().editId)
         assertEquals(listOf(relation,incomplete),source.events)
         assertTrue(view.person("a").partners.single().connection.weddingDates.isEmpty())
@@ -40,7 +39,12 @@ class GenealogyPresentationTest {
         assertEquals(listOf("1840","1845-02-03"),rows.first().connection.weddingDates)
         assertEquals("early",rows.first().connection.editId)
         assertEquals(2,view.connections.size)
-        assertTrue(view.visibleEvents.isEmpty())
+    }
+    @Test fun parentalEventsProduceDirectDeduplicatedPersonConnections() {
+        val roles=mapOf("subject" to "c","genealogy.father" to "a","genealogy.mother" to "b")
+        val source=tree.copy(events=listOf(LifeEvent(kind="genealogy.birth",roles=roles),LifeEvent(kind="genealogy.baptism",roles=roles)))
+        assertEquals(setOf(ParentConnection("a","c","genealogy.father"),ParentConnection("b","c","genealogy.mother")),GenealogyPresentation(source).parents.toSet())
+        assertEquals(2,source.events.size)
     }
     @Test fun segmentAnchorsRespectDifferentBoxSizesAndTouchDistanceIsFinite() {
         val a=GraphBox(0f,0f,244f,210f);val b=GraphBox(400f,30f,244f,160f)

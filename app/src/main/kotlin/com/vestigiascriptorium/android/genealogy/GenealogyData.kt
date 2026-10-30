@@ -64,8 +64,7 @@ internal object GenealogyEdits {
     }
     fun freePosition(tree: FamilyTree,x: Float,y: Float,width: Float=244f,height: Float=88f): Pair<Float,Float> {
         val presentation=GenealogyPresentation(tree)
-        val occupied=tree.people.map {GraphBox(it.x,it.y,244f,88f+presentation.person(it.id).partners.size*54f)}+
-            presentation.visibleEvents.map {GraphBox(it.x,it.y,196f,88f)}
+        val occupied=tree.people.map {GraphBox(it.x,it.y,244f,88f+presentation.person(it.id).partners.size*54f)}
         for(i in 0..10000) {
             val px=x+(i%5)*300f;val py=y+(i/5)*180f
             if(occupied.none {px+width+24>it.x && px<it.x+it.width+24 && py+height+24>it.y && py<it.y+it.height+24}) return px to py

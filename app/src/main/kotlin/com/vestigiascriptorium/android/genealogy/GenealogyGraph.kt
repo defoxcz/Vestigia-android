@@ -23,9 +23,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.*
 import com.vestigiascriptorium.android.ui.main.Copy
 import kotlin.math.roundToInt
@@ -61,8 +58,6 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
     val latestSelect by rememberUpdatedState(onSelect)
     val ink=MaterialTheme.colorScheme.outline
     val primary=MaterialTheme.colorScheme.primary
-    val paper=MaterialTheme.colorScheme.background
-    val textMeasurer=rememberTextMeasurer()
     var liveDrag by remember(tree.id) {mutableStateOf<Pair<String,Offset>?>(null)}
     LaunchedEffect(tree) {liveDrag=null}
     val locale=java.util.Locale.getDefault(java.util.Locale.Category.FORMAT)
@@ -82,16 +77,11 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 }
             })
         }
-        presentation.visibleEvents.forEach {e -> put(e.id,buildList {
-            add(BoxLine(e.title.ifBlank {eventLabel(e.kind,copy)},true,2))
-            val text=listOf(GenealogyDates.format(e.date,locale),e.place).filter {it.isNotBlank()}.joinToString(" · ")
-            if(text.isNotBlank())add(BoxLine(text,limit=2))
-        })}
+
     }}
     var measuredSizes by remember(tree.id) {mutableStateOf<Map<String,IntSize>>(emptyMap())}
     val positions=remember(presentation) {buildMap {
         tree.people.forEach {put(it.id,GraphBox(it.x,it.y,244f,88f))}
-        presentation.visibleEvents.forEach {put(it.id,GraphBox(it.x,it.y,196f,88f))}
     }}
     val boxes=remember(positions,measuredSizes,density,view.zoom) {positions.mapValues {(id,box) ->
         measuredSizes[id]?.let {box.copy(height=it.height/(density.density*view.zoom))} ?: box
@@ -134,16 +124,10 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
         }}
         .semantics {contentDescription=copy.t("Graf vazeb. Posun prstem, přiblížení dvěma prsty.","Connections graph. Drag to pan, pinch to zoom.")}) {
         Canvas(Modifier.fillMaxSize()) {
-            presentation.visibleEvents.forEach {event -> event.roles.forEach {(role,id) -> if(id in boxes) {
-                val ends=connectionEnds(liveBox(event.id),liveBox(id));val start=screen(ends.first);val end=screen(ends.second)
-                drawLine(ink,start,end,2.dp.toPx())
-                if(view.zoom>=.5f) {
-                    val label=textMeasurer.measure(eventRoleLabel(event.kind,role,copy),TextStyle(color=ink,fontSize=11.sp))
-                    val origin=(start+end)/2f-Offset(label.size.width/2f,label.size.height/2f)
-                    drawRect(paper,origin-Offset(3.dp.toPx(),1.dp.toPx()),androidx.compose.ui.geometry.Size(label.size.width+6.dp.toPx(),label.size.height+2.dp.toPx()))
-                    drawText(label,topLeft=origin)
-                }
-            }}}
+            presentation.parents.forEach {connection ->
+                val ends=connectionEnds(liveBox(connection.parent),liveBox(connection.child))
+                drawLine(ink,screen(ends.first),screen(ends.second),2.dp.toPx())
+            }
             presentation.connections.forEach {connection ->
                 val ends=connectionEnds(liveBox(connection.first),liveBox(connection.second))
                 drawLine(if(connection.events.any {it.id==view.selected})primary else ink,screen(ends.first),screen(ends.second),if(connection.events.any {it.id==view.selected})3.dp.toPx() else 2.dp.toPx())

@@ -91,7 +91,8 @@ class GenealogyUiTest {
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.name=="Anna upravená Nováková" && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithText("Přizpůsobit").performClick()
-            rule.onNodeWithText("Narození").performClick()
+            rule.onNodeWithText("Anna upravená Nováková").performClick()
+            rule.onNodeWithText("Narození · 1820").performScrollTo().performClick()
             rule.onNodeWithText("Místo události").performScrollTo().performTextInput("Břeclav")
             rule.onNodeWithText("Uložit událost").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.events?.single()?.place=="Břeclav" && !controller.state.value.busy}

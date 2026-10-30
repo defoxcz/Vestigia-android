@@ -37,8 +37,8 @@ existence skenu nebo matričního záznamu není podmínkou zadávání.
   tlačítko Přizpůsobit a návrat k vybrané osobě. Přesun boxu až po delším podržení,
   aby běžný posun pohledu omylem neměnil rozložení.
 - Osobní box: jméno, životní data a případně portrét. Vybraná osoba se zvýrazní.
-  Události mohou být samostatnými uzly; zjednodušený pohled je může skrýt,
-  ale zachová jejich význam a role v datech.
+  Události jsou skryté datové záznamy bez vlastních uzlů. Graf zobrazuje
+  přímé rodičovské a partnerské spojnice; význam a role událostí zůstávají v datech.
 - Plovoucí + nabídne Osobu, Příbuzného k výběru a Událost. Pro příbuzného je
   vždy dostupné připojení existující osoby, aby nevznikaly zbytečné duplicity.
 - Akce Zpět/Znovu jsou dostupné z kompaktního ovládání grafu. Automatické
@@ -77,7 +77,7 @@ kompatibilita importu/exportu se ověří zvlášť nad kopiemi dat. Přímé ot
 živých desktopových projektů ani synchronizace zatím nejsou slíbené.
 
 Vykreslování navrhujeme pomocí Compose Canvas pro hrany a pozadí s interaktivními
-boxy osob/událostí nad ním. Datové souřadnice jsou nezávislé na zoomu a hustotě
+boxy osob nad ním. Datové souřadnice jsou nezávislé na zoomu a hustotě
 displeje. Viditelné oblasti omezují vykreslování; změna osoby nebo tažení boxu
 nepřepočítává celý graf. Rozložení lze počítat mimo hlavní vlákno, zachovat
 ruční pozice a výsledky použít pouze pro aktuální verzi dat. Konkrétní výkon
@@ -144,3 +144,7 @@ Premium nebo administrátorskou roli. V horní liště je **Účet** se stavem,
 termínem online ověření, ručním ověřením a odhlášením. Odebrání přístupu
 zobrazí vstupní kontrolu bez smazání knihovny. Debug i Release používají stejné
 podmínky a samostatné relace. Technické podrobnosti jsou v README.
+
+Od 1.0.0019 mají v genealogickém grafu vlastní box pouze osoby. Události jsou
+skryté datové záznamy upravitelné z přehledu osoby; rodiče a partneři mají přímé
+spojnice. Přidání příbuzného je dostupné také přímo v editoru nové osoby.
