@@ -382,3 +382,40 @@ telefonu prošly. Test záměrně umístí dítě mimo původní osu otce a po s
 porovnává skutečné středy obou boxů. Kontroluje také řádek `1830–1880`, editaci
 manželky, Undo/Redo a návrat k samostatným boxům. Geometrický test pokrývá
 jediné dítě i vystředění nad dětmi z více manželství a zachování zdrojových boxů.
+
+## Obrázky z Google Disku (1.0.0026)
+
+Editor portrétu i dialog Dokumentace mají tlačítko **Google Disk / soubory**.
+Otevře systémovou nabídku aplikací pro výběr obrázku, včetně Google Disku,
+pokud je nainstalovaný a přihlášený. Stejnou cestou lze použít i jiné dostupné
+poskytovatele. Původní výběr souboru zůstává dostupný. Používá se Android
+`ACTION_GET_CONTENT` s `image/*` a bez omezení jen na místní soubory; nevyžaduje
+přihlašovací údaje ke Google účtu, Google API ani oprávnění k celému úložišti.
+
+Vybraný obrázek se načte jako stream mimo hlavní vlákno a uloží do vlastního
+soukromého úložiště. Není potřeba trvalé oprávnění k URI. Poskytuje-li zdroj
+místo přímého souboru obrazovou reprezentaci, načítání umí použít typovaný
+obrazový stream. Probíhá stejná kontrola skutečného obrázku, rozměrů a limitu
+32 MiB jako u místního portrétu. Ukládání osoby/dokladu počká na dokončení
+kopie. Přerušený, nedostupný nebo nepodporovaný vstup nevymění předchozí obrázek.
+
+Obrázky vložené touto volbou do Dokumentace jsou také vlastní kopie; standardní
+výběr dokumentu nadále zachovává existující chování s odkazem a SAF oprávněním.
+Po úspěšném zkopírování není obrázek závislý na dostupnosti původního cloudového
+souboru. Originál na Disku aplikace nemění.
+
+Podklady: [Android — výběr obsahu](https://developer.android.com/guide/components/intents-common#Storage)
+a [přístup k souborům a obrazovým reprezentacím](https://developer.android.com/training/data-storage/shared/documents-files).
+
+
+Ověření 1.0.0026: na skutečném telefonu prošlo pět UI scénářů, včetně nového
+výběru a kopírování cloudového obrázku do portrétu i dokumentace. Syntetický
+poskytovatel v testovacím APK odmítá přímé otevření a poskytne až typovaný
+obrazový stream přes pipe bez známé délky. Test kontroluje vlastní kopii a MIME
+PNG, nikoli trvalý přístup k původnímu URI. Na telefonu byla ověřena dostupnost
+Google Disku pro `GET_CONTENT image/*` s `CATEGORY_OPENABLE`; uživatelovy skutečné
+soukromé soubory z Disku se při testování nevybíraly ani nečetly.
+
+Finální sestavení 1.0.0026: Debug/Release, všech 49 JVM testů a Lint obou variant
+prošly. Obě varianty jsou aktualizované výhradně instalací `-r`, bez odinstalace
+nebo mazání uživatelských dat.

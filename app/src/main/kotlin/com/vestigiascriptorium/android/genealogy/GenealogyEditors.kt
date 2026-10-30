@@ -35,12 +35,14 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
     var portrait by rememberSaveable(person.id) {mutableStateOf(person.portrait)}
     var photoBusy by remember {mutableStateOf(false)}
     var photoError by remember {mutableStateOf(false)}
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri ->if(uri!=null && media!=null)scope.launch {
+    fun importPortrait(uri: Uri?) {if(uri!=null && media!=null)scope.launch {
         photoBusy=true;photoError=false
-        try {portrait=withContext(Dispatchers.IO) {val job=kotlin.coroutines.coroutineContext;media.add(context.contentResolver.openInputStream(uri) ?: error("image")) {job.ensureActive()}}}
+        try {portrait=withContext(Dispatchers.IO) {val job=kotlin.coroutines.coroutineContext;media.importImage(context.contentResolver,uri) {job.ensureActive()}}}
         catch(e: Exception) {if(e is kotlinx.coroutines.CancellationException)throw e;photoError=true}
         finally {photoBusy=false}
     }}
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {importPortrait(it)}
+    val cloudPicker=rememberLauncherForActivityResult(CloudImagePicker()) {importPortrait(it)}
     var editing by rememberSaveable(person.id) {mutableStateOf(isNew)}
     var given by rememberSaveable(person.id) {mutableStateOf(person.givenName)}
     var middle by rememberSaveable(person.id) {mutableStateOf(person.middleName)}
@@ -72,8 +74,9 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
                     OutlinedButton(enabled=!busy && !photoBusy && media!=null,onClick={picker.launch(arrayOf("image/*"))}) {Text(if(portrait.isEmpty())c.t("Vložit obrázek","Add portrait") else c.t("Změnit obrázek","Change portrait"))}
                     if(portrait.isNotEmpty())TextButton(enabled=!busy && !photoBusy,onClick={portrait=""}) {Text(c.t("Odstranit obrázek","Remove portrait"))}
                 }
+                OutlinedButton(enabled=!busy && !photoBusy && media!=null,onClick={cloudPicker.launch(Unit)}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
                 if(photoBusy)LinearProgressIndicator(Modifier.fillMaxWidth())
-                if(photoError)Text(c.t("Obrázek nelze načíst. Vyberte podporovaný obrázek do 32 MB.","Unable to read image. Choose a supported image up to 32 MB."),color=MaterialTheme.colorScheme.error)
+                if(photoError)Text(c.t("Obrázek nelze načíst. Zkontrolujte připojení a přístup ke zdroji. Vyberte podporovaný obrázek do 32 MB.","Unable to read image. Check your connection and access. Choose a supported image up to 32 MB."),color=MaterialTheme.colorScheme.error)
                 if(person.legacyName.isNotBlank())Text(c.t("Dosavadní celé jméno: ","Legacy full name: ")+person.legacyName,style=MaterialTheme.typography.bodySmall)
                 NameFields(given,middle,surname,c,{given=it},{middle=it},{surname=it})
                 Choice(c.t("Pohlaví","Gender"),listOf("unknown","male","female"),gender,{gender=it}) {when(it) {"male" -> c.t("Muž","Male");"female" -> c.t("Žena","Female");else -> c.t("Neurčeno","Unknown")}}
@@ -191,13 +194,23 @@ internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolea
 }
 
 @Composable
-internal fun EvidenceDialog(person: String,c: Copy,busy: Boolean,onDismiss: ()->Unit,onSave: (Evidence)->Unit) {
+internal fun EvidenceDialog(person: String,c: Copy,busy: Boolean,onDismiss: ()->Unit,onSave: (Evidence)->Unit,media: GenealogyMedia?=null) {
     var caption by rememberSaveable {mutableStateOf("")}
     var note by rememberSaveable {mutableStateOf("")}
     var uri by rememberSaveable {mutableStateOf("")}
     var mime by rememberSaveable {mutableStateOf("application/octet-stream")}
     var error by remember {mutableStateOf(false)}
     val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    var copying by remember {mutableStateOf(false)}
+    val cloudPicker=rememberLauncherForActivityResult(CloudImagePicker()) {selected ->if(selected!=null && media!=null)scope.launch {
+        copying=true;error=false
+        try {
+            val copy=withContext(Dispatchers.IO) {val job=kotlin.coroutines.coroutineContext;val key=media.importImage(context.contentResolver,selected) {job.ensureActive()};key to media.imageMime(key)}
+            uri="managed:"+copy.first;mime=copy.second
+        } catch(e: Exception) {if(e is kotlinx.coroutines.CancellationException)throw e;error=true}
+        finally {copying=false}
+    }}
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {value -> if(value!=null) {
         try {context.contentResolver.takePersistableUriPermission(value,Intent.FLAG_GRANT_READ_URI_PERMISSION);uri=value.toString();mime=context.contentResolver.getType(value) ?: "application/octet-stream";error=false}
         catch(_: Exception) {error=true}
@@ -205,11 +218,13 @@ internal fun EvidenceDialog(person: String,c: Copy,busy: Boolean,onDismiss: ()->
     AlertDialog(onDismissRequest=onDismiss,title={Text(c.t("Dokumentace osoby","Person documentation"))},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(caption,{caption=it},Modifier.fillMaxWidth(),label={Text(c.t("Popisek dokladu / citace","Evidence caption / citation"))})
         OutlinedTextField(note,{note=it},Modifier.fillMaxWidth(),label={Text(c.t("Poznámka k dokladu","Evidence note"))},minLines=2)
-        OutlinedButton(onClick={picker.launch(arrayOf("image/*","application/pdf","text/plain"))}) {Text(if(uri.isEmpty())c.t("Vybrat soubor","Choose file") else c.t("Změnit vybraný soubor","Change selected file"))}
+        OutlinedButton(enabled=!busy && !copying,onClick={picker.launch(arrayOf("image/*","application/pdf","text/plain"))}) {Text(if(uri.isEmpty())c.t("Vybrat soubor","Choose file") else c.t("Změnit vybraný soubor","Change selected file"))}
+        if(media!=null)OutlinedButton(enabled=!busy && !copying,onClick={cloudPicker.launch(Unit)}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
+        if(copying)LinearProgressIndicator(Modifier.fillMaxWidth())
         if(uri.isNotEmpty()) Text(c.t("Soubor vybrán","File selected"))
-        Text(c.t("Soubor zůstává ve vybraném úložišti. Pokud jej přesunete nebo odeberete přístup, doklad nepůjde otevřít. Lze uložit také samotnou citaci.","The file stays in its selected location. Moving it or revoking access may prevent opening it. You can also save a citation alone."),style=MaterialTheme.typography.bodySmall)
-        if(error)Text(c.t("Trvalý přístup k souboru se nepodařilo získat.","Unable to retain access to the file."),color=MaterialTheme.colorScheme.error)
-    }},confirmButton={TextButton(enabled=!busy && caption.isNotBlank(),onClick={onSave(Evidence(person=person,caption=caption.trim(),note=note,file=uri,mime=mime))}) {Text(c.t("Uložit doklad","Save evidence"))}},dismissButton={TextButton(enabled=!busy,onClick=onDismiss) {Text(c.t("Zrušit","Cancel"))}})
+        Text(if(uri.startsWith("managed:"))c.t("Obrázek je uložen jako vlastní kopie. Původní soubor se nemění.","The image is stored as a local copy. The original is unchanged.") else c.t("Soubor zůstává ve vybraném úložišti. Pokud jej přesunete nebo odeberete přístup, doklad nepůjde otevřít. Lze uložit také samotnou citaci.","The file stays in its selected location. Moving it or revoking access may prevent opening it. You can also save a citation alone."),style=MaterialTheme.typography.bodySmall)
+        if(error)Text(c.t("Soubor se nepodařilo načíst. Zkontrolujte připojení a přístup ke zdroji; obrázek musí být podporovaný a do 32 MB.","Unable to read the file. Check your connection and access; images must be supported and up to 32 MB."),color=MaterialTheme.colorScheme.error)
+    }},confirmButton={TextButton(enabled=!busy && !copying && caption.isNotBlank(),onClick={onSave(Evidence(person=person,caption=caption.trim(),note=note,file=uri,mime=mime))}) {Text(c.t("Uložit doklad","Save evidence"))}},dismissButton={TextButton(enabled=!busy,onClick=onDismiss) {Text(c.t("Zrušit","Cancel"))}})
 }
 
 @Composable

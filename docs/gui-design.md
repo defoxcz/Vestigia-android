@@ -160,3 +160,6 @@ ručně lze měnit vodorovnou pozici osoby.
 Od 1.0.0024 mají Zpět/Znovu/Přizpůsobit ikonová tlačítka s nápovědou. Vedle
 nich lze zapnout manželky ve společném boxu manžela; předvolba se ukládá a
 společné děti navazují na spodní hranu boxu otce. Jméno manželky je klikatelné.
+
+Od 1.0.0026 lze portrét i obrazovou dokumentaci vložit tlačítkem Google Disk /
+soubory. Vybraný obrázek se uloží jako vlastní kopie; načítání probíhá mimo UI.

@@ -35,6 +35,11 @@ public final class PhotoFixtureProvider extends ContentProvider {
             return pipe[0];
         } catch(IOException e) { throw new FileNotFoundException(); }
     }
+    @Override public android.content.res.AssetFileDescriptor openTypedAssetFile(Uri uri,String mime,android.os.Bundle options) throws FileNotFoundException {
+        if (uri.getPath().equals("/cloud-portrait.png") && mime.startsWith("image/"))
+            return new android.content.res.AssetFileDescriptor(openFile(Uri.parse("content://fixture/portrait.png"),"r"),0,android.content.res.AssetFileDescriptor.UNKNOWN_LENGTH);
+        return super.openTypedAssetFile(uri,mime,options);
+    }
     @Override public Uri insert(Uri uri, ContentValues values) {throw new UnsupportedOperationException();}
     @Override public int delete(Uri uri, String selection, String[] args) {throw new UnsupportedOperationException();}
     @Override public int update(Uri uri, ContentValues values, String selection, String[] args) {throw new UnsupportedOperationException();}

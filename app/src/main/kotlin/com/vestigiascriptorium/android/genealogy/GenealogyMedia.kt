@@ -8,6 +8,18 @@ import java.security.MessageDigest
 internal class GenealogyMedia(val root: File) {
     init {check(root.isDirectory || root.mkdirs())}
     fun file(key: String): File?=key.takeIf {it.matches(Regex("[a-f0-9]{64}\\.(img|bin)"))}?.let {File(root,it)}?.takeIf {it.isFile}
+    fun importImage(resolver: android.content.ContentResolver,uri: android.net.Uri,cancel: ()->Unit={}): String {
+        try {
+            return add(resolver.openInputStream(uri) ?: throw java.io.FileNotFoundException(),cancel)
+        } catch(original: java.io.FileNotFoundException) {
+            // Some cloud providers export an image representation instead of a raw file.
+            val asset=resolver.openTypedAssetFileDescriptor(uri,"image/*",null) ?: throw original
+            return asset.use {add(it.createInputStream(),cancel)}
+        }
+    }
+    fun imageMime(key: String): String=file(key)?.let {source ->
+        android.graphics.BitmapFactory.Options().apply {inJustDecodeBounds=true;android.graphics.BitmapFactory.decodeFile(source.path,this)}.outMimeType
+    } ?: "image/*"
     fun addDocument(input: InputStream,cancel: ()->Unit={}): String {
         val temp=File.createTempFile("document-",".tmp",root)
         try {

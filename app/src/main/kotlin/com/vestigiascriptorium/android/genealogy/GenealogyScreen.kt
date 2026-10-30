@@ -175,7 +175,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             if(secondParent!=null)GenealogyEdits.relate(related,other,secondParent,if(kind==Relative.CHILD_AS_FATHER)Relative.MOTHER else Relative.FATHER) else related
         }
     })}
-    evidence?.let {id -> EvidenceDialog(id,copy,state.busy,onDismiss={evidence=null},onSave={doc ->pending=true;pendingRevision=state.revision;controller.edit {it.copy(evidence=it.evidence+doc).also(GenealogyEdits::validate)}})}
+    evidence?.let {id -> EvidenceDialog(id,copy,state.busy,media=controller.media,onDismiss={evidence=null},onSave={doc ->pending=true;pendingRevision=state.revision;controller.edit {it.copy(evidence=it.evidence+doc).also(GenealogyEdits::validate)}})}
     (state.error?.let {problem(it,copy)} ?: localError)?.let {message -> AlertDialog(onDismissRequest={controller.clearError();localError=null},title={Text(copy.t("Změnu nelze dokončit","Unable to complete change"))},text={Text(message)},confirmButton={TextButton(onClick={controller.clearError();localError=null}) {Text("OK")}})}
 }
 

@@ -56,6 +56,38 @@ class PortraitImportUiTest {
         rule.onNodeWithContentDescription("Portrét osoby").assertIsDisplayed()
         Assert.assertEquals(key,store.read(tree.id).people.single().portrait)
     }
+    @Test fun cloudProviderImageCopiesIntoPortraitAndEvidenceWithoutPersistentUriGrants()=isolated {store,controller ->
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val chooser=CloudImagePicker().createIntent(context,Unit)
+        Assert.assertEquals(Intent.ACTION_CHOOSER,chooser.action)
+        @Suppress("DEPRECATION") val intent=chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        Assert.assertEquals(Intent.ACTION_GET_CONTENT,intent.action)
+        Assert.assertEquals("image/*",intent.type)
+        Assert.assertFalse(intent.getBooleanExtra(Intent.EXTRA_LOCAL_ONLY,true))
+        val person=Person(givenName="Cloud portrét");val tree=FamilyTree(title="Cloud",people=listOf(person))
+        store.save(tree)
+        rule.runOnIdle {controller.open(tree.id)}
+        val owner=registry("cloud-portrait.png")
+        rule.setContent {CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}}
+        waitText(person.name);rule.onNodeWithText(person.name).performClick();rule.onNodeWithText("Upravit").performClick()
+        rule.onNodeWithText("Google Disk / soubory").performScrollTo().performClick()
+        rule.waitUntil(10000) {rule.onAllNodesWithContentDescription("Portrét osoby").fetchSemanticsNodes().isNotEmpty()}
+        rule.onNodeWithText("Uložit osobu").performClick()
+        rule.waitUntil(10000) {controller.state.value.tree?.people?.single()?.portrait?.isNotEmpty()==true && !controller.state.value.busy}
+        rule.waitUntil(10000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
+        val key=store.read(tree.id).people.single().portrait
+        Assert.assertTrue(controller.media.file(key)!!.length()>0)
+        rule.onNodeWithText(person.name).performClick()
+        rule.onNodeWithText("Připojit dokumentaci").performScrollTo().performClick()
+        rule.onNodeWithText("Popisek dokladu / citace").performTextInput("Obrázek z cloudu")
+        rule.onNodeWithText("Google Disk / soubory").performClick()
+        waitText("Obrázek je uložen jako vlastní kopie. Původní soubor se nemění.")
+        rule.onNodeWithText("Uložit doklad").performClick()
+        rule.waitUntil(10000) {controller.state.value.tree?.evidence?.size==1 && !controller.state.value.busy}
+        val doc=store.read(tree.id).evidence.single()
+        Assert.assertEquals("managed:$key",doc.file)
+        Assert.assertEquals("image/png",doc.mime)
+    }
     @Test fun importPreviewRequiresConfirmationAndCreatesANewTree()=isolated {store,controller ->
         val owner=registry("family.ged")
         rule.setContent {CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}}
