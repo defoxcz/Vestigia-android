@@ -329,3 +329,36 @@ původního přetečení na další řádek a opět prošel. Snímek telefonu po
 zarovnání i větve dosahující k boxům. Grafové boxy nemají vynucené Material3
 48dp rozměrové odsazení, které při oddálení vytvářelo neviditelné okraje;
 měření tak odpovídá viditelným hranám. Test partnerů byl po této úpravě zopakován.
+
+
+## Ikony a manželky ve společném boxu (1.0.0024)
+
+Spodní lišta používá ikony Vrátit změnu, Znovu a Přizpůsobit. Mají přístupné
+popisky, nápovědu při podržení a zachovávají stav povolení příkazů. Vedle nich
+je přepínací ikona dvou osob v jednom boxu **Manželky v boxu manžela**. Výchozí
+zobrazení má samostatné boxy; zapnutou volbu si lokální genealogické úložiště
+pamatuje i při novém spuštění a pro ostatní rodokmeny. Nastavení je oddělené
+od historie editací a nesahá do dat osob ani pomůcek.
+
+Ve společném zobrazení obsahuje box manžela jména manželek, jejich dostupné
+životní letopočty a data svateb. Podtržené jméno otevře přehled/editaci konkrétní
+ženy; dostupná je také v samostatném seznamu Osoby. Rodinné větve pro společné
+děti začínají uprostřed spodní hrany boxu otce. Zachované jsou generační řádky,
+mezery a sourozenecké větve. Přepnutí zpět obnoví samostatné boxy bez migrace,
+změny UUID, rodičů, citací, portrétů nebo uložených souřadnic.
+
+Pro seskupení musí být pohlaví nebo rodičovské role rozpoznatelné. Žena s více
+partnery a matka dítěte, u kterého není uveden právě její manžel jako otec,
+zůstává samostatně: společný box by mohl naznačovat nesprávné rodičovství.
+Manžel s více manželkami se může seskupit s každou ženou, která má jediného
+partnera a splňuje toto pravidlo. Samostatný pár bez dětí lze také seskupit.
+Box reprezentuje oba členy domácnosti; vlastní osoby a vazby zůstávají oddělené
+v datech i při připojení předků manželky.
+
+Ověření 30. 10. 2026: 48 JVM testů a Lint obou variant prošly z čistého sestavení.
+Na telefonu prošel nový scénář ikon, seskupení, otevření/editace manželky,
+Undo/Redo, uložení předvolby a obnovení samostatných boxů; prošly také čtyři
+regresní scénáře editoru a partnerů. Finální scénář byl zopakován po doplnění
+popisku Manželka a podtrženého odkazu. Konflikt cache při souběžných Gradle
+bězích byl odstraněn čistou kompilací a obnovením Debug kompilace; běžný
+`scripts/test-device.sh` následně prošel. Sestavení se ověřovalo postupně.

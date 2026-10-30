@@ -156,3 +156,7 @@ ze spojnice rodičů a společnou sourozeneckou větev.
 Od 1.0.0022 graf zarovnává potomky do generačních řádků a sourozenecké větve
 do přesné poloviny skutečné mezery mezi řádky. Svislá poloha je dána generací;
 ručně lze měnit vodorovnou pozici osoby.
+
+Od 1.0.0024 mají Zpět/Znovu/Přizpůsobit ikonová tlačítka s nápovědou. Vedle
+nich lze zapnout manželky ve společném boxu manžela; předvolba se ukládá a
+společné děti navazují na spodní hranu boxu otce. Jméno manželky je klikatelné.

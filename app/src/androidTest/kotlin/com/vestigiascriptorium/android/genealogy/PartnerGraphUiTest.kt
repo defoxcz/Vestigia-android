@@ -30,7 +30,7 @@ class PartnerGraphUiTest {
         try {
             rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
             rule.waitUntil(10_000) {rule.onAllNodesWithTag("partner-link-union").fetchSemanticsNodes().isNotEmpty()}
-            rule.onNodeWithText("Přizpůsobit").performClick()
+            rule.onNodeWithContentDescription("Přizpůsobit").performClick()
             rule.onNodeWithTag("genealogy-node-union").assertDoesNotExist()
             rule.onNodeWithText("Partnerský vztah").assertDoesNotExist()
             rule.onNodeWithText("Partner: Anna Nováková").assertExists()

@@ -11,7 +11,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 
-internal data class GenealogyState(val revision: Long=0,val ready: Boolean=false,val busy: Boolean=false,val trees: List<Pair<String,String>> = emptyList(),val tree: FamilyTree?=null,val view: GraphView=GraphView(),val undo: Boolean=false,val redo: Boolean=false,val error: String?=null,val importPreview: ImportPreview?=null)
+internal data class GenealogyState(val revision: Long=0,val ready: Boolean=false,val busy: Boolean=false,val trees: List<Pair<String,String>> = emptyList(),val tree: FamilyTree?=null,val view: GraphView=GraphView(),val undo: Boolean=false,val redo: Boolean=false,val error: String?=null,val importPreview: ImportPreview?=null,val collapseWives: Boolean=false)
 internal class GenealogyController(private val store: GenealogyStore,private val scope: CoroutineScope) {
     val media=GenealogyMedia(File(store.root,"media"))
     private val mutable=MutableStateFlow(GenealogyState())
@@ -21,7 +21,7 @@ internal class GenealogyController(private val store: GenealogyStore,private val
     private var viewJob: Job?=null
     @Volatile private var importCanceled=false
     init {run { val trees=store.list();val id=store.last();val tree=id?.takeIf {key -> trees.any {it.first==key} }?.let(store::read)
-        mutable.value=GenealogyState(ready=true,trees=trees,tree=tree,view=tree?.let {store.view(it.id)} ?: GraphView()) } }
+        mutable.value=GenealogyState(ready=true,trees=trees,tree=tree,collapseWives=store.collapseWives(),view=tree?.let {store.view(it.id)} ?: GraphView()) } }
     private fun run(action: suspend ()->Unit) {scope.launch {lock.withLock {
         mutable.update {it.copy(busy=true,error=null)}
         try {withContext(Dispatchers.IO) {action()}}
@@ -29,6 +29,7 @@ internal class GenealogyController(private val store: GenealogyStore,private val
         catch(e: Exception) {mutable.update {it.copy(error=(e as? GenealogyProblem)?.code ?: (e as? ImportProblem)?.let {"import:"+it.reason} ?: "storage")}}
         finally {mutable.update {it.copy(ready=true,busy=false,undo=past.isNotEmpty(),redo=future.isNotEmpty())}}
     }}}
+    fun collapseWives(value: Boolean)=run {store.collapseWives(value);mutable.update {it.copy(collapseWives=value)}}
     fun clearError() {mutable.update {it.copy(error=null)}}
     fun create(title: String) = run {
         val tree=FamilyTree(title=title.trim());store.save(tree);store.last(tree.id)

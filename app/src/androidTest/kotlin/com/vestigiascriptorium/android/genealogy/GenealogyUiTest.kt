@@ -41,11 +41,11 @@ class GenealogyUiTest {
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.size==2 && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Připojit osobu").fetchSemanticsNodes().isEmpty()}
             Assert.assertEquals("genealogy.parentage",controller.state.value.tree!!.events.single().kind)
-            rule.onNodeWithText("Zpět").performClick()
+            rule.onNodeWithContentDescription("Vrátit změnu").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.size==1 && !controller.state.value.busy}
-            rule.onNodeWithText("Znovu").performClick()
+            rule.onNodeWithContentDescription("Znovu").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.size==2 && !controller.state.value.busy}
-            rule.onNodeWithText("Přizpůsobit").performClick()
+            rule.onNodeWithContentDescription("Přizpůsobit").performClick()
             rule.onNodeWithText("Jan Novák").assertIsDisplayed()
             screenshot("genealogy-graph-test.png")
             rule.onNodeWithContentDescription("Zpět").performClick()
@@ -90,7 +90,7 @@ class GenealogyUiTest {
             rule.onNodeWithText("Uložit osobu").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.name=="Anna upravená Nováková" && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
-            rule.onNodeWithText("Přizpůsobit").performClick()
+            rule.onNodeWithContentDescription("Přizpůsobit").performClick()
             rule.onNodeWithText("Anna upravená Nováková").performClick()
             rule.onNodeWithText("Narození · 1820").performScrollTo().performClick()
             rule.onNodeWithText("Místo události").performScrollTo().performTextInput("Břeclav")

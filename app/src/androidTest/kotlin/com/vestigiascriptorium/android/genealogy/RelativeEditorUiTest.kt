@@ -47,7 +47,7 @@ class RelativeEditorUiTest {
         Assert.assertEquals("1691-03-21",result.events.single {it.kind=="genealogy.birth"}.date)
         result.events.forEach {rule.onNodeWithTag("genealogy-node-${it.id}").assertDoesNotExist()}
         Assert.assertEquals(ParentConnection(father.id,anna.id,"genealogy.father"),GenealogyPresentation(result).parents.single())
-        rule.onNodeWithText("Přizpůsobit").performClick()
+        rule.onNodeWithContentDescription("Přizpůsobit").performClick()
         rule.onNodeWithText("Anna Dvořáková").performClick()
         rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Jméno").performTextReplacement("Anna Marie")
@@ -63,9 +63,9 @@ class RelativeEditorUiTest {
         store.save(source)
         rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
         rule.runOnIdle {controller.open(source.id)}
-        waitText("Přizpůsobit")
+        rule.waitUntil(10000) {rule.onAllNodesWithContentDescription("Přizpůsobit").fetchSemanticsNodes().isNotEmpty()}
         repeat(6) {index ->
-            rule.onNodeWithText("Přizpůsobit").performClick()
+            rule.onNodeWithContentDescription("Přizpůsobit").performClick()
             rule.onNodeWithTag("genealogy-node-${father.id}").performClick()
             rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
             rule.onNodeWithText("Vztah k vybrané osobě: Otec").performClick()
@@ -81,7 +81,7 @@ class RelativeEditorUiTest {
         val family=GenealogyPresentation(tree).families.single()
         Assert.assertEquals(setOf(father.id,mother.id),family.parents.toSet())
         Assert.assertEquals(6,family.children.size)
-        rule.onNodeWithText("Přizpůsobit").performClick()
+        rule.onNodeWithContentDescription("Přizpůsobit").performClick()
         rule.waitForIdle()
         val tops=family.children.map {rule.onNodeWithTag("genealogy-node-$it").fetchSemanticsNode().boundsInWindow.top}
         Assert.assertTrue("All six descendants must share a row",tops.max()-tops.min()<2f)

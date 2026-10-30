@@ -112,18 +112,27 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         navigationIcon={BackButton(enabled=!state.busy,onClick={if(editor!=null)closeEditor() else if(tree!=null)controller.closeTree() else onExit()},label=copy.t("Zpět","Back"))},
         actions={if(tree!=null) TextButton(enabled=!state.busy && editor==null,onClick={onPeople(tree.id)}) {Text(copy.t("Osoby","People"))}})},
         bottomBar={if(tree!=null) Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=8.dp),horizontalArrangement=Arrangement.SpaceBetween) {
-            TextButton(enabled=state.undo && !state.busy && editor==null,onClick=controller::undo) {Text(copy.t("Zpět","Undo"))}
-            TextButton(enabled=state.redo && !state.busy && editor==null,onClick=controller::redo) {Text(copy.t("Znovu","Redo"))}
-            TextButton(enabled=!state.busy && tree.people.isNotEmpty(),onClick={
+            GenealogyToolTip(copy.t("Vrátit změnu","Undo")) {
+            IconButton(enabled=state.undo && !state.busy && editor==null,onClick=controller::undo,modifier=Modifier.semantics {contentDescription=copy.t("Vrátit změnu","Undo")}) {GenealogyToolbarIcon(0)}
+            }
+            GenealogyToolTip(copy.t("Znovu","Redo")) {
+            IconButton(enabled=state.redo && !state.busy && editor==null,onClick=controller::redo,modifier=Modifier.semantics {contentDescription=copy.t("Znovu","Redo")}) {GenealogyToolbarIcon(1)}
+            }
+            GenealogyToolTip(copy.t("Přizpůsobit","Fit")) {
+            IconButton(modifier=Modifier.semantics {contentDescription=copy.t("Přizpůsobit","Fit")},enabled=!state.busy && tree.people.isNotEmpty(),onClick={
                 val nodes=nodeBounds.values.toList()
-                if(nodes.isEmpty())return@TextButton
+                if(nodes.isEmpty())return@IconButton
                 val width=graphSize.width/density
                 val height=graphSize.height/density
                 val minX=nodes.minOf {it.x};val minY=nodes.minOf {it.y}
                 val maxX=nodes.maxOf {it.x+it.width};val maxY=nodes.maxOf {it.y+it.height}
                 val scale=minOf((width-40)/(maxX-minX),(height-40)/(maxY-minY),1f).coerceIn(.2f,3f)
                 controller.view(state.view.copy(x=20-minX*scale,y=20-minY*scale,zoom=scale))
-            }) {Text(copy.t("Přizpůsobit","Fit"))}
+            }) {GenealogyToolbarIcon(2)}
+            }
+            GenealogyToolTip(copy.t("Manželky v boxu manžela","Wives in husband’s box")) {
+            IconToggleButton(checked=state.collapseWives,enabled=!state.busy && editor==null,onCheckedChange=controller::collapseWives,modifier=Modifier.semantics {contentDescription=copy.t("Manželky v boxu manžela","Wives in husband’s box")}) {GenealogyToolbarIcon(3)}
+            }
             Button(enabled=!state.busy,onClick={if(dirty)discard=true else {editorStates.removeState(editorSession);editorSession=newId();draftId=newId();editor="new";dirty=false}}) {Text(copy.t("+ Osoba","+ Person"))}
         }}
     ) {padding ->
@@ -137,7 +146,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         }
         else Row(Modifier.padding(padding).fillMaxSize()) {
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                GenealogyGraph(tree,state.view,copy,controller::view,::select,{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy,onBounds={nodeBounds=it},media=controller.media)
+                GenealogyGraph(tree,state.view,copy,controller::view,::select,{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy,onBounds={nodeBounds=it},media=controller.media,collapseWives=state.collapseWives)
                 if(tree.people.isEmpty()) Column(Modifier.align(Alignment.Center).padding(32.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
                     Text(copy.t("Přidejte první osobu","Add the first person"),style=MaterialTheme.typography.headlineSmall)
                     Text(copy.t("Graf nevyžaduje stránku matriky ani jiný doklad.","The graph does not require a register page or evidence."))

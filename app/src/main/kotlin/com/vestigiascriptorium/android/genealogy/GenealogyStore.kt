@@ -43,6 +43,8 @@ internal class GenealogyStore(val root: File): Closeable {
         try {db.insertWithOnConflict("trees",null,ContentValues().apply {put("id",tree.id);put("title",tree.title);put("payload",payload(tree))},SQLiteDatabase.CONFLICT_REPLACE).also {check(it!=-1L)};db.setTransactionSuccessful()}
         finally {db.endTransaction()}
     }
+    fun collapseWives()=db.rawQuery("SELECT value FROM settings WHERE key='collapse-wives'",null).use {it.moveToFirst() && it.getString(0)=="true"}
+    fun collapseWives(value: Boolean) {check(db.insertWithOnConflict("settings",null,ContentValues().apply {put("key","collapse-wives");put("value",value.toString())},SQLiteDatabase.CONFLICT_REPLACE)!=-1L)}
     fun last(): String?=db.rawQuery("SELECT value FROM settings WHERE key='open'",null).use {if(it.moveToFirst()) it.getString(0) else null}
     fun last(id: String?) {db.insertWithOnConflict("settings",null,ContentValues().apply {put("key","open");put("value",id)},SQLiteDatabase.CONFLICT_REPLACE).also {check(it!=-1L)}}
     fun view(id: String): GraphView=db.rawQuery("SELECT x,y,zoom,selected FROM workspace WHERE id=?",arrayOf(id)).use {if(it.moveToFirst()) GraphView(it.getFloat(0),it.getFloat(1),it.getFloat(2),it.getString(3)) else GraphView()}

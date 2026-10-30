@@ -51,7 +51,7 @@ class PortraitImportUiTest {
         rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.portrait?.isEmpty()==true && !controller.state.value.busy}
         rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
         rule.onNodeWithContentDescription("Portrét osoby").assertDoesNotExist()
-        rule.onNodeWithText("Zpět").performClick()
+        rule.onNodeWithContentDescription("Vrátit změnu").performClick()
         rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.portrait==key && !controller.state.value.busy}
         rule.onNodeWithContentDescription("Portrét osoby").assertIsDisplayed()
         Assert.assertEquals(key,store.read(tree.id).people.single().portrait)
