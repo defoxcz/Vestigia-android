@@ -16,15 +16,15 @@ class GenerationLayoutTest {
         val layout=GenerationLayout(tree,presentation)
         val boxes=layout.boxes(tree.people,mapOf("a" to 200f,"b" to 120f,"c0" to 180f))
         assertEquals(0f,boxes.getValue("b").y,0f)
-        assertEquals(setOf(360f),children.map {boxes.getValue(it.id).y}.toSet())
-        assertEquals(700f,boxes.getValue(grandchild.id).y,0f)
+        children.forEach {assertEquals(200f+160f/3f,boxes.getValue(it.id).y,.001f)}
+        assertEquals(380f+320f/3f,boxes.getValue(grandchild.id).y,.001f)
         val sorted=children.map {boxes.getValue(it.id)}.sortedBy {it.x}
         assertTrue(sorted.zipWithNext().all {(left,right) ->right.x>=left.x+left.width+24})
         val family=presentation.families.single {it.parents.size==2}
         val segments=familySegments(family,boxes,parentRowBottom=200f)
-        assertEquals(280f,segments[2].first.y,0f)
-        assertEquals(280f,segments[2].second.y,0f)
-        assertEquals(280f,segments[1].second.y,0f)
+        assertEquals(200f+80f/3f,segments[2].first.y,.001f)
+        assertEquals(200f+80f/3f,segments[2].second.y,.001f)
+        assertEquals(200f+80f/3f,segments[1].second.y,.001f)
         assertEquals(90f,b.y,0f) // layout never rewrites source positions
     }
     @Test fun siblingBusesShareTheRowMidpointEvenWithUnrelatedTallerBoxes() {

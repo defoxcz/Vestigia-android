@@ -311,7 +311,7 @@ Partneři a známí společní rodiče jsou ve stejné úrovni; potomci v násle
 úrovních. Také další sourozenec po zaplnění původních pěti pozic zůstane na
 stejném řádku. Boxy se vodorovně oddělují, aby se nepřekrývaly. Vyšší boxy
 s portrétem a dalšími partnery určují potřebnou výšku řádku. Mezera mezi řádky
-má 160 jednotek grafu. Sourozenecká vodorovná větev je přesně ve středu mezery
+má od 1.0.0023 třetinu původních 160 jednotek grafu (160/3, přibližně 53,33). Sourozenecká vodorovná větev je přesně ve středu mezery
 mezi dolním okrajem nejvyššího boxu rodičovské generace a horním okrajem boxů
 potomků; nevychází z výšky partnerské spojnice uvnitř rodičovských boxů.
 

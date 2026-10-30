@@ -35,7 +35,7 @@ internal class GenerationLayout(tree: FamilyTree,presentation: GenealogyPresenta
                 row.sortedWith(compareBy<Person> {it.x}.thenBy {it.id}).forEach {p ->
                     val x=maxOf(p.x,right);put(p.id,GraphBox(x,top,244f,heights[p.id] ?: 88f));right=x+300f
                 }
-                top+=row.maxOf {heights[it.id] ?: 88f}+160f
+                top+=row.maxOf {heights[it.id] ?: 88f}+160f/3f
             }
         }
     }
