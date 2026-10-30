@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vestigiascriptorium.android.ui.AppVersionLabel
 import com.vestigiascriptorium.android.ui.main.Copy
@@ -55,9 +56,19 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     val editorStates=rememberSaveableStateHolder()
     var localError by remember {mutableStateOf<String?>(null)}
     val context=LocalContext.current
-    val wide=with(LocalDensity.current) {LocalWindowInfo.current.containerSize.width.toDp()>=700.dp}
+    val windowSize=LocalWindowInfo.current.containerSize
+    val wide=with(LocalDensity.current) {windowSize.width.toDp()>=700.dp}
+    // Sheet insets vary with its offset. Do not derive its height from the sheet's
+    // changing constraints, otherwise the measured height moves the Expanded anchor.
+    val editorHeight=with(LocalDensity.current) {windowSize.height.toDp()*.9f}
+    val latestDirty by rememberUpdatedState(dirty)
+    // A changing callback is a saveable-state input in Material3 1.4. Keep its
+    // identity stable while reading the latest draft and storage state.
+    val confirmSheetChange=remember { {target: SheetValue ->
+        if(target==SheetValue.Hidden && latestDirty) {discard=true;false} else !latestBusy
+    } }
     val sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=fullEditor || editor=="new" || tree?.events?.any {it.id==editor}==true,
-        confirmValueChange={target -> if(target==SheetValue.Hidden && dirty) {discard=true;false} else !latestBusy})
+        confirmValueChange=confirmSheetChange)
     fun dismissEditor() {editorStates.removeState(editorSession);editor=null;dirty=false;fullEditor=false}
     fun closeEditor() {if(state.busy)return;if(dirty)discard=true else dismissEditor()}
     fun select(id: String) {
@@ -148,7 +159,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         }
     }
     // The same editor is used in the bottom sheet and the wide-window side panel.
-    if(tree!=null && editor!=null && !wide) ModalBottomSheet(onDismissRequest=::closeEditor,sheetState=sheetState) {Box(Modifier.fillMaxWidth().fillMaxHeight(.9f).imePadding()) {Panel()}}
+    if(tree!=null && editor!=null && !wide) ModalBottomSheet(onDismissRequest=::closeEditor,sheetState=sheetState) {Box(Modifier.fillMaxWidth().height(editorHeight).testTag("genealogy-editor-panel").imePadding()) {Panel()}}
     // Wide panels are composed below to avoid separate editor state implementations.
     if(importing || state.importPreview!=null) GenealogyImportDialog(controller,state,copy,onDismiss={importing=false;controller.cancelImport()})
     if(create) NameDialog(copy,state.busy,onDismiss={create=false},onCreate={controller.create(it);create=false})

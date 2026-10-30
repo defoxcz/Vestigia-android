@@ -257,3 +257,21 @@ První běh nového testu měl nejednoznačný selektor (stejné jméno v grafu 
 po omezení selektoru na dialog scénář prošel. Graf s přímou rodičovskou
 spojnicí byl také vizuálně zkontrolován. Release 1.0.0019 aktualizován přes
 `adb install -r` bez odinstalace nebo mazání dat.
+
+## Stabilita spodního panelu (1.0.0020)
+
+Výška editoru vychází z rozměru okna (90 %), nikoli z procenta proměnlivých
+vnitřních omezení spodního panelu. Posun a spotřebování systémových insetů tak
+nemění měřenou výšku obsahu a neposouvají horní kotvu při gestu. Kontrola zavření
+má stabilní identitu a čte aktuální stav návrhu a ukládání, aby běžná změna
+formuláře nevytvářela nový Material3 SheetState. Roztažení editoru a potvrzení
+zahození neuložených změn zůstávají zachované.
+
+`SheetGestureUiTest` používá izolovaný rodokmen na skutečném telefonu: rychlé
+vytažení z částečné výšky, tři další prudká gesta proti hornímu dorazu, kontrola
+stejné polohy po ustálení a po dalších snímcích animace; navíc zachování
+rozepsaného jména a potvrzení zavření. Neotevírá uživatelské rodokmeny ani pomůcky.
+
+Ověření 30. 10. 2026 na fyzickém Samsung SM-S938B: test rychlých gest a dva
+regresní scénáře editoru prošly. Prošlo také 43 JVM testů, sestavení Debug/Release
+a Lint obou variant. Aktualizace používá `adb install -r` se zachováním dat.
