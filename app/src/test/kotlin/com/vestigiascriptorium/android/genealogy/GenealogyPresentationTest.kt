@@ -9,6 +9,17 @@ class GenealogyPresentationTest {
     private val c=Person(id="c",givenName="Marie")
     private val tree=FamilyTree(title="Rod",people=listOf(a,b,c))
     private fun event(kind: String,date: String="",other: String="b",id: String=newId())=LifeEvent(id=id,kind=kind,date=date,roles=mapOf("subject" to "a","subject2" to other))
+    @Test fun spousesAreNotParentsOfEachOtherAndChildRolesHaveExplicitContext() {
+        val spouses=GenealogyEdits.relate(tree,"a","b",Relative.SPOUSE)
+        assertTrue(GenealogyPresentation(spouses).parents.isEmpty())
+        val birth=LifeEvent(kind="genealogy.birth",roles=mapOf("subject" to "c","genealogy.father" to "a","genealogy.mother" to "b"))
+        val family=spouses.copy(events=spouses.events+birth)
+        val copy=com.vestigiascriptorium.android.ui.main.Copy(true)
+        assertEquals("Matka dítěte Marie",personEventRoleLabel(family,birth,"genealogy.mother","a",copy))
+        assertEquals("Otec dítěte Marie",personEventRoleLabel(family,birth,"genealogy.father","b",copy))
+        assertEquals("Matka",personEventRoleLabel(family,birth,"genealogy.mother","c",copy))
+        assertEquals("Partner",personEventRoleLabel(family,spouses.events.single(),"subject2","a",copy))
+    }
     @Test fun boxesPreferLifeYearsAndOtherwiseUseMentionPeriod() {
         assertEquals("1810–1860",GenealogyPresentation(tree).person("a").years)
         val born=LifeEvent(kind="genealogy.birth",date="1820-02-03",roles=mapOf("subject" to "a"))

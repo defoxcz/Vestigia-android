@@ -61,6 +61,8 @@ class HouseholdUiTest {
             rule.onNodeWithText("1830–1880").assertIsDisplayed()
             rule.onNodeWithContentDescription("Otevřít osobu: Anna").performClick()
             rule.onNodeWithText("Anna").assertExists()
+            rule.onNodeWithText("Otec dítěte Dítě: Jan").assertExists()
+            rule.onNodeWithText("Otec: Jan").assertDoesNotExist()
             rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Jméno").performTextReplacement("Anna Marie")
             rule.onNodeWithText("Uložit osobu").performClick()

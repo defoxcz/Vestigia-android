@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -96,8 +98,8 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
                 Text(c.t("Události a vazby","Events and relationships"),style=MaterialTheme.typography.titleMedium)
                 OutlinedButton(enabled=!busy,onClick=onRelative) {Text(c.t("Přidat příbuzného","Add relative"))}
                 tree.events.filter {person.id in it.roles.values}.forEach {event ->
-                    TextButton(enabled=!busy,onClick={onOpenEvent(event.id)}) {Text(listOf(event.title.ifBlank {eventLabel(event.kind,c)},GenealogyDates.format(event.date),event.place).filter {it.isNotBlank()}.joinToString(" · "))}
-                    event.roles.forEach {(role,id) -> if(id!=person.id) Text("${eventRoleLabel(event.kind,role,c)}: ${tree.people.firstOrNull {it.id==id}?.name.orEmpty()}",style=MaterialTheme.typography.bodySmall)}
+                    TextButton(enabled=!busy,onClick={onOpenEvent(event.id)}) {Text(listOf(event.title.ifBlank {eventLabel(event.kind,c)},event.roles["subject"]?.takeIf {it!=person.id && event.kind in listOf("genealogy.birth","genealogy.baptism","genealogy.parentage")}?.let {id ->tree.people.firstOrNull {it.id==id}?.name}.orEmpty(),GenealogyDates.format(event.date),event.place).filter {it.isNotBlank()}.joinToString(" · "))}
+                    event.roles.forEach {(role,id) -> if(id!=person.id) Text("${personEventRoleLabel(tree,event,role,person.id,c)}: ${tree.people.firstOrNull {it.id==id}?.name.orEmpty()}",style=MaterialTheme.typography.bodySmall)}
                 }
                 var eventKind by rememberSaveable(person.id) {mutableStateOf("genealogy.mentioned")}
                 Choice(c.t("Nová událost","New event"),GenealogyEdits.kinds.filter {it !in listOf("genealogy.parentage","genealogy.spousal-record","genealogy.marriage")},eventKind,{eventKind=it}) {eventLabel(it,c)}
@@ -108,7 +110,7 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
                 tree.evidence.filter {it.person==person.id}.forEach {doc ->
                     Text(doc.caption,style=MaterialTheme.typography.titleSmall)
                     if(doc.note.isNotBlank())Text(doc.note)
-                    if(doc.file.isNotBlank()) TextButton(onClick={onOpen(doc)}) {Text(c.t("Otevřít doklad","Open evidence"))}
+                    if(doc.file.isNotBlank()) EvidencePreview(doc,media,c,{onOpen(doc)})
                 }
                 OutlinedButton(enabled=!busy,onClick=onEvidence) {Text(c.t("Připojit dokumentaci","Attach documentation"))}
             }
@@ -199,32 +201,65 @@ internal fun EvidenceDialog(person: String,c: Copy,busy: Boolean,onDismiss: ()->
     var note by rememberSaveable {mutableStateOf("")}
     var uri by rememberSaveable {mutableStateOf("")}
     var mime by rememberSaveable {mutableStateOf("application/octet-stream")}
+    var makeCopy by rememberSaveable {mutableStateOf(true)}
     var error by remember {mutableStateOf(false)}
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
     var copying by remember {mutableStateOf(false)}
-    val cloudPicker=rememberLauncherForActivityResult(CloudImagePicker()) {selected ->if(selected!=null && media!=null)scope.launch {
+    fun selectFile(selected: Uri?,imageOnly: Boolean=false) {if(selected!=null)scope.launch {
         copying=true;error=false
         try {
-            val copy=withContext(Dispatchers.IO) {val job=kotlin.coroutines.coroutineContext;val key=media.importImage(context.contentResolver,selected) {job.ensureActive()};key to media.imageMime(key)}
-            uri="managed:"+copy.first;mime=copy.second
+            val result=withContext(Dispatchers.IO) {
+                val resolver=context.contentResolver
+                val type=resolver.getType(selected) ?: "application/octet-stream"
+                if(makeCopy) {
+                    val storage=media ?: throw GenealogyProblem("storage")
+                    val job=kotlin.coroutines.coroutineContext
+                    if(imageOnly || type.startsWith("image/")) {
+                        val key=storage.importImage(resolver,selected) {job.ensureActive()}
+                        "managed:$key" to storage.imageMime(key)
+                    } else {
+                        val input=resolver.openInputStream(selected) ?: throw java.io.FileNotFoundException()
+                        "managed:"+storage.addDocument(input) {job.ensureActive()} to type
+                    }
+                } else {
+                    resolver.takePersistableUriPermission(selected,Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    selected.toString() to type
+                }
+            }
+            uri=result.first;mime=result.second
         } catch(e: Exception) {if(e is kotlinx.coroutines.CancellationException)throw e;error=true}
         finally {copying=false}
     }}
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {value -> if(value!=null) {
-        try {context.contentResolver.takePersistableUriPermission(value,Intent.FLAG_GRANT_READ_URI_PERMISSION);uri=value.toString();mime=context.contentResolver.getType(value) ?: "application/octet-stream";error=false}
-        catch(_: Exception) {error=true}
-    }}
-    AlertDialog(onDismissRequest=onDismiss,title={Text(c.t("Dokumentace osoby","Person documentation"))},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+    val cloudPicker=rememberLauncherForActivityResult(CloudImagePicker()) {selectFile(it,true)}
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {selectFile(it)}
+    AlertDialog(onDismissRequest={if(!copying && !busy)onDismiss()},title={Text(c.t("Dokumentace osoby","Person documentation"))},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(caption,{caption=it},Modifier.fillMaxWidth(),label={Text(c.t("Popisek dokladu / citace","Evidence caption / citation"))})
         OutlinedTextField(note,{note=it},Modifier.fillMaxWidth(),label={Text(c.t("Poznámka k dokladu","Evidence note"))},minLines=2)
+        Text(c.t("Uložení souboru","File storage"),style=MaterialTheme.typography.titleSmall)
+        Row(Modifier.fillMaxWidth().selectable(selected=makeCopy,enabled=!busy && !copying,role=Role.RadioButton,onClick={if(!makeCopy) {makeCopy=true;uri="";error=false}}),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+            RadioButton(selected=makeCopy,onClick=null)
+            Text(c.t("Vytvořit kopii ve Vestigii","Create a copy in Vestigia"))
+        }
+        Row(Modifier.fillMaxWidth().selectable(selected=!makeCopy,enabled=!busy && !copying,role=Role.RadioButton,onClick={if(makeCopy) {makeCopy=false;uri="";error=false}}),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+            RadioButton(selected=!makeCopy,onClick=null)
+            Text(c.t("Odkazovat na zdroj","Link to the source"))
+        }
         OutlinedButton(enabled=!busy && !copying,onClick={picker.launch(arrayOf("image/*","application/pdf","text/plain"))}) {Text(if(uri.isEmpty())c.t("Vybrat soubor","Choose file") else c.t("Změnit vybraný soubor","Change selected file"))}
-        if(media!=null)OutlinedButton(enabled=!busy && !copying,onClick={cloudPicker.launch(Unit)}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
+        if(media!=null)OutlinedButton(enabled=!busy && !copying,onClick={if(makeCopy)cloudPicker.launch(Unit) else picker.launch(arrayOf("image/*"))}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
         if(copying)LinearProgressIndicator(Modifier.fillMaxWidth())
-        if(uri.isNotEmpty()) Text(c.t("Soubor vybrán","File selected"))
-        Text(if(uri.startsWith("managed:"))c.t("Obrázek je uložen jako vlastní kopie. Původní soubor se nemění.","The image is stored as a local copy. The original is unchanged.") else c.t("Soubor zůstává ve vybraném úložišti. Pokud jej přesunete nebo odeberete přístup, doklad nepůjde otevřít. Lze uložit také samotnou citaci.","The file stays in its selected location. Moving it or revoking access may prevent opening it. You can also save a citation alone."),style=MaterialTheme.typography.bodySmall)
-        if(error)Text(c.t("Soubor se nepodařilo načíst. Zkontrolujte připojení a přístup ke zdroji; obrázek musí být podporovaný a do 32 MB.","Unable to read the file. Check your connection and access; images must be supported and up to 32 MB."),color=MaterialTheme.colorScheme.error)
-    }},confirmButton={TextButton(enabled=!busy && !copying && caption.isNotBlank(),onClick={onSave(Evidence(person=person,caption=caption.trim(),note=note,file=uri,mime=mime))}) {Text(c.t("Uložit doklad","Save evidence"))}},dismissButton={TextButton(enabled=!busy,onClick=onDismiss) {Text(c.t("Zrušit","Cancel"))}})
+        if(uri.isNotEmpty()) {
+            Text(c.t("Soubor vybrán","File selected"))
+            if(mime.startsWith("image/") || mime=="application/pdf")EvidencePreview(Evidence(person=person,caption=caption.ifBlank {c.t("Náhled dokladu","Evidence preview")},file=uri,mime=mime),media,c,{
+                try {context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(if(uri.startsWith("managed:"))GenealogyFileProvider.uri(context,uri.removePrefix("managed:")) else Uri.parse(uri),mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))}
+                catch(_: Exception) {error=true}
+            })
+        }
+        Text(c.t("Doklady se zde pouze prohlížejí. Obrázek ani zdrojový soubor se neupravují.","Evidence is read-only here. Images and source files are never edited."),style=MaterialTheme.typography.bodySmall)
+        if(makeCopy)Text(c.t("Kopie jsou v soukromé složce Vestigie v telefonu. Odinstalace aplikace je smaže; původní soubor zůstane zachován.","Copies are in Vestigia’s private folder on this phone. Uninstalling the app deletes them; the original remains unchanged."),style=MaterialTheme.typography.bodySmall)
+        Text(if(uri.startsWith("managed:")) {if(mime.startsWith("image/"))c.t("Obrázek je uložen jako vlastní kopie. Původní soubor se nemění.","The image is stored as a local copy. The original is unchanged.") else c.t("Doklad je uložen jako vlastní kopie. Původní soubor se nemění.","The evidence is stored as a local copy. The original is unchanged.")} else if(makeCopy)c.t("Vyberte soubor pro vytvoření vlastní kopie.","Choose a file to create a private copy.") else c.t("Soubor zůstává ve vybraném úložišti. Pokud jej přesunete nebo odeberete přístup, doklad nepůjde otevřít. Lze uložit také samotnou citaci.","The file stays in its selected location. Moving it or revoking access may prevent opening it. You can also save a citation alone."),style=MaterialTheme.typography.bodySmall)
+        if(error)Text(c.t("Soubor se nepodařilo načíst. Zkontrolujte připojení a přístup ke zdroji. Kopie může mít nejvýše 32 MB; odkaz vyžaduje trvalé oprávnění ke čtení.","Unable to read the file. Check your connection and access. Copies are limited to 32 MB; links require persistent read access."),color=MaterialTheme.colorScheme.error)
+    }},confirmButton={TextButton(enabled=!busy && !copying && caption.isNotBlank(),onClick={onSave(Evidence(person=person,caption=caption.trim(),note=note,file=uri,mime=mime))}) {Text(c.t("Uložit doklad","Save evidence"))}},dismissButton={TextButton(enabled=!busy && !copying,onClick=onDismiss) {Text(c.t("Zrušit","Cancel"))}})
 }
 
 @Composable

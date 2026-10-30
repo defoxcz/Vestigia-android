@@ -51,6 +51,15 @@ internal fun eventRoleLabel(kind: String,role: String,c: Copy)=if(role=="subject
     "genealogy.spousal-record","genealogy.marriage" -> c.t("Partner","Partner")
     else -> roleLabel(role,c)
 } else if(role=="subject2") c.t("Partner","Partner") else roleLabel(role,c)
+/** Parent roles belong to the event's child, not to the person whose panel is open. */
+internal fun personEventRoleLabel(tree: FamilyTree,event: LifeEvent,role: String,viewedPerson: String,c: Copy): String {
+    val child=event.roles["subject"]
+    if(child!=viewedPerson && event.kind in listOf("genealogy.birth","genealogy.baptism","genealogy.parentage") && role in listOf("genealogy.father","genealogy.mother")) {
+        val name=tree.people.firstOrNull {it.id==child}?.name.orEmpty()
+        return (if(role=="genealogy.father")c.t("Otec dítěte","Father of child") else c.t("Matka dítěte","Mother of child"))+" "+name
+    }
+    return eventRoleLabel(event.kind,role,c)
+}
 internal fun lifeDates(tree: FamilyTree,id: String)=listOf("genealogy.birth" to "*", "genealogy.death" to "†").mapNotNull { (kind,mark) -> tree.events.firstOrNull {it.kind==kind && it.roles["subject"]==id && it.date.isNotBlank()}?.let {"$mark ${GenealogyDates.format(it.date)}"} }.joinToString(" · ")
 private data class BoxLine(val text: String,val title: Boolean=false,val limit: Int=Int.MAX_VALUE,val personId: String?=null)
 

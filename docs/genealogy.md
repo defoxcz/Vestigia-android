@@ -466,3 +466,48 @@ Geometrická kontrola potvrdila čtvercové rozměry obou portrétů, stejnou sv
 osu a umístění manželky napravo od manžela. Snímek fyzického telefonu potvrdil
 kruhové výřezy vedle sebe i navazující rodinnou větev. Prošly také regresní
 scénáře kopírování cloudového obrázku, odebrání/Undo a potvrzení importu.
+
+## Doklady: kopie nebo zdroj, náhledy (1.0.0029)
+
+Při připojování dokladu lze zvolit vlastní kopii (výchozí) nebo odkaz na zdroj.
+Volba platí pro místní soubory i Google Disk / soubory. Odkaz používá systémový
+výběr dokumentu a pouze trvalé oprávnění ke čtení; poskytovatel bez této podpory
+se odmítne s chybou, nevzniká skrytá náhradní kopie. Změna režimu zruší aktuální
+výběr a vyžaduje nové vybrání souboru. Samotnou citaci lze uložit bez souboru.
+
+Vlastní kopie jsou v soukromém `noBackupFilesDir/genealogy/media` příslušné
+varianty Vestigie, nikoli ve veřejných Obrázcích nebo Dokumentech. Kopie se
+kontrolují a načítají mimo UI, limit je 32 MiB. Odinstalace aplikace odstraní
+její soukromé kopie spolu s daty, aktualizace `adb install -r` je zachová.
+Zdrojové soubory se nikdy nemění a u odkazů se nekopírují do spravované knihovny.
+Portréty a importované soubory nadále používají vlastní kopie. Kopie se zachovávají
+pro historii Zpět; zrušení dialogu může ponechat nepřipojenou soukromou kopii.
+
+Obrázkové doklady mají náhled přímo u osoby a v dialogu připojení. Klepnutí
+otevře velký náhled s posunem a přiblížením. PDF má náhled první strany
+vykreslený pouze v paměti, stejné velké zobrazení a možnost otevřít celý dokument
+v externím prohlížeči. Nelze-li PDF vykreslit (např. šifrovaný nebo neposuvný
+cloudový stream), zůstává karta pro otevření externím prohlížečem; jiné soubory
+mají také dokumentovou kartu. Obrazovky neposkytují úpravu obrázku ani zápis
+ke zdroji. Vlastní soubory se externě zpřístupňují jen s oprávněním ke čtení.
+
+V přehledu událostí rodiče se rodičovská role vztahuje výslovně k dítěti,
+např. „Matka dítěte Marie: Anna“. Nadpis události obsahuje také jméno dítěte.
+Samotné partnerství nepřidává rodičovské vazby; tato změna pouze upřesňuje
+zobrazení a nemigruje uložené vztahy.
+
+Ověření 1.0.0029: Debug/Release sestavení, Lint Debug a 50 JVM testů prošly.
+Na fyzickém Samsungu SM-S938B prošlo devět UI scénářů (šest portréty/doklady/import,
+dva partnerský graf, jeden domácnost). Odkazový scénář používá vlastní syntetické
+URI s trvalým oprávněním ke čtení, ověřuje zachování URI a prázdné spravované
+úložiště. Scénáře kopií ověřují místní i cloudový obrazový stream, MIME a vlastní
+soubor. PDF scénář vytváří vlastní dočasný dokument a ověřuje první stranu a zoom.
+Snímky velkého obrazového a PDF náhledu byly vizuálně zkontrolovány po dokončení
+systémových animací. Test domácnosti byl rozšířen o výslovný popisek otce dítěte
+v přehledu manželky a znovu prošel. Testy neotevírají uživatelské rodokmeny.
+
+Obě varianty byly aktualizovány pouze přes `adb install -r`. Podepsané Release
+APK je v `vestigia-installations/testing/VestigiaScriptorium-1.0.0029-release.apk`,
+předchozí 1.0.0028 v `vestigia-installations/archive/android/`. Veřejné HTTPS
+stažení je shodné s lokálním APK; SHA-256:
+`f1e96036a22804782410111ad91ebbd24c2a999ebd6952b6d5f549958fa11f6e`.

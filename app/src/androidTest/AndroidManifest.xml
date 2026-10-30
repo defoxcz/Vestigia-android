@@ -2,6 +2,6 @@
     <application>
         <provider android:name="com.vestigiascriptorium.android.genealogy.PhotoFixtureProvider"
             android:authorities="com.vestigiascriptorium.android.debug.test.photo-fixture"
-            android:exported="true" />
+            android:exported="true" android:grantUriPermissions="true" />
     </application>
 </manifest>
