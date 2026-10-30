@@ -86,8 +86,8 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
     }}
     var measuredSizes by remember(tree.id) {mutableStateOf<Map<String,IntSize>>(emptyMap())}
     val generationLayout=remember(presentation) {GenerationLayout(tree,presentation)}
-    val positions=remember(generationLayout,visiblePeople,measuredSizes,density,view.zoom) {
-        generationLayout.boxes(visiblePeople,measuredSizes.mapValues {(_,size) ->size.height/(density.density*view.zoom)})
+    val positions=remember(generationLayout,visiblePeople,measuredSizes,density,view.zoom,household) {
+        household.centerFathers(generationLayout.boxes(visiblePeople,measuredSizes.mapValues {(_,size) ->size.height/(density.density*view.zoom)}),presentation.families)
     }
     val boxes=positions
     // Measure cards with a fixed world width and unbounded height. Their actual content

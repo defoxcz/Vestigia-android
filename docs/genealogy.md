@@ -362,3 +362,23 @@ regresní scénáře editoru a partnerů. Finální scénář byl zopakován po 
 popisku Manželka a podtrženého odkazu. Konflikt cache při souběžných Gradle
 bězích byl odstraněn čistou kompilací a obnovením Debug kompilace; běžný
 `scripts/test-device.sh` následně prošel. Sestavení se ověřovalo postupně.
+
+
+## Vystředění společného boxu (1.0.0025)
+
+Po seskupení manželky se box otce vodorovně vystředí nad celou šířkou boxů jeho
+přímých potomků (střed mezi levým okrajem prvního a pravým okrajem posledního).
+Jediné dítě je přímo pod otcem; u více manželek se zahrnou jejich společné děti.
+Výpočet postupuje od dolních generací nahoru, takže předci používají konečné
+pozice vystředěných potomků. Jde o projekci zobrazení, která nepřepisuje zdrojové
+souřadnice. Spojnice, měření, výběr a Přizpůsobit používají tyto stejné boxy.
+
+Pokud osobě chybí rok narození/úmrtí a zobrazují se pouze roky připomínky,
+box obsahuje jen `1830–1880`, případně samotný známý rok. Slova připomínán,
+od a do se v této zkrácené řádce nepíšou; popisky polí v editoru zůstávají.
+
+Ověření 1.0.0025: 49 JVM testů, Lint Debug/Release a tři UI testy na skutečném
+telefonu prošly. Test záměrně umístí dítě mimo původní osu otce a po seskupení
+porovnává skutečné středy obou boxů. Kontroluje také řádek `1830–1880`, editaci
+manželky, Undo/Redo a návrat k samostatným boxům. Geometrický test pokrývá
+jediné dítě i vystředění nad dětmi z více manželství a zachování zdrojových boxů.

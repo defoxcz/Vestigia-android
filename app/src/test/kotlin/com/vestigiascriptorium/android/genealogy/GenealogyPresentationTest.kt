@@ -10,13 +10,13 @@ class GenealogyPresentationTest {
     private val tree=FamilyTree(title="Rod",people=listOf(a,b,c))
     private fun event(kind: String,date: String="",other: String="b",id: String=newId())=LifeEvent(id=id,kind=kind,date=date,roles=mapOf("subject" to "a","subject2" to other))
     @Test fun boxesPreferLifeYearsAndOtherwiseUseMentionPeriod() {
-        assertEquals("připomínán 1810–1860",GenealogyPresentation(tree).person("a").years)
+        assertEquals("1810–1860",GenealogyPresentation(tree).person("a").years)
         val born=LifeEvent(kind="genealogy.birth",date="1820-02-03",roles=mapOf("subject" to "a"))
         val died=LifeEvent(kind="genealogy.death",date="1890",roles=mapOf("subject" to "a"))
         assertEquals("* 1820  + 1890",GenealogyPresentation(tree.copy(events=listOf(born,died))).person("a").years)
         assertEquals("+ 1890",GenealogyPresentation(tree.copy(events=listOf(died))).person("a").years)
         assertEquals("",GenealogyPresentation(tree).person("b").years)
-        assertEquals("připomínán od 1810",GenealogyPresentation(tree.copy(people=listOf(a.copy(mentionedTo="")))).person("a").years)
+        assertEquals("1810",GenealogyPresentation(tree.copy(people=listOf(a.copy(mentionedTo="")))).person("a").years)
     }
     @Test fun partnershipIsAConnectionWhileStoredRecordAndIncompleteEventsRemainAvailable() {
         val relation=event("genealogy.spousal-record",date="1840",id="rel")

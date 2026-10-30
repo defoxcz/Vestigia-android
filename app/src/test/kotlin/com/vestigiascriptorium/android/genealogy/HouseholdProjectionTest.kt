@@ -26,6 +26,17 @@ class HouseholdProjectionTest {
         assertEquals(4,tree.people.size)
         assertTrue(HouseholdProjection(tree,presentation,false).owners.isEmpty())
     }
+    @Test fun groupedFatherCentersOverAllChildrenAcrossWivesWithoutChangingSourceBoxes() {
+        val tree=source();val projection=HouseholdProjection(tree,GenealogyPresentation(tree),true)
+        val boxes=mapOf("f" to GraphBox(-400f,0f,244f,180f),"c" to GraphBox(500f,250f,244f,88f),"d" to GraphBox(1100f,250f,244f,88f))
+        val result=projection.centerFathers(boxes,listOf(FamilyConnection(listOf("f","a"),listOf("c")),FamilyConnection(listOf("f","b"),listOf("d"))))
+        assertEquals(800f,result.getValue("f").x,0f)
+        assertEquals(922f,result.getValue("f").center().x,0f)
+        assertEquals(-400f,boxes.getValue("f").x,0f)
+        assertEquals(boxes.getValue("c"),result.getValue("c"))
+        val single=projection.centerFathers(boxes,listOf(FamilyConnection(listOf("f","a"),listOf("c"))))
+        assertEquals(500f,single.getValue("f").x,0f)
+    }
     @Test fun unknownFatherOrMultipleHusbandsNeverBecomeAnImpliedParentalRelationship() {
         val tree=source()
         val motherOnly=tree.copy(events=tree.events.map {it.copy(roles=it.roles-"genealogy.father")})

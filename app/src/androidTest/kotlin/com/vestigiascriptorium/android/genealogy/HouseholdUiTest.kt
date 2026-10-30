@@ -20,8 +20,8 @@ class HouseholdUiTest {
         val root=File(context.cacheDir,"household-${newId()}")
         val store=GenealogyStore(root)
         val father=Person(givenName="Jan",gender="male")
-        val wife=Person(givenName="Anna",gender="female",x=400f)
-        val child=Person(givenName="Dítě",y=250f)
+        val wife=Person(givenName="Anna",gender="female",x=400f,mentionedFrom="1830",mentionedTo="1880")
+        val child=Person(givenName="Dítě",x=600f,y=250f)
         var tree=FamilyTree(title="Domácnost",people=listOf(father,wife,child))
         tree=GenealogyEdits.relate(tree,father.id,wife.id,Relative.SPOUSE)
         tree=GenealogyEdits.relate(tree,child.id,father.id,Relative.FATHER)
@@ -44,6 +44,10 @@ class HouseholdUiTest {
             Assert.assertTrue(store.collapseWives())
             GenealogyStore(root).use {Assert.assertTrue(it.collapseWives())}
             rule.onNodeWithContentDescription("Přizpůsobit").performClick()
+            val fatherBounds=rule.onNodeWithTag("genealogy-node-${father.id}").fetchSemanticsNode().boundsInWindow
+            val childBounds=rule.onNodeWithTag("genealogy-node-${child.id}").fetchSemanticsNode().boundsInWindow
+            Assert.assertEquals(childBounds.center.x,fatherBounds.center.x,2f)
+            rule.onNodeWithText("1830–1880").assertIsDisplayed()
             rule.onNodeWithContentDescription("Otevřít osobu: Anna").performClick()
             rule.onNodeWithText("Anna").assertExists()
             rule.onNodeWithText("Upravit").performClick()

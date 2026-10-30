@@ -36,9 +36,9 @@ internal class GenealogyPresentation(val tree: FamilyTree) {
         val birth=year("genealogy.birth");val death=year("genealogy.death")
         val dates=if(birth!=null || death!=null)listOfNotNull(birth?.let {"* $it"},death?.let {"+ $it"}).joinToString("  ") else {
             val from=GenealogyDates.year(subject.mentionedFrom);val to=GenealogyDates.year(subject.mentionedTo)
-            when {from!=null && to!=null -> if(cs)"připomínán $from–$to" else "mentioned $from–$to"
-                from!=null -> if(cs)"připomínán od $from" else "mentioned from $from"
-                to!=null -> if(cs)"připomínán do $to" else "mentioned until $to"
+            when {from!=null && to!=null -> "$from–$to"
+                from!=null -> "$from"
+                to!=null -> "$to"
                 else -> ""}
         }
         val partners=connectionsByPerson[id].orEmpty()

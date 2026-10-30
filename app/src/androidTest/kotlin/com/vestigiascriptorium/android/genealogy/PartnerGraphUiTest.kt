@@ -64,7 +64,7 @@ class PartnerGraphUiTest {
         rule.onNodeWithText("Partner: Anna").assertIsDisplayed()
         rule.onNodeWithText("2. partner: Marie").assertIsDisplayed()
         rule.onAllNodesWithText("Svatba: 1850")[0].assertIsDisplayed()
-        rule.onNodeWithText("připomínán 1830–1880").assertIsDisplayed()
+        rule.onNodeWithText("1830–1880").assertIsDisplayed()
         val last=rule.onAllNodesWithText("Svatba: 1850",useUnmergedTree=true)[0].getUnclippedBoundsInRoot()
         val reference=rule.onNodeWithText("Partner: Anna",useUnmergedTree=true).getUnclippedBoundsInRoot()
         Assert.assertTrue("Last wedding row is clipped: $last vs $reference",last.bottom-last.top>=reference.bottom-reference.top-1.dp)

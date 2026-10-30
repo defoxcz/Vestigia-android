@@ -27,5 +27,21 @@ internal class HouseholdProjection(tree: FamilyTree,presentation: GenealogyPrese
         val hosts=family.parents.map(::owner).distinct()
         return FamilyConnection(hosts,family.children.map(::owner).distinct().filter {it !in hosts})
     }
+    fun centerFathers(boxes: Map<String,GraphBox>,families: List<FamilyConnection>): Map<String,GraphBox> {
+        if(owners.isEmpty())return boxes
+        val children=families.map(::family).filter {it.parents.size==1 && it.parents.single() in owners.values}
+            .groupBy({it.parents.single()},{it.children}).mapValues {(_,lists) ->lists.flatten().distinct()}
+        val result=boxes.toMutableMap()
+        // Work upwards so a grandfather uses the final positions of his children's boxes.
+        children.keys.sortedByDescending {boxes.getValue(it).y}.forEach {father ->
+            val parent=result.getValue(father)
+            val descendants=children.getValue(father).mapNotNull(result::get).filter {it.y>parent.y}
+            if(descendants.isNotEmpty()) {
+                val left=descendants.minOf {it.x};val right=descendants.maxOf {it.x+it.width}
+                result[father]=parent.copy(x=(left+right-parent.width)/2f)
+            }
+        }
+        return result
+    }
     fun aliases(boxes: Map<String,GraphBox>)=boxes+owners.mapValues {(_,host) ->boxes.getValue(host)}
 }
