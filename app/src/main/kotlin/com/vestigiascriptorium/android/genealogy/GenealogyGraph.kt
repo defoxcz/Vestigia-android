@@ -163,12 +163,18 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 shape=RoundedCornerShape((12*view.zoom).dp),border=if(household.owner(view.selected.orEmpty())==id)androidx.compose.foundation.BorderStroke(2.dp,primary) else null,
                 colors=CardDefaults.cardColors(containerColor=if(id in people)MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(Modifier.padding((10*view.zoom).dp),verticalArrangement=Arrangement.spacedBy((5*view.zoom).dp)) {
-                    people[id]?.portrait?.takeIf {it.isNotBlank()}?.let {PersonPortrait(it,media,copy,Modifier.size((80*view.zoom).dp).clip(CircleShape),contentScale=ContentScale.Crop)}
+                    val portraitPeople=listOf(people.getValue(id))+lines.getValue(id).mapNotNull {it.personId?.let(people::get)}
+                    val portraits=portraitPeople.distinctBy {it.id}.filter {it.portrait.isNotBlank()}
+                    if(portraits.isNotEmpty()) {
+                        val portraitSize=minOf(80f,(224f-5f*(portraits.size-1))/portraits.size).coerceAtLeast(1f)
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy((5*view.zoom).dp)) {
+                            portraits.forEach {person ->
+                                PersonPortrait(person.portrait,media,copy,Modifier.size((portraitSize*view.zoom).dp).clip(CircleShape)
+                                    .clickable(enabled=enabled) {onSelect(person.id)}.semantics {contentDescription=copy.t("Portrét: ","Portrait: ")+person.name},contentScale=ContentScale.Crop)
+                            }
+                        }
+                    }
                     lines.getValue(id).forEach {line ->
-                        line.personId?.let {wife ->people.getValue(wife).portrait.takeIf {it.isNotBlank()}?.let {portrait ->
-                            PersonPortrait(portrait,media,copy,Modifier.size((64*view.zoom).dp).clip(CircleShape)
-                                .clickable(enabled=enabled) {onSelect(wife)}.semantics {contentDescription=copy.t("Portrét: ","Portrait: ")+people.getValue(wife).name},contentScale=ContentScale.Crop)
-                        }}
                         Text(line.text,modifier=if(line.personId!=null)Modifier.clickable(enabled=enabled) {onSelect(line.personId)}.semantics {contentDescription=copy.t("Otevřít osobu: ","Open person: ")+people.getValue(line.personId).name} else Modifier,letterSpacing=0.sp,fontSize=((if(line.title)14 else 11)*view.zoom).sp,lineHeight=((if(line.title)17 else 14)*view.zoom).sp,maxLines=line.limit,overflow=TextOverflow.Ellipsis,textDecoration=if(line.personId!=null)androidx.compose.ui.text.style.TextDecoration.Underline else null,color=if(line.personId!=null)primary else if(line.title)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)}
                 }
             }

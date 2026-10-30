@@ -443,3 +443,20 @@ Podepsané APK je zveřejněné jako
 Předchozí 1.0.0026 je zachovaná v `vestigia-installations/archive/android/`.
 Veřejný HTTPS GET byl porovnán s lokálním APK a má shodný SHA-256:
 `04430c2c8bcf1470489c099f0560ecc6e3e21c6d5dc77ccaf8862e1b5d45167c`.
+
+## Portréty vedle sebe (1.0.0028)
+
+Portréty mají kruhový výřez také v přehledu a editoru osoby. Ve společném
+boxu jsou portréty v jedné vodorovné řadě: nejprve manžel, potom manželky
+v pořadí jejich údajů. Zobrazují se jen existující obrázky. Velikost se při
+větším počtu přizpůsobí šířce boxu a všechny portréty v řadě jsou stejně velké.
+Klepnutí na portrét otevírá příslušnou osobu; texty manželek zůstávají pod řadou.
+
+Ověření 1.0.0028: `assembleDebug lintDebug` a podepsané `assembleRelease`
+prošly. Obě varianty byly aktualizovány pomocí `adb install -r`.
+Čtyři UI scénáře zastavila vstupní kontrola zamčeného telefonu; dotykové,
+geometrické a vizuální ověření nového uspořádání proto zatím není dokončené.
+Release APK je v `vestigia-installations/testing/`, předchozí 1.0.0027 v
+`vestigia-installations/archive/android/`. Veřejný GET se shoduje s lokálním
+APK; SHA-256:
+`1414e6d0812cb979e0bdf3b5aa05c693462c3ab11bc6a0d0fba400e6410070d0`.

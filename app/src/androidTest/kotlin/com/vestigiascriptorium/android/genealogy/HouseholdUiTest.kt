@@ -46,7 +46,12 @@ class HouseholdUiTest {
             rule.waitUntil(10000) {controller.state.value.collapseWives && !controller.state.value.busy}
             rule.onNodeWithTag("genealogy-node-${wife.id}").assertDoesNotExist()
             rule.onNodeWithTag("genealogy-node-${father.id}").assertExists()
-            rule.onNodeWithContentDescription("Portrét: Anna").assertExists()
+            val husbandPortrait=rule.onNodeWithContentDescription("Portrét: Jan").fetchSemanticsNode().boundsInWindow
+            val wifePortrait=rule.onNodeWithContentDescription("Portrét: Anna").fetchSemanticsNode().boundsInWindow
+            Assert.assertEquals(husbandPortrait.width,husbandPortrait.height,2f)
+            Assert.assertEquals(wifePortrait.width,wifePortrait.height,2f)
+            Assert.assertEquals(husbandPortrait.center.y,wifePortrait.center.y,2f)
+            Assert.assertTrue(husbandPortrait.right<wifePortrait.left)
             Assert.assertTrue(store.collapseWives())
             GenealogyStore(root).use {Assert.assertTrue(it.collapseWives())}
             rule.onNodeWithContentDescription("Přizpůsobit").performClick()

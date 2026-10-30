@@ -68,7 +68,7 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
             else Button(enabled=!busy,onClick={editing=true;onExpand()}) {Text(c.t("Upravit","Edit"))}
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(14.dp)) {
-            if(portrait.isNotEmpty())PersonPortrait(portrait,media,c,Modifier.fillMaxWidth().height(160.dp))
+            if(portrait.isNotEmpty())PersonPortrait(portrait,media,c,Modifier.size(160.dp))
             if(editing) {
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(modifier=Modifier.weight(1f).fillMaxHeight(),enabled=!busy && !photoBusy && media!=null,onClick={picker.launch(arrayOf("image/*"))}) {Text(if(portrait.isEmpty())c.t("Vložit obrázek","Add portrait") else c.t("Změnit obrázek","Change portrait"))}
