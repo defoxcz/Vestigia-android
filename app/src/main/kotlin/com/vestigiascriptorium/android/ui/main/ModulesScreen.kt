@@ -13,11 +13,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 
+// Retain planned modules so each can be made visible when its editor is ready.
+private data class AdditionalModule(val title: String,val description: String,val visible: Boolean=false)
+
 @Composable
 internal fun ModulesScreen(copy: Copy,onGenealogy: () -> Unit,onModule: (String) -> Unit) {
     LazyColumn(contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
         item { Eyebrow(copy.t("VAŠE BADATELSKÁ PRACOVNA","YOUR RESEARCH WORKSPACE")) }
-        item { Heading(copy.t("Moduly","Modules"),copy.t("Vyberte obor a pokračujte ve svém bádání.","Choose a field and continue your research.")) }
+        item { Heading(copy.t("Moduly","Modules"),copy.t("Pokračujte ve svém genealogickém bádání.","Continue your genealogy research.")) }
         item {
             Card(onClick=onGenealogy,colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primaryContainer),shape=RoundedCornerShape(24.dp)) {
                 Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
@@ -37,12 +40,12 @@ internal fun ModulesScreen(copy: Copy,onGenealogy: () -> Unit,onModule: (String)
         }
 
         listOf(
-            copy.t("Rukopisy","Manuscripts") to copy.t("Prameny, přepisy a čtení historických textů.","Sources, transcriptions and reading historical texts."),
-            copy.t("Heraldika","Heraldry") to copy.t("Erby, jejich popis a vzájemné souvislosti.","Coats of arms, their descriptions and connections."),
-            copy.t("Sfragistika","Sigillography") to copy.t("Pečeti, jejich držitelé a vazby na listiny.","Seals, their owners and links to charters."),
-            copy.t("Epigrafika","Epigraphy") to copy.t("Nápisy, jejich dokumentace a odborné edice.","Inscriptions, their documentation and scholarly editions."),
-            copy.t("Paleografika","Palaeography") to copy.t("Historická písma, jejich tvary a souvislosti.","Historical scripts, letterforms and their context.")
-        ).forEach { (title,description) -> item {
+            AdditionalModule(copy.t("Rukopisy","Manuscripts"),copy.t("Prameny, přepisy a čtení historických textů.","Sources, transcriptions and reading historical texts.")),
+            AdditionalModule(copy.t("Heraldika","Heraldry"),copy.t("Erby, jejich popis a vzájemné souvislosti.","Coats of arms, their descriptions and connections.")),
+            AdditionalModule(copy.t("Sfragistika","Sigillography"),copy.t("Pečeti, jejich držitelé a vazby na listiny.","Seals, their owners and links to charters.")),
+            AdditionalModule(copy.t("Epigrafika","Epigraphy"),copy.t("Nápisy, jejich dokumentace a odborné edice.","Inscriptions, their documentation and scholarly editions.")),
+            AdditionalModule(copy.t("Paleografika","Palaeography"),copy.t("Historická písma, jejich tvary a souvislosti.","Historical scripts, letterforms and their context."))
+        ).filter {it.visible}.forEach { (title,description) -> item {
             OutlinedCard(onClick={onModule(title)},shape=RoundedCornerShape(18.dp)) {
                 Column(Modifier.fillMaxWidth().padding(20.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
                     Text(title,style=MaterialTheme.typography.titleLarge,fontFamily=FontFamily.Serif)

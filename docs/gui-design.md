@@ -12,8 +12,8 @@ Moduly odpovídají registru desktopové aplikace:
 - Paleografika
 
 Na hlavní obrazovce není souhrnná položka Další moduly ani štítky Připravujeme.
-Genealogie má zvýrazněný vstup, ostatní obory mají vlastní kartu. Mobilní editory
-budou implementovány postupně; zahrnutí karty není tvrzením, že je editor hotový.
+Od 1.0.0030 je viditelná pouze karta Genealogie. Definice ostatních oborů
+zůstávají v projektu skryté; každý lze zviditelnit samostatně po doplnění editoru.
 Numismatika je nyní součástí badatelských pomůcek, ne samostatný registrovaný
 modul desktopu.
 
@@ -163,3 +163,19 @@ společné děti navazují na spodní hranu boxu otce. Jméno manželky je klika
 
 Od 1.0.0026 lze portrét i obrazovou dokumentaci vložit tlačítkem Google Disk /
 soubory. Vybraný obrázek se uloží jako vlastní kopie; načítání probíhá mimo UI.
+
+## Viditelné moduly (1.0.0030)
+
+Katalog ukazuje jen Genealogii. Definice a vykreslení pěti připravovaných modulů
+zůstávají zachované a každý má vlastní příznak viditelnosti. Navigace Pomůcky
+ani Stahování se nemění. Upravený UI scénář kontroluje skrytí dalších karet a
+otevření Genealogie.
+
+Ověření: `assembleDebug lintDebug`, `assembleRelease` a
+`assembleDebugAndroidTest` prošly; podpis a verze Release APK byly ověřeny.
+Telefon při této změně nebyl připojený přes ADB, takže UI test nebyl spuštěný
+a žádná instalace na zařízení nebyla aktualizována. Emulátor se nepoužil.
+Release APK je veřejně dostupné v `vestigia-installations/testing/`, předchozí
+1.0.0029 je v `vestigia-installations/archive/android/`. Stažené APK bylo
+porovnáno s lokálním souborem a má SHA-256:
+`684efa98d99bb4a905a1a146c85ead9cbd943f8c7fbdd931e3b4b91df1170864`.

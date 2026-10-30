@@ -19,11 +19,14 @@ class LibraryUiTest {
         org.junit.Assume.assumeFalse("Unlock the physical phone to run UI interaction tests",
             context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked)
     }
-    @Test fun moduleCatalogueListsEveryDesktopModuleWithoutReleaseLabels() {
-        rule.setContent { VestigiaScriptoriumTheme { ModulesScreen(Copy(true),{}, {}) } }
-        for(title in listOf("Genealogie","Rukopisy","Heraldika","Sfragistika","Epigrafika","Paleografika")) {
-            rule.onNode(hasScrollAction()).performScrollToNode(hasText(title))
-            rule.onNodeWithText(title).assertIsDisplayed()
+    @Test fun moduleCatalogueShowsOnlyGenealogyAndOpensIt() {
+        var opened=false
+        rule.setContent { VestigiaScriptoriumTheme { ModulesScreen(Copy(true),{opened=true}, {}) } }
+        rule.onNodeWithText("Genealogie").assertIsDisplayed().performClick()
+        rule.runOnIdle {assertEquals(true,opened)}
+        rule.onNode(hasScrollAction()).performScrollToIndex(2)
+        for(title in listOf("Rukopisy","Heraldika","Sfragistika","Epigrafika","Paleografika")) {
+            rule.onNodeWithText(title).assertDoesNotExist()
         }
         rule.onNodeWithText("Další moduly").assertDoesNotExist()
         rule.onNodeWithText("Připravujeme").assertDoesNotExist()
