@@ -179,3 +179,10 @@ Release APK je veřejně dostupné v `vestigia-installations/testing/`, předcho
 1.0.0029 je v `vestigia-installations/archive/android/`. Stažené APK bylo
 porovnáno s lokálním souborem a má SHA-256:
 `684efa98d99bb4a905a1a146c85ead9cbd943f8c7fbdd931e3b4b91df1170864`.
+
+Po připojení a odemčení fyzického Samsungu SM-S938B prošly všechny čtyři
+scénáře `LibraryUiTest` bez přeskočení, včetně zobrazení pouze Genealogie a
+jejího otevření. Testy pomůcek pracovaly s izolovaným stavem a callbacky,
+neodinstalovávaly skutečné pomůcky. Debug i Release byly aktualizovány na
+1.0.0030 výhradně přes `adb install -r`; spuštění Release aktivity a její
+nainstalovaná verze byly ověřeny. Nové sestavení Release nebylo potřeba.
