@@ -152,3 +152,7 @@ spojnice. Přidání příbuzného je dostupné také přímo v editoru nové os
 Od 1.0.0021 má spodní editor ručně nastavitelnou výšku tažením úchytu bez
 automatického dosouvání. Děti téže dvojice rodičů používají společný kmen
 ze spojnice rodičů a společnou sourozeneckou větev.
+
+Od 1.0.0022 graf zarovnává potomky do generačních řádků a sourozenecké větve
+do přesné poloviny skutečné mezery mezi řádky. Svislá poloha je dána generací;
+ručně lze měnit vodorovnou pozici osoby.

@@ -23,7 +23,7 @@ Graf se posouvá po pozadí prstem a přibližuje dvěma prsty. Delší podržen
 zahájí přesun. Přizpůsobit zahrne všechny boxy do dostupné pracovní plochy.
 Osoby v horní liště otevřou samostatnou aktivitu se seznamem a našeptáváním;
 výběr vrátí uživatele do grafu a otevře přehled vybrané osoby.
-Běžné editace nepřeskládávají ostatní boxy. Vlastní boxy mají pouze osoby. Rodičovské i partnerské vztahy se zobrazují
+Svislou polohu boxů určuje generační řádek; vodorovné pozice lze upravovat. Vlastní boxy mají pouze osoby. Rodičovské i partnerské vztahy se zobrazují
 přímými spojnicemi osob. Události zůstávají datovými záznamy bez vlastních boxů.
 
 Na telefonu je přehled/editor ve vysouvacím spodním panelu, na širokém okně
@@ -302,3 +302,30 @@ portrét a import) prošly. Výšku test kontroluje podle délky tahu s toleranc
 systémového prahu gesta a ověřuje nulový následný dojezd. Rodinná větev byla
 znovu ověřena samostatným testem a vizuálně ze snímku po dokončení animací Androidu.
 Release aktualizován instalací `-r` se zachováním dat.
+
+
+## Generační řádky (1.0.0022)
+
+Zobrazení grafu řadí osoby do generačních řádků podle rodičovských vazeb.
+Partneři a známí společní rodiče jsou ve stejné úrovni; potomci v následujících
+úrovních. Také další sourozenec po zaplnění původních pěti pozic zůstane na
+stejném řádku. Boxy se vodorovně oddělují, aby se nepřekrývaly. Vyšší boxy
+s portrétem a dalšími partnery určují potřebnou výšku řádku. Mezera mezi řádky
+má 160 jednotek grafu. Sourozenecká vodorovná větev je přesně ve středu mezery
+mezi dolním okrajem nejvyššího boxu rodičovské generace a horním okrajem boxů
+potomků; nevychází z výšky partnerské spojnice uvnitř rodičovských boxů.
+
+Zarovnání se promítne i do existujících a importovaných rodokmenů bez přepsání
+jejich uložených souřadnic, osob nebo vazeb. Ruční přesun osoby mění vodorovnou
+pozici; svislou polohu určuje generační řádek. Přizpůsobit a výběr osoby používají
+skutečné promítnuté boxy. Kamera, měření, spojnice i dotykové cíle sdílejí stejnou
+geometrii. Nestandardní křížení partnerství napříč generacemi se zpracuje konečným
+výpočtem; taková data nemusí připouštět jednoznačné generační uspořádání.
+
+
+Ověření 30. 10. 2026: 46 JVM testů a Lint obou variant prošly. Devět regresních
+UI scénářů prošlo; poté byl test rodiny rozšířen na šest sourozenců včetně
+původního přetečení na další řádek a opět prošel. Snímek telefonu potvrdil
+zarovnání i větve dosahující k boxům. Grafové boxy nemají vynucené Material3
+48dp rozměrové odsazení, které při oddálení vytvářelo neviditelné okraje;
+měření tak odpovídá viditelným hranám. Test partnerů byl po této úpravě zopakován.

@@ -56,7 +56,7 @@ class RelativeEditorUiTest {
         rule.onNodeWithText("Zrušit").performClick()
         Assert.assertEquals("Anna Marie",store.read(tree.id).people.single {it.id==anna.id}.givenName)
     }
-    @Test fun twoChildrenUseTheChosenCoupleAndShareOneFamilyBranch()=isolated {store,controller ->
+    @Test fun childrenShareGenerationRowAndFamilyBranch()=isolated {store,controller ->
         val father=Person(givenName="Otec",x=0f,y=0f)
         val mother=Person(givenName="Matka",x=400f,y=0f)
         val source=GenealogyEdits.relate(FamilyTree(title="Rodina",people=listOf(father,mother)),father.id,mother.id,Relative.SPOUSE)
@@ -64,7 +64,7 @@ class RelativeEditorUiTest {
         rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
         rule.runOnIdle {controller.open(source.id)}
         waitText("Přizpůsobit")
-        repeat(2) {index ->
+        repeat(6) {index ->
             rule.onNodeWithText("Přizpůsobit").performClick()
             rule.onNodeWithTag("genealogy-node-${father.id}").performClick()
             rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
@@ -80,9 +80,11 @@ class RelativeEditorUiTest {
         val tree=store.read(source.id)
         val family=GenealogyPresentation(tree).families.single()
         Assert.assertEquals(setOf(father.id,mother.id),family.parents.toSet())
-        Assert.assertEquals(2,family.children.size)
+        Assert.assertEquals(6,family.children.size)
         rule.onNodeWithText("Přizpůsobit").performClick()
         rule.waitForIdle()
+        val tops=family.children.map {rule.onNodeWithTag("genealogy-node-$it").fetchSemanticsNode().boundsInWindow.top}
+        Assert.assertTrue("All six descendants must share a row",tops.max()-tops.min()<2f)
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         android.os.SystemClock.sleep(500) // Allow platform dialog/IME dismissal to finish before the screenshot.
         InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap ->File(context.cacheDir,"family-branch-test.png").outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}}

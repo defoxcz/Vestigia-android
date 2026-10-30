@@ -38,7 +38,8 @@ Přenášejí se jména, osoby, běžné životní události, rodiče, partnerst
 poznámky a základní citace. Partnerství bez data sňatku nevytváří datovaný sňatek.
 Samotný rok zůstává rokem; přesná gregoriánská data se převedou na ISO.
 Přibližná, rozsahová a další nepodporovaná data zůstávají původním textem.
-GEDCOM dostane počáteční generační rozložení; Vestigia zachovává pozice boxů.
+GEDCOM dostane počáteční generační rozložení; Vestigia zachovává zdrojové souřadnice; od 1.0.0022 se při vykreslení
+boxy zarovnávají do generačních řádků.
 
 Android nemodeluje všechny struktury GEDCOM ani všechny desktopové události.
 Adoptivní vazby se nesmějí změnit na biologické; zůstávají ve zdrojové kopii

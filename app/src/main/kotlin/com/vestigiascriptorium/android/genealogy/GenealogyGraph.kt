@@ -80,12 +80,11 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
 
     }}
     var measuredSizes by remember(tree.id) {mutableStateOf<Map<String,IntSize>>(emptyMap())}
-    val positions=remember(presentation) {buildMap {
-        tree.people.forEach {put(it.id,GraphBox(it.x,it.y,244f,88f))}
-    }}
-    val boxes=remember(positions,measuredSizes,density,view.zoom) {positions.mapValues {(id,box) ->
-        measuredSizes[id]?.let {box.copy(height=it.height/(density.density*view.zoom))} ?: box
-    }}
+    val generationLayout=remember(presentation) {GenerationLayout(tree,presentation)}
+    val positions=remember(generationLayout,tree.people,measuredSizes,density,view.zoom) {
+        generationLayout.boxes(tree.people,measuredSizes.mapValues {(_,size) ->size.height/(density.density*view.zoom)})
+    }
+    val boxes=positions
     // Measure cards with a fixed world width and unbounded height. Their actual content
     // supplies the geometry, including system font metrics and all partner rows.
     val measureCards=remember(positions,density,view.zoom) {MeasurePolicy {measurables,constraints ->
@@ -125,9 +124,10 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
         .semantics {contentDescription=copy.t("Graf vazeb. Posun prstem, přiblížení dvěma prsty.","Connections graph. Drag to pan, pinch to zoom.")}) {
         Canvas(Modifier.fillMaxSize()) {
             val familyBoxes=boxes.mapValues {(id,_) ->liveBox(id)}
+            val rowBottoms=familyBoxes.values.groupBy {it.y}.mapValues {(_,row) ->row.maxOf {it.y+it.height}}
             presentation.families.forEach {family ->
                 val partnerLine=presentation.connections.any {setOf(it.first,it.second)==family.parents.toSet()}
-                familySegments(family,familyBoxes,!partnerLine).forEach {(a,b) ->
+                familySegments(family,familyBoxes,!partnerLine,rowBottoms[familyBoxes.getValue(family.parents.first()).y]).forEach {(a,b) ->
                     drawLine(ink,screen(a),screen(b),2.dp.toPx())
                 }
             }
@@ -143,12 +143,15 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 .testTag("partner-link-${connection.editId}").clickable(enabled=enabled,role=Role.Button) {onSelect(connection.editId)}
                 .semantics {contentDescription=copy.t("Upravit vztah: ","Edit relationship: ")+people.getValue(connection.first).name+" – "+people.getValue(connection.second).name})
         }
+        // Graph geometry scales with zoom. Material's 48dp layout padding would
+        // otherwise put invisible margins between measured bounds and visible cards.
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
         Layout(modifier=Modifier.matchParentSize(),measurePolicy=measureCards,content={
         positions.forEach {(id,box) -> key(id) {
             var drag by remember(id,box.x,box.y) {mutableStateOf(Offset.Zero)}
             Card(enabled=enabled,onClick={onSelect(id)},modifier=Modifier.layoutId(id).testTag("genealogy-node-$id")
                 .onSizeChanged {actual ->if(measuredSizes[id]!=actual)measuredSizes=measuredSizes+(id to actual)}
-                .pointerInput(id,box.x,box.y,enabled) {if(enabled)detectDragGesturesAfterLongPress(onDragStart={drag=Offset.Zero},onDragCancel={drag=Offset.Zero;liveDrag=null},onDragEnd={onMove(id,box.x+drag.x,box.y+drag.y)}) {change,amount ->change.consume();drag+=amount/(density.density*latest.zoom);liveDrag=id to drag}},
+                .pointerInput(id,box.x,box.y,enabled) {if(enabled)detectDragGesturesAfterLongPress(onDragStart={drag=Offset.Zero},onDragCancel={drag=Offset.Zero;liveDrag=null},onDragEnd={onMove(id,box.x+drag.x,people.getValue(id).y)}) {change,amount ->change.consume();drag+=Offset(amount.x,0f)/(density.density*latest.zoom);liveDrag=id to drag}},
                 shape=RoundedCornerShape((12*view.zoom).dp),border=if(view.selected==id)androidx.compose.foundation.BorderStroke(2.dp,primary) else null,
                 colors=CardDefaults.cardColors(containerColor=if(id in people)MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(Modifier.padding((10*view.zoom).dp),verticalArrangement=Arrangement.spacedBy((5*view.zoom).dp)) {
@@ -158,5 +161,6 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
             }
         }}
         })
+        }
     }
 }

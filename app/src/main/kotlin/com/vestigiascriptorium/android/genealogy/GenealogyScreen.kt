@@ -64,7 +64,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         if(dirty) {discard=true;return}
         editorStates.removeState(editorSession);editorSession=newId()
         val p=tree?.people?.firstOrNull {it.id==id};val e=tree?.events?.firstOrNull {it.id==id}
-        val x=p?.x ?: e?.x ?: 0f;val y=p?.y ?: e?.y ?: 0f
+        val x=nodeBounds[id]?.x ?: p?.x ?: e?.x ?: 0f;val y=nodeBounds[id]?.y ?: p?.y ?: e?.y ?: 0f
         val zoom=state.view.zoom
         val bounds=nodeBounds[id]
         if(bounds==null && e!=null)

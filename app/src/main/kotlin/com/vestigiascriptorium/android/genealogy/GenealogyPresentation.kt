@@ -72,7 +72,7 @@ internal fun segmentDistance(point: GraphPoint,a: GraphPoint,b: GraphPoint): Flo
 }
 
 /** One parental junction and sibling bus for each explicitly recorded parent set. */
-internal fun familySegments(family: FamilyConnection,boxes: Map<String,GraphBox>,includeParentLine: Boolean=true): List<Pair<GraphPoint,GraphPoint>> {
+internal fun familySegments(family: FamilyConnection,boxes: Map<String,GraphBox>,includeParentLine: Boolean=true,parentRowBottom: Float?=null): List<Pair<GraphPoint,GraphPoint>> {
     val parents=family.parents.map {boxes.getValue(it)}
     val children=family.children.map {boxes.getValue(it)}
     if(parents.isEmpty() || children.isEmpty())return emptyList()
@@ -80,7 +80,7 @@ internal fun familySegments(family: FamilyConnection,boxes: Map<String,GraphBox>
     val origin=pair?.let {(it.first+it.second)*.5f} ?: parents.single().let {GraphPoint(it.x+it.width/2,it.y+it.height)}
     val below=children.minOf {it.y}>origin.y
     val targets=children.map {GraphPoint(it.x+it.width/2,if(below)it.y else it.y+it.height)}
-    val busY=if(below)(origin.y+targets.minOf {it.y})/2 else origin.y+48f
+    val busY=if(below)((parentRowBottom ?: parents.maxOf {it.y+it.height})+targets.minOf {it.y})/2 else origin.y+48f
     val junction=GraphPoint(origin.x,busY)
     return buildList {
         if(pair!=null && includeParentLine)add(pair)
