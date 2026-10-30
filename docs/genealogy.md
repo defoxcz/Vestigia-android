@@ -460,3 +460,9 @@ Release APK je v `vestigia-installations/testing/`, předchozí 1.0.0027 v
 `vestigia-installations/archive/android/`. Veřejný GET se shoduje s lokálním
 APK; SHA-256:
 `1414e6d0812cb979e0bdf3b5aa05c693462c3ab11bc6a0d0fba400e6410070d0`.
+
+Po odemčení telefonu prošly všechny čtyři UI scénáře 1.0.0028 bez přeskočení.
+Geometrická kontrola potvrdila čtvercové rozměry obou portrétů, stejnou svislou
+osu a umístění manželky napravo od manžela. Snímek fyzického telefonu potvrdil
+kruhové výřezy vedle sebe i navazující rodinnou větev. Prošly také regresní
+scénáře kopírování cloudového obrázku, odebrání/Undo a potvrzení importu.
