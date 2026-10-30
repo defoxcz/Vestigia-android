@@ -70,11 +70,11 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(14.dp)) {
             if(portrait.isNotEmpty())PersonPortrait(portrait,media,c,Modifier.fillMaxWidth().height(160.dp))
             if(editing) {
-                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(enabled=!busy && !photoBusy && media!=null,onClick={picker.launch(arrayOf("image/*"))}) {Text(if(portrait.isEmpty())c.t("Vložit obrázek","Add portrait") else c.t("Změnit obrázek","Change portrait"))}
-                    if(portrait.isNotEmpty())TextButton(enabled=!busy && !photoBusy,onClick={portrait=""}) {Text(c.t("Odstranit obrázek","Remove portrait"))}
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(modifier=Modifier.weight(1f).fillMaxHeight(),enabled=!busy && !photoBusy && media!=null,onClick={picker.launch(arrayOf("image/*"))}) {Text(if(portrait.isEmpty())c.t("Vložit obrázek","Add portrait") else c.t("Změnit obrázek","Change portrait"))}
+                    OutlinedButton(modifier=Modifier.weight(1f).fillMaxHeight(),enabled=!busy && !photoBusy && media!=null,onClick={cloudPicker.launch(Unit)}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
                 }
-                OutlinedButton(enabled=!busy && !photoBusy && media!=null,onClick={cloudPicker.launch(Unit)}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
+                if(portrait.isNotEmpty())TextButton(enabled=!busy && !photoBusy,onClick={portrait=""}) {Text(c.t("Odstranit obrázek","Remove portrait"))}
                 if(photoBusy)LinearProgressIndicator(Modifier.fillMaxWidth())
                 if(photoError)Text(c.t("Obrázek nelze načíst. Zkontrolujte připojení a přístup ke zdroji. Vyberte podporovaný obrázek do 32 MB.","Unable to read image. Check your connection and access. Choose a supported image up to 32 MB."),color=MaterialTheme.colorScheme.error)
                 if(person.legacyName.isNotBlank())Text(c.t("Dosavadní celé jméno: ","Legacy full name: ")+person.legacyName,style=MaterialTheme.typography.bodySmall)

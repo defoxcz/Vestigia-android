@@ -14,10 +14,10 @@ import com.vestigiascriptorium.android.aids.reader.AidImages
 import com.vestigiascriptorium.android.ui.main.Copy
 
 @Composable
-internal fun PersonPortrait(key: String,media: GenealogyMedia?,c: Copy,modifier: Modifier=Modifier) {
+internal fun PersonPortrait(key: String,media: GenealogyMedia?,c: Copy,modifier: Modifier=Modifier,contentScale: ContentScale=ContentScale.Fit) {
     var failed by remember(key) {mutableStateOf(false)}
     Box(modifier.testTag("person-portrait").background(MaterialTheme.colorScheme.surfaceContainer)) {
-        AsyncImage(model=media?.file(key),imageLoader=AidImages.loader(LocalContext.current),contentDescription=c.t("Portrét osoby","Person portrait"),contentScale=ContentScale.Fit,
+        AsyncImage(model=media?.file(key),imageLoader=AidImages.loader(LocalContext.current),contentDescription=c.t("Portrét osoby","Person portrait"),contentScale=contentScale,
             modifier=Modifier.fillMaxSize(),onError={failed=true},onSuccess={failed=false})
         if(failed)Text(c.t("Obrázek není dostupný","Image unavailable"),Modifier.padding(8.dp),style=MaterialTheme.typography.bodySmall)
     }

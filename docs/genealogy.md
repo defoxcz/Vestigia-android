@@ -419,3 +419,19 @@ soukromé soubory z Disku se při testování nevybíraly ani nečetly.
 Finální sestavení 1.0.0026: Debug/Release, všech 49 JVM testů a Lint obou variant
 prošly. Obě varianty jsou aktualizované výhradně instalací `-r`, bez odinstalace
 nebo mazání uživatelských dat.
+
+## Kruhové portréty (1.0.0027)
+
+V editoru osoby jsou tlačítka Vložit/Změnit obrázek a Google Disk / soubory
+vedle sebe ve stejně širokých a vysokých tlačítkách. Odstranění obrázku je
+samostatně pod nimi. Portréty v grafových boxech mají kruhový výřez vyplněný
+obrázkem; uložená původní kopie se nemění. Při seskupení manželek v boxu
+manžela se u každé manželky s obrázkem zobrazí také její kruhový portrét.
+Klepnutí na něj otevře příslušnou osobu stejně jako její jméno. Skutečná výška
+obsahu dál určuje geometrii boxů, generačních řádků a spojnic.
+
+Ověření: `assembleDebug lintDebug` a čtyři UI scénáře na fyzickém Samsungu
+SM-S938B prošly. Kontrola porovnává polohu obou tlačítek a ověřuje přítomnost
+portrétu manželky ve společném boxu; regresně pokrývá cloudovou kopii,
+odebrání/Undo, import a editaci manželky. Kruhové výřezy byly zkontrolovány
+ze snímku telefonu. Debug byl aktualizován pouze přes `adb install -r`.

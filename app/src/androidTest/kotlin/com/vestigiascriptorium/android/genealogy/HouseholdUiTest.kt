@@ -19,8 +19,13 @@ class HouseholdUiTest {
         Assert.assertFalse("Unlock phone for household test",context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked)
         val root=File(context.cacheDir,"household-${newId()}")
         val store=GenealogyStore(root)
-        val father=Person(givenName="Jan",gender="male")
-        val wife=Person(givenName="Anna",gender="female",x=400f,mentionedFrom="1830",mentionedTo="1880")
+        val bitmap=android.graphics.Bitmap.createBitmap(40,60,android.graphics.Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(android.graphics.Color.BLUE)
+        val bytes=java.io.ByteArrayOutputStream().also {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}.toByteArray()
+        bitmap.recycle()
+        val portrait=GenealogyMedia(File(root,"media")).add(bytes.inputStream())
+        val father=Person(givenName="Jan",gender="male",portrait=portrait)
+        val wife=Person(givenName="Anna",gender="female",portrait=portrait,x=400f,mentionedFrom="1830",mentionedTo="1880")
         val child=Person(givenName="Dítě",x=600f,y=250f)
         var tree=FamilyTree(title="Domácnost",people=listOf(father,wife,child))
         tree=GenealogyEdits.relate(tree,father.id,wife.id,Relative.SPOUSE)
@@ -41,6 +46,7 @@ class HouseholdUiTest {
             rule.waitUntil(10000) {controller.state.value.collapseWives && !controller.state.value.busy}
             rule.onNodeWithTag("genealogy-node-${wife.id}").assertDoesNotExist()
             rule.onNodeWithTag("genealogy-node-${father.id}").assertExists()
+            rule.onNodeWithContentDescription("Portrét: Anna").assertExists()
             Assert.assertTrue(store.collapseWives())
             GenealogyStore(root).use {Assert.assertTrue(it.collapseWives())}
             rule.onNodeWithContentDescription("Přizpůsobit").performClick()

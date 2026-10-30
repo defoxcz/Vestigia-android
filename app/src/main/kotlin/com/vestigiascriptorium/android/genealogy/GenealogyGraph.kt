@@ -10,6 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
@@ -160,8 +163,13 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 shape=RoundedCornerShape((12*view.zoom).dp),border=if(household.owner(view.selected.orEmpty())==id)androidx.compose.foundation.BorderStroke(2.dp,primary) else null,
                 colors=CardDefaults.cardColors(containerColor=if(id in people)MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(Modifier.padding((10*view.zoom).dp),verticalArrangement=Arrangement.spacedBy((5*view.zoom).dp)) {
-                    people[id]?.portrait?.takeIf {it.isNotBlank()}?.let {PersonPortrait(it,media,copy,Modifier.fillMaxWidth().height((112*view.zoom).dp))}
-                    lines.getValue(id).forEach {line ->Text(line.text,modifier=if(line.personId!=null)Modifier.clickable(enabled=enabled) {onSelect(line.personId)}.semantics {contentDescription=copy.t("Otevřít osobu: ","Open person: ")+people.getValue(line.personId).name} else Modifier,letterSpacing=0.sp,fontSize=((if(line.title)14 else 11)*view.zoom).sp,lineHeight=((if(line.title)17 else 14)*view.zoom).sp,maxLines=line.limit,overflow=TextOverflow.Ellipsis,textDecoration=if(line.personId!=null)androidx.compose.ui.text.style.TextDecoration.Underline else null,color=if(line.personId!=null)primary else if(line.title)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)}
+                    people[id]?.portrait?.takeIf {it.isNotBlank()}?.let {PersonPortrait(it,media,copy,Modifier.size((80*view.zoom).dp).clip(CircleShape),contentScale=ContentScale.Crop)}
+                    lines.getValue(id).forEach {line ->
+                        line.personId?.let {wife ->people.getValue(wife).portrait.takeIf {it.isNotBlank()}?.let {portrait ->
+                            PersonPortrait(portrait,media,copy,Modifier.size((64*view.zoom).dp).clip(CircleShape)
+                                .clickable(enabled=enabled) {onSelect(wife)}.semantics {contentDescription=copy.t("Portrét: ","Portrait: ")+people.getValue(wife).name},contentScale=ContentScale.Crop)
+                        }}
+                        Text(line.text,modifier=if(line.personId!=null)Modifier.clickable(enabled=enabled) {onSelect(line.personId)}.semantics {contentDescription=copy.t("Otevřít osobu: ","Open person: ")+people.getValue(line.personId).name} else Modifier,letterSpacing=0.sp,fontSize=((if(line.title)14 else 11)*view.zoom).sp,lineHeight=((if(line.title)17 else 14)*view.zoom).sp,maxLines=line.limit,overflow=TextOverflow.Ellipsis,textDecoration=if(line.personId!=null)androidx.compose.ui.text.style.TextDecoration.Underline else null,color=if(line.personId!=null)primary else if(line.title)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)}
                 }
             }
         }}

@@ -38,7 +38,12 @@ class PortraitImportUiTest {
         val owner=registry("portrait.png")
         rule.setContent {CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}}
         waitText(person.name);rule.onNodeWithText(person.name).performClick();rule.onNodeWithText("Upravit").performClick()
-        rule.onNodeWithText("Vložit obrázek").performScrollTo().performClick()
+        rule.onNodeWithText("Vložit obrázek").performScrollTo()
+        val localButton=rule.onNodeWithText("Vložit obrázek").fetchSemanticsNode().boundsInWindow
+        val cloudButton=rule.onNodeWithText("Google Disk / soubory").fetchSemanticsNode().boundsInWindow
+        Assert.assertEquals(localButton.center.y,cloudButton.center.y,2f)
+        Assert.assertTrue(localButton.right<=cloudButton.left)
+        rule.onNodeWithText("Vložit obrázek").performClick()
         rule.waitUntil(10_000) {rule.onAllNodesWithContentDescription("Portrét osoby").fetchSemanticsNodes().isNotEmpty()}
         rule.onNodeWithText("Uložit osobu").performClick()
         rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.portrait?.isNotEmpty()==true && !controller.state.value.busy}
