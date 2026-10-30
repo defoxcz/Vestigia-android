@@ -435,3 +435,11 @@ SM-S938B prošly. Kontrola porovnává polohu obou tlačítek a ověřuje přít
 portrétu manželky ve společném boxu; regresně pokrývá cloudovou kopii,
 odebrání/Undo, import a editaci manželky. Kruhové výřezy byly zkontrolovány
 ze snímku telefonu. Debug byl aktualizován pouze přes `adb install -r`.
+
+Release 1.0.0027 byl následně sestaven, ověřen kontrolou podpisu a aktualizován
+na fyzickém telefonu přes `adb install -r`; spuštění aktivity prošlo.
+Podepsané APK je zveřejněné jako
+`vestigia-installations/testing/VestigiaScriptorium-1.0.0027-release.apk`.
+Předchozí 1.0.0026 je zachovaná v `vestigia-installations/archive/android/`.
+Veřejný HTTPS GET byl porovnán s lokálním APK a má shodný SHA-256:
+`04430c2c8bcf1470489c099f0560ecc6e3e21c6d5dc77ccaf8862e1b5d45167c`.
