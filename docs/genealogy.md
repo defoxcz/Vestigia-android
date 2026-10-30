@@ -251,5 +251,9 @@ z přehledu osoby. Přizpůsobení a hledání volného místa ignorují skryté
 Ověření 1.0.0019: 43 JVM testů a Lint obou variant prošly; sestavení Debug,
 Release a instrumentačních testů prošlo. Nový UI scénář pokrývá založení osoby
 přes Přidat příbuzného, datum bez nul, vyhledání bez diakritiky, nahrazení dotazu,
-připojení existujícího UUID a nepřítomnost boxů událostí. Jeho spuštění na
-telefonu zatím nebylo možné: zařízení není připojeno k ADB.
+připojení existujícího UUID a nepřítomnost boxů událostí. Po připojení telefonu
+30. 10. 2026 prošlo šest regresních UI scénářů a nový scénář příbuzného.
+První běh nového testu měl nejednoznačný selektor (stejné jméno v grafu i dialogu);
+po omezení selektoru na dialog scénář prošel. Graf s přímou rodičovskou
+spojnicí byl také vizuálně zkontrolován. Release 1.0.0019 aktualizován přes
+`adb install -r` bez odinstalace nebo mazání dat.

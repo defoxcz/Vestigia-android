@@ -30,14 +30,14 @@ class RelativeEditorUiTest {
         rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
         waitText("Hledat existující osobu")
         rule.onNodeWithText("Hledat existující osobu").performTextInput("jiri dvorak")
-        rule.onNodeWithText("Jiří Dvořák").performScrollTo().performClick()
+        rule.onNode(hasText("Jiří Dvořák") and hasAnyAncestor(isDialog())).performScrollTo().performClick()
         rule.onNodeWithText("Vybraná osoba: Jiří Dvořák").assertExists()
         // A new IME value invalidates the previous selection and updates suggestions.
         rule.onNodeWithText("Hledat existující osobu").performTextReplacement("jan novak")
-        rule.onNodeWithText("Jan Novák").performScrollTo().assertExists()
+        rule.onNode(hasText("Jan Novák") and hasAnyAncestor(isDialog())).performScrollTo().assertExists()
         rule.onNodeWithText("Vybraná osoba: Jiří Dvořák").assertDoesNotExist()
         rule.onNodeWithText("Hledat existující osobu").performTextReplacement("jiri dvorak")
-        rule.onNodeWithText("Jiří Dvořák").performScrollTo().performClick()
+        rule.onNode(hasText("Jiří Dvořák") and hasAnyAncestor(isDialog())).performScrollTo().performClick()
         rule.onNodeWithText("Připojit osobu").performClick()
         rule.waitUntil(10_000) {controller.state.value.tree?.events?.any {it.roles["genealogy.father"]==father.id}==true && !controller.state.value.busy}
         rule.waitUntil(10_000) {rule.onAllNodesWithText("Připojit osobu").fetchSemanticsNodes().isEmpty()}
