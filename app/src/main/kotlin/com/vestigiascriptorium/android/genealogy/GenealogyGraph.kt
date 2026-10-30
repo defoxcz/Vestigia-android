@@ -124,9 +124,12 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
         }}
         .semantics {contentDescription=copy.t("Graf vazeb. Posun prstem, přiblížení dvěma prsty.","Connections graph. Drag to pan, pinch to zoom.")}) {
         Canvas(Modifier.fillMaxSize()) {
-            presentation.parents.forEach {connection ->
-                val ends=connectionEnds(liveBox(connection.parent),liveBox(connection.child))
-                drawLine(ink,screen(ends.first),screen(ends.second),2.dp.toPx())
+            val familyBoxes=boxes.mapValues {(id,_) ->liveBox(id)}
+            presentation.families.forEach {family ->
+                val partnerLine=presentation.connections.any {setOf(it.first,it.second)==family.parents.toSet()}
+                familySegments(family,familyBoxes,!partnerLine).forEach {(a,b) ->
+                    drawLine(ink,screen(a),screen(b),2.dp.toPx())
+                }
             }
             presentation.connections.forEach {connection ->
                 val ends=connectionEnds(liveBox(connection.first),liveBox(connection.second))

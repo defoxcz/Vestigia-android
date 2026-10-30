@@ -46,6 +46,24 @@ class GenealogyPresentationTest {
         assertEquals(setOf(ParentConnection("a","c","genealogy.father"),ParentConnection("b","c","genealogy.mother")),GenealogyPresentation(source).parents.toSet())
         assertEquals(2,source.events.size)
     }
+    @Test fun siblingsShareOneParentJunctionWhileHalfSiblingsRemainSeparate() {
+        val d=Person(id="d",givenName="Další dítě")
+        val e=Person(id="e",givenName="Polorodý sourozenec")
+        val events=listOf(
+            LifeEvent(kind="genealogy.birth",roles=mapOf("subject" to "c","genealogy.father" to "a","genealogy.mother" to "b")),
+            LifeEvent(kind="genealogy.parentage",roles=mapOf("subject" to "d","genealogy.father" to "a","genealogy.mother" to "b")),
+            LifeEvent(kind="genealogy.parentage",roles=mapOf("subject" to "e","genealogy.father" to "a")))
+        val families=GenealogyPresentation(tree.copy(people=tree.people+listOf(d,e),events=events)).families
+        assertEquals(2,families.size)
+        val family=families.single {it.parents.size==2}
+        assertEquals(listOf("c","d"),family.children)
+        val boxes=mapOf("a" to GraphBox(0f,0f,200f,100f),"b" to GraphBox(400f,0f,200f,100f),"c" to GraphBox(0f,400f,200f,100f),"d" to GraphBox(400f,400f,200f,100f))
+        val segments=familySegments(family,boxes)
+        assertEquals(5,segments.size) // parent line, one trunk, one sibling bus, two branches
+        assertEquals(GraphPoint(300f,50f),segments[1].first)
+        assertEquals(setOf(GraphPoint(100f,400f),GraphPoint(500f,400f)),segments.takeLast(2).map {it.second}.toSet())
+        assertEquals(4,familySegments(family,boxes,false).size)
+    }
     @Test fun segmentAnchorsRespectDifferentBoxSizesAndTouchDistanceIsFinite() {
         val a=GraphBox(0f,0f,244f,210f);val b=GraphBox(400f,30f,244f,160f)
         val (from,to)=connectionEnds(a,b)

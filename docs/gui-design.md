@@ -148,3 +148,7 @@ podmínky a samostatné relace. Technické podrobnosti jsou v README.
 Od 1.0.0019 mají v genealogickém grafu vlastní box pouze osoby. Události jsou
 skryté datové záznamy upravitelné z přehledu osoby; rodiče a partneři mají přímé
 spojnice. Přidání příbuzného je dostupné také přímo v editoru nové osoby.
+
+Od 1.0.0021 má spodní editor ručně nastavitelnou výšku tažením úchytu bez
+automatického dosouvání. Děti téže dvojice rodičů používají společný kmen
+ze spojnice rodičů a společnou sourozeneckou větev.

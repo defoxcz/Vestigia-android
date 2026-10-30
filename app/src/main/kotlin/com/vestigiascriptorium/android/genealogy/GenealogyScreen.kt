@@ -45,7 +45,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     var graphSize by remember {mutableStateOf(IntSize.Zero)}
     var nodeBounds by remember(tree?.id) {mutableStateOf<Map<String,GraphBox>>(emptyMap())}
     val density=LocalDensity.current.density
-    var fullEditor by rememberSaveable {mutableStateOf(false)}
+    var panelFraction by rememberSaveable {mutableFloatStateOf(.6f)}
     var dirty by remember {mutableStateOf(false)}
     var discard by remember {mutableStateOf(false)}
     var relative by rememberSaveable {mutableStateOf<String?>(null)}
@@ -58,18 +58,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     val context=LocalContext.current
     val windowSize=LocalWindowInfo.current.containerSize
     val wide=with(LocalDensity.current) {windowSize.width.toDp()>=700.dp}
-    // Sheet insets vary with its offset. Do not derive its height from the sheet's
-    // changing constraints, otherwise the measured height moves the Expanded anchor.
-    val editorHeight=with(LocalDensity.current) {windowSize.height.toDp()*.9f}
-    val latestDirty by rememberUpdatedState(dirty)
-    // A changing callback is a saveable-state input in Material3 1.4. Keep its
-    // identity stable while reading the latest draft and storage state.
-    val confirmSheetChange=remember { {target: SheetValue ->
-        if(target==SheetValue.Hidden && latestDirty) {discard=true;false} else !latestBusy
-    } }
-    val sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=fullEditor || editor=="new" || tree?.events?.any {it.id==editor}==true,
-        confirmValueChange=confirmSheetChange)
-    fun dismissEditor() {editorStates.removeState(editorSession);editor=null;dirty=false;fullEditor=false}
+    fun dismissEditor() {editorStates.removeState(editorSession);editor=null;dirty=false}
     fun closeEditor() {if(state.busy)return;if(dirty)discard=true else dismissEditor()}
     fun select(id: String) {
         if(dirty) {discard=true;return}
@@ -81,7 +70,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         if(bounds==null && e!=null)
             controller.view(state.view.copy(selected=id))
         else controller.view(state.view.copy(selected=id,x=graphSize.width/density/2-(x+(bounds?.width ?: 244f)/2)*zoom,y=30-y*zoom))
-        editor=id;dirty=false;fullEditor=false
+        editor=id;dirty=false
     }
     LaunchedEffect(selectedPerson,state.ready,tree?.id,graphSize) {
         if(selectedPerson!=null && state.ready && tree!=null && graphSize.width>0) {
@@ -105,10 +94,10 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         val id=editor ?: return
         val person=if(id=="new") Person(id=draftId,x=(-state.view.x+40)/state.view.zoom,y=(-state.view.y+40)/state.view.zoom) else currentTree.people.firstOrNull {it.id==id}
         if(person!=null) PersonPanel(currentTree,person,id=="new",copy,state.busy,onDirty={dirty=it},onClose=::closeEditor,
-            onExpand={fullEditor=true},media=controller.media,
+            onExpand={},media=controller.media,
             onSave={p,b,d -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
             onSaveAndRelative={p,b,d ->relativeAfterSave=p.id;pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
-            onRelative={relative=person.id},onEvidence={evidence=person.id},onOpenEvent={eventId ->editor=eventId;fullEditor=true;dirty=false},onEvent={kind ->
+            onRelative={relative=person.id},onEvidence={evidence=person.id},onOpenEvent={eventId ->editor=eventId;dirty=false},onEvent={kind ->
                 val old=currentTree.events.firstOrNull {it.kind==kind && it.roles["subject"]==person.id && kind!="genealogy.mentioned"}
                 if(old!=null) {editor=old.id;dirty=false}
                 else {pending=true;pendingRevision=state.revision;controller.edit {it.copy(events=it.events+LifeEvent(kind=kind,roles=mapOf("subject" to person.id),x=person.x+260,y=person.y+120)).also(GenealogyEdits::validate)}}
@@ -159,12 +148,12 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         }
     }
     // The same editor is used in the bottom sheet and the wide-window side panel.
-    if(tree!=null && editor!=null && !wide) ModalBottomSheet(onDismissRequest=::closeEditor,sheetState=sheetState) {Box(Modifier.fillMaxWidth().height(editorHeight).testTag("genealogy-editor-panel").imePadding()) {Panel()}}
+    if(tree!=null && editor!=null && !wide) ResizableEditorPanel(copy,panelFraction,{panelFraction=it},::closeEditor) {Panel()}
     // Wide panels are composed below to avoid separate editor state implementations.
     if(importing || state.importPreview!=null) GenealogyImportDialog(controller,state,copy,onDismiss={importing=false;controller.cancelImport()})
     if(create) NameDialog(copy,state.busy,onDismiss={create=false},onCreate={controller.create(it);create=false})
     if(discard) AlertDialog(onDismissRequest={discard=false},title={Text(copy.t("Zahodit změny?","Discard changes?"))},text={Text(copy.t("Rozpracované údaje nejsou uložené.","The edited details have not been saved."))},confirmButton={TextButton(onClick={discard=false;dismissEditor()}) {Text(copy.t("Zahodit","Discard"))}},dismissButton={TextButton(onClick={discard=false}) {Text(copy.t("Pokračovat v úpravách","Keep editing"))}})
-    relative?.let {id -> if(tree!=null) RelativeDialog(tree,id,copy,state.busy,onDismiss={relative=null},onSave={existing,newPerson,kind ->
+    relative?.let {id -> if(tree!=null) RelativeDialog(tree,id,copy,state.busy,onDismiss={relative=null},onSave={existing,newPerson,kind,secondParent ->
         pending=true;pendingRevision=state.revision
         controller.edit {before ->
             val selected=before.people.first {it.id==id}
@@ -173,7 +162,8 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             val dx=if(kind==Relative.MOTHER || kind==Relative.SPOUSE) 300f else -50f
             val pos=GenealogyEdits.freePosition(before,selected.x+dx,selected.y+dy)
             val withPerson=if(existing!=null) before else before.copy(people=before.people+newPerson.copy(id=other,x=pos.first,y=pos.second))
-            GenealogyEdits.relate(withPerson,id,other,kind)
+            val related=GenealogyEdits.relate(withPerson,id,other,kind)
+            if(secondParent!=null)GenealogyEdits.relate(related,other,secondParent,if(kind==Relative.CHILD_AS_FATHER)Relative.MOTHER else Relative.FATHER) else related
         }
     })}
     evidence?.let {id -> EvidenceDialog(id,copy,state.busy,onDismiss={evidence=null},onSave={doc ->pending=true;pendingRevision=state.revision;controller.edit {it.copy(evidence=it.evidence+doc).also(GenealogyEdits::validate)}})}

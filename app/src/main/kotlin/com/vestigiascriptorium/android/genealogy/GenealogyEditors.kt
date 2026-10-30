@@ -154,16 +154,21 @@ internal fun <T> Choice(label: String,options: List<T>,value: T,onChange: (T)->U
 }
 
 @Composable
-internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolean,onDismiss: ()->Unit,onSave: (String?,Person,Relative)->Unit) {
+internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolean,onDismiss: ()->Unit,onSave: (String?,Person,Relative,String?)->Unit) {
     var kind by rememberSaveable {mutableStateOf(Relative.FATHER)}
+    var secondParent by rememberSaveable {mutableStateOf("")}
     var existing by rememberSaveable {mutableStateOf("")}
     var given by rememberSaveable {mutableStateOf("")}
     var middle by rememberSaveable {mutableStateOf("")}
     var surname by rememberSaveable {mutableStateOf("")}
     var query by rememberSaveable {mutableStateOf("")}
     AlertDialog(onDismissRequest=onDismiss,title={Text(c.t("Přidat příbuzného","Add relative"))},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-        Choice(c.t("Vztah k vybrané osobě","Relationship to selected person"),Relative.entries.toList(),kind,{kind=it}) {when(it) {
+        Choice(c.t("Vztah k vybrané osobě","Relationship to selected person"),Relative.entries.toList(),kind,{kind=it;secondParent=""}) {when(it) {
             Relative.FATHER ->c.t("Otec","Father");Relative.MOTHER ->c.t("Matka","Mother");Relative.SPOUSE ->c.t("Partner / partnerka","Partner");Relative.CHILD_AS_FATHER ->c.t("Dítě · vybraná osoba je otec","Child · selected person is father");Relative.CHILD_AS_MOTHER ->c.t("Dítě · vybraná osoba je matka","Child · selected person is mother")}}
+        if(kind in listOf(Relative.CHILD_AS_FATHER,Relative.CHILD_AS_MOTHER)) {
+            val partners=remember(tree,person) {GenealogyPresentation(tree).person(person).partners.map {it.person}}
+            if(partners.isNotEmpty())Choice(c.t("Druhý rodič dítěte","Child’s other parent"),listOf("")+partners.map {it.id},secondParent,{secondParent=it}) {key ->partners.firstOrNull {it.id==key}?.name ?: c.t("Neurčený druhý rodič","Other parent unspecified")}
+        }
         OutlinedTextField(query,{query=it;existing=""},Modifier.fillMaxWidth(),label={Text(c.t("Hledat existující osobu","Find existing person"))},singleLine=true)
         val rows=remember(tree) {PeopleIndex.rows(tree,java.util.Locale.getDefault()).filter {it.person.id!=person}}
         val matches=remember(rows,query) {PeopleIndex.filter(rows,query)}
@@ -182,7 +187,7 @@ internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolea
         }
         if(existing.isEmpty())NameFields(given,middle,surname,c,{given=it},{middle=it},{surname=it})
         Text(c.t("Uloží se záznam vztahu. Datum ani matriční doklad nejsou povinné.","A relationship record will be saved. No date or register page is required."),style=MaterialTheme.typography.bodySmall)
-    }},confirmButton={TextButton(enabled=!busy && (existing.isNotEmpty() || listOf(given,middle,surname).any {it.isNotBlank()}),onClick={onSave(existing.takeIf {it.isNotEmpty()},Person(givenName=given.trim(),middleName=middle.trim(),surname=surname.trim()),kind)}) {Text(c.t("Připojit osobu","Connect person"))}},dismissButton={TextButton(enabled=!busy,onClick=onDismiss) {Text(c.t("Zrušit","Cancel"))}})
+    }},confirmButton={TextButton(enabled=!busy && (existing.isNotEmpty() || listOf(given,middle,surname).any {it.isNotBlank()}),onClick={onSave(existing.takeIf {it.isNotEmpty()},Person(givenName=given.trim(),middleName=middle.trim(),surname=surname.trim()),kind,secondParent.takeIf {it.isNotEmpty()})}) {Text(c.t("Připojit osobu","Connect person"))}},dismissButton={TextButton(enabled=!busy,onClick=onDismiss) {Text(c.t("Zrušit","Cancel"))}})
 }
 
 @Composable

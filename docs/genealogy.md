@@ -275,3 +275,30 @@ rozepsaného jména a potvrzení zavření. Neotevírá uživatelské rodokmeny 
 Ověření 30. 10. 2026 na fyzickém Samsung SM-S938B: test rychlých gest a dva
 regresní scénáře editoru prošly. Prošlo také 43 JVM testů, sestavení Debug/Release
 a Lint obou variant. Aktualizace používá `adb install -r` se zachováním dat.
+
+
+## Volná výška panelu a rodinné větve (1.0.0021)
+
+Spodní panel se mění tažením horního úchytu a po puštění zůstává v nastavené
+výšce. Nemá automatické dorazy ani setrvačný dojezd. Rozsah je 25–95 % dostupné
+výšky; výška se pamatuje během práce v obrazovce včetně obnovení uloženého stavu.
+Přechod do editace nebo na událost ji automaticky nemění. Obsah panelu má vlastní
+posouvání, klávesnice respektuje dostupný prostor. Přístupnost nabízí také akce
+Zvětšit panel / Zmenšit panel. Zavření dál chrání neuložené údaje.
+
+Děti se seskupují podle skutečně zadané sady rodičů. U dvou rodičů vede společný
+kmen ze středu jejich spojnice na vodorovnou sourozeneckou větev a z ní větve
+k jednotlivým dětem. Další dítě stejné dvojice naváže na stejnou větev. Není-li
+zaznamenané partnerství, rodičovská spojnice se vykreslí i tak, ale nevytváří se
+fiktivní sňatek. Polorodí sourozenci s jinými rodiči mají samostatné větve.
+Při jediném známém rodiči vychází společná větev od něj; druhého rodiče aplikace
+neodhaduje. V Přidat příbuzného → Dítě lze výslovně zvolit druhého rodiče z
+partnerů. Oba rodiče a připojení dítěte se uloží v jedné transakci a jednom kroku
+Zpět. Existující vazby se znovu vykreslí automaticky bez hromadné změny dat.
+
+Ověření 30. 10. 2026: 44 JVM testů, Lint Debug/Release, sedm UI scénářů
+na fyzickém telefonu (ruční výška, editory, hledání, rodina se dvěma dětmi,
+portrét a import) prošly. Výšku test kontroluje podle délky tahu s tolerancí
+systémového prahu gesta a ověřuje nulový následný dojezd. Rodinná větev byla
+znovu ověřena samostatným testem a vizuálně ze snímku po dokončení animací Androidu.
+Release aktualizován instalací `-r` se zachováním dat.

@@ -15,7 +15,7 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class SheetGestureUiTest {
     @get:Rule val rule=createComposeRule()
-    @Test fun fastUpwardFlingsSettleAtOneStableExpandedPosition() {
+    @Test fun dragHandleKeepsTheChosenHeightWithoutFlingOrSnap() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         Assert.assertFalse("Unlock phone for sheet gesture test",context.getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked)
         val root=File(context.cacheDir,"sheet-gesture-${newId()}")
@@ -30,23 +30,24 @@ class SheetGestureUiTest {
             rule.waitUntil(10000) {rule.onAllNodesWithText(p.name).fetchSemanticsNodes().isNotEmpty()}
             rule.onNodeWithText(p.name).performClick()
             val panel=rule.onNodeWithTag("genealogy-editor-panel")
+            val handle=rule.onNodeWithTag("genealogy-panel-handle")
             val initial=panel.fetchSemanticsNode().boundsInWindow.top
-            panel.performTouchInput {swipe(Offset(width/2f,height*.2f),Offset(width/2f,0f),80)}
+            handle.performTouchInput {swipe(Offset(width/2f,height/2f),Offset(width/2f,height/2f-160f),80)}
             rule.waitForIdle()
             val expanded=panel.fetchSemanticsNode().boundsInWindow.top
-            Assert.assertTrue("Fast swipe must expand the panel",expanded<initial-100f)
-            repeat(3) {
-                panel.performTouchInput {swipe(Offset(width/2f,height*.2f),Offset(width/2f,0f),60)}
-                rule.waitForIdle()
-                Assert.assertEquals(expanded,panel.fetchSemanticsNode().boundsInWindow.top,2f)
-            }
+            val slop=android.view.ViewConfiguration.get(context).scaledTouchSlop
+            Assert.assertTrue(initial-expanded in (160f-slop-4f)..164f)
             repeat(12) {
                 rule.mainClock.advanceTimeBy(100)
                 Assert.assertEquals(expanded,panel.fetchSemanticsNode().boundsInWindow.top,2f)
             }
+            handle.performTouchInput {swipe(Offset(width/2f,height/2f),Offset(width/2f,height/2f+90f),60)}
+            rule.waitForIdle()
+            val lowered=panel.fetchSemanticsNode().boundsInWindow.top
+            Assert.assertTrue(lowered-expanded in (90f-slop-4f)..94f)
             rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Jméno").performTextReplacement("Změněný návrh")
-            panel.performTouchInput {swipe(Offset(width/2f,80f),Offset(width/2f,0f),60)}
+            handle.performTouchInput {swipe(Offset(width/2f,height/2f),Offset(width/2f,height/2f-80f),60)}
             rule.waitForIdle()
             rule.onNodeWithText("Jméno").assertTextContains("Změněný návrh")
             rule.onNodeWithText("Zavřít").performClick()

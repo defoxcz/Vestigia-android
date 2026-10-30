@@ -7,6 +7,7 @@ internal data class PartnerConnection(val first: String,val second: String,val e
     val weddingDates: List<String> get()=events.filter {it.kind=="genealogy.marriage"}.map {it.date}.filter {it.isNotBlank()}.distinct().sortedBy(::dateOrder)
 }
 internal data class ParentConnection(val parent: String,val child: String,val role: String)
+internal data class FamilyConnection(val parents: List<String>,val children: List<String>)
 internal data class PartnerEntry(val person: Person,val connection: PartnerConnection)
 internal data class PersonBoxData(val years: String,val partners: List<PartnerEntry>)
 internal data class GraphBox(val x: Float,val y: Float,val width: Float,val height: Float)
@@ -26,6 +27,8 @@ internal class GenealogyPresentation(val tree: FamilyTree) {
             event.roles[role]?.takeIf {it in people}?.let {ParentConnection(it,child!!,role)}
         }
     }.distinct()
+    val families=parents.groupBy {it.child}.map { (child,links) ->links.map {it.parent}.distinct().sorted() to child }
+        .groupBy({it.first},{it.second}).map {(parents,children) ->FamilyConnection(parents,children.distinct())}
     private val lifeEvents=tree.events.filter {it.kind in listOf("genealogy.birth","genealogy.death")}.groupBy {it.roles["subject"]}
     fun person(id: String,cs: Boolean=true): PersonBoxData {
         val subject=people.getValue(id)
@@ -66,4 +69,23 @@ internal fun segmentDistance(point: GraphPoint,a: GraphPoint,b: GraphPoint): Flo
     val t=if(length==0f)0f else (((point.x-a.x)*v.x+(point.y-a.y)*v.y)/length).coerceIn(0f,1f)
     val nearest=a+v*t
     return kotlin.math.hypot(point.x-nearest.x,point.y-nearest.y)
+}
+
+/** One parental junction and sibling bus for each explicitly recorded parent set. */
+internal fun familySegments(family: FamilyConnection,boxes: Map<String,GraphBox>,includeParentLine: Boolean=true): List<Pair<GraphPoint,GraphPoint>> {
+    val parents=family.parents.map {boxes.getValue(it)}
+    val children=family.children.map {boxes.getValue(it)}
+    if(parents.isEmpty() || children.isEmpty())return emptyList()
+    val pair=if(parents.size==2)connectionEnds(parents[0],parents[1]) else null
+    val origin=pair?.let {(it.first+it.second)*.5f} ?: parents.single().let {GraphPoint(it.x+it.width/2,it.y+it.height)}
+    val below=children.minOf {it.y}>origin.y
+    val targets=children.map {GraphPoint(it.x+it.width/2,if(below)it.y else it.y+it.height)}
+    val busY=if(below)(origin.y+targets.minOf {it.y})/2 else origin.y+48f
+    val junction=GraphPoint(origin.x,busY)
+    return buildList {
+        if(pair!=null && includeParentLine)add(pair)
+        add(origin to junction)
+        add(GraphPoint(minOf(origin.x,targets.minOf {it.x}),busY) to GraphPoint(maxOf(origin.x,targets.maxOf {it.x}),busY))
+        targets.forEach {add(GraphPoint(it.x,busY) to it)}
+    }
 }

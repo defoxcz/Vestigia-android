@@ -56,6 +56,37 @@ class RelativeEditorUiTest {
         rule.onNodeWithText("Zrušit").performClick()
         Assert.assertEquals("Anna Marie",store.read(tree.id).people.single {it.id==anna.id}.givenName)
     }
+    @Test fun twoChildrenUseTheChosenCoupleAndShareOneFamilyBranch()=isolated {store,controller ->
+        val father=Person(givenName="Otec",x=0f,y=0f)
+        val mother=Person(givenName="Matka",x=400f,y=0f)
+        val source=GenealogyEdits.relate(FamilyTree(title="Rodina",people=listOf(father,mother)),father.id,mother.id,Relative.SPOUSE)
+        store.save(source)
+        rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
+        rule.runOnIdle {controller.open(source.id)}
+        waitText("Přizpůsobit")
+        repeat(2) {index ->
+            rule.onNodeWithText("Přizpůsobit").performClick()
+            rule.onNodeWithTag("genealogy-node-${father.id}").performClick()
+            rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
+            rule.onNodeWithText("Vztah k vybrané osobě: Otec").performClick()
+            rule.onNodeWithText("Dítě · vybraná osoba je otec").performClick()
+            rule.onNodeWithText("Druhý rodič dítěte: Neurčený druhý rodič").performClick()
+            rule.onNode(hasText("Matka") and hasAnyAncestor(isPopup())).performClick()
+            rule.onNodeWithText("Jméno").performScrollTo().performTextInput("Dítě ${index+1}")
+            rule.onNodeWithText("Připojit osobu").performClick()
+            rule.waitUntil(10000) {controller.state.value.tree?.people?.size==index+3 && !controller.state.value.busy}
+            rule.waitUntil(10000) {rule.onAllNodesWithText("Připojit osobu").fetchSemanticsNodes().isEmpty()}
+        }
+        val tree=store.read(source.id)
+        val family=GenealogyPresentation(tree).families.single()
+        Assert.assertEquals(setOf(father.id,mother.id),family.parents.toSet())
+        Assert.assertEquals(2,family.children.size)
+        rule.onNodeWithText("Přizpůsobit").performClick()
+        rule.waitForIdle()
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        android.os.SystemClock.sleep(500) // Allow platform dialog/IME dismissal to finish before the screenshot.
+        InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap ->File(context.cacheDir,"family-branch-test.png").outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}}
+    }
     private inline fun isolated(action: (GenealogyStore,GenealogyController)->Unit) {
         val root=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"relative-editor-${newId()}")
         val store=GenealogyStore(root);val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val controller=GenealogyController(store,scope)
