@@ -232,7 +232,7 @@ internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolea
         val expanded=focused && query.isNotBlank() && existing.isEmpty() && dismissed!=query && matches.isNotEmpty()
         ExposedDropdownMenuBox(expanded=expanded,onExpandedChange={dismissed=if(it)null else query}) {
             OutlinedTextField(query,{query=it;existing="";dismissed=null},Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).onFocusChanged {focused=it.isFocused},label={Text(c.t("Hledat existující osobu","Find existing person"))},singleLine=true)
-            ExposedDropdownMenu(expanded=expanded,onDismissRequest={dismissed=query},modifier=Modifier.heightIn(max=240.dp).testTag("relative-suggestions")) {
+            KeyboardAwareSuggestions(expanded=expanded,onDismissRequest={dismissed=query},modifier=Modifier.heightIn(max=240.dp).testTag("relative-suggestions")) {
                 matches.take(20).forEach {row ->
                     DropdownMenuItem(text={Text(listOf(row.person.name,row.year?.toString().orEmpty()).filter {it.isNotEmpty()}.joinToString(" · "))},onClick={existing=row.person.id;query=row.person.name},modifier=Modifier.testTag("relative-suggestion-${row.person.id}"))
                 }

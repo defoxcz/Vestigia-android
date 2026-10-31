@@ -43,7 +43,7 @@ internal fun GenealogyPlaceField(label: String,value: String,c: Copy,source: Aid
         val expanded=focused && resultQuery==value && chosen!=value && dismissed!=value && matches.isNotEmpty()
         ExposedDropdownMenuBox(expanded=expanded,onExpandedChange={dismissed=if(it)null else value}) {
             OutlinedTextField(value,{chosen=null;dismissed=null;matches=emptyList();onChange(it)},Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).onFocusChanged {focused=it.isFocused},label={Text(label)},singleLine=true)
-            ExposedDropdownMenu(expanded=expanded,onDismissRequest={dismissed=value},modifier=Modifier.heightIn(max=240.dp).testTag("place-suggestions")) {
+            KeyboardAwareSuggestions(expanded=expanded,onDismissRequest={dismissed=value},modifier=Modifier.heightIn(max=240.dp).testTag("place-suggestions")) {
                 matches.forEach {place ->
                     DropdownMenuItem(text={Column {
                         Text(place.title)

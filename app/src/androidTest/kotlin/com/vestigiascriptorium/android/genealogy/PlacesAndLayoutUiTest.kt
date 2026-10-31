@@ -69,7 +69,9 @@ class PlacesAndLayoutUiTest {
         val source=AidReaderSource(File(store.root,"index")) {file}
         rule.setContent {VestigiaScriptoriumTheme {
             var value by remember {mutableStateOf("")}
-            Column(Modifier.fillMaxSize().imePadding().padding(16.dp),verticalArrangement=Arrangement.Bottom) {GenealogyPlaceField("Obec",value,Copy(true),source) {value=it}}
+            ResizableEditorPanel(Copy(true),.95f,{},{}) {
+                Column(Modifier.fillMaxSize().imePadding().padding(16.dp),verticalArrangement=Arrangement.Bottom) {GenealogyPlaceField("Obec",value,Copy(true),source) {value=it}}
+            }
         }}
         val input=rule.onNodeWithText("Obec")
         input.performClick().performTextInput("lunden")
@@ -79,13 +81,13 @@ class PlacesAndLayoutUiTest {
         InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap ->
             File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"place-suggestions-keyboard.png").outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
         }
-        rule.onNode(hasClickAction() and hasText("Břeclav")).performClick()
+        rule.onNode(hasClickAction() and hasText("Břeclav")).performTouchInput {click()}
         input.assertTextContains("Břeclav")
         input.performTextReplacement("Brno")
         rule.waitUntil(10000) {rule.onAllNodes(hasClickAction() and hasText("Brno") and !hasSetTextAction()).fetchSemanticsNodes().isNotEmpty()}
-        rule.onAllNodes(hasClickAction() and !hasSetTextAction())[0].assert(hasText("Brno"))
+        rule.onAllNodes(hasClickAction() and hasAnyAncestor(hasTestTag("place-suggestions")))[0].assert(hasText("Brno"))
         rule.onNode(hasClickAction() and hasText("Břeclav") and !hasSetTextAction()).assertDoesNotExist()
-        rule.onNode(hasClickAction() and hasText("Brno") and !hasSetTextAction()).performClick()
+        rule.onNode(hasClickAction() and hasText("Brno") and !hasSetTextAction()).performTouchInput {click()}
         input.assertTextContains("Brno")
     }
     @Test fun evidenceUsesThreeColumnsAndMoreInLandscape()=isolated {_,controller ->

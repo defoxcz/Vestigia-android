@@ -687,3 +687,26 @@ snímky byly vizuálně zkontrolovány. Testy používají izolované rodokmeny 
 obcí. Debug i Release byly aktualizovány pouze pomocí `adb install -r`.
 Podepsané APK 1.0.0036 je zveřejněno v testing, předchozí 1.0.0035 je v archivu.
 SHA-256: `fb99e2a8088ee1aec85da16c4c13e27ebec9f8efe128bdadb3201211028fd3f2`.
+
+## Našeptávání v dialogovém editoru (1.0.0037)
+
+Nabídky obcí, příbuzných a osob používají společné umístění podle aktuálního
+IME insetu. Horní okraj klávesnice se převede ze souřadnic obrazovky do
+souřadnic okna. Nabídka se ukotví pod pole, pokud se tam vejde, jinak nad něj,
+a její poloha i výška jsou omezené prostorem nad klávesnicí. Nepřebírá fokus
+textového pole. Tím se obejde viditelný rámec dialogu kresleného přes celou
+obrazovku, který může zahrnovat i oblast klávesnice.
+
+Regresní test nyní používá skutečný `ResizableEditorPanel` se stejným
+nastavením dialogu jako editor osoby. Ověřuje nabídku u spodního okraje,
+zachovaný fokus při psaní, obnovení výsledků po změně textu a výběr položek
+pomocí dotykových událostí. Snímek na fyzickém Samsungu SM-S938B potvrzuje
+současně viditelnou klávesnici a nabídku nad ní. Testy používají izolovanou
+databázi obcí a rodokmeny. Prošlo všech osm dotčených UI scénářů; selektor
+pořadí návrhů je omezený na nabídku, aby nezahrnoval klikatelné pozadí dialogu.
+
+Debug/Release sestavení, Lint obou variant a všech 56 JVM testů prošly.
+Obě instalace jsou aktualizované přes `adb install -r`. Podepsané APK 1.0.0037
+je v testing a předchozí 1.0.0036 je zachovaná v archivu Androidu. Veřejně
+stažené APK se shoduje s lokálním; SHA-256:
+`a57fdb3555df0ec4d47d5b33d58fd42243fdb8b54aff87a8ebaae474c429866a`.

@@ -70,7 +70,7 @@ internal fun PeopleScreen(tree: FamilyTree,c: Copy,onBack: ()->Unit,onSelect: (P
                 OutlinedTextField(query,{query=it;dismissed=null},singleLine=true,label={Text(c.t("Hledat osobu","Find person"))},
                     modifier=Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).onFocusChanged {focused=it.isFocused},
                     trailingIcon={if(query.isNotEmpty())TextButton(onClick={query="";dismissed=null}) {Text(c.t("Smazat","Clear"))}})
-                ExposedDropdownMenu(expanded=focused && query.isNotBlank() && dismissed!=query && filtered.isNotEmpty(),onDismissRequest={dismissed=query},modifier=Modifier.heightIn(max=240.dp).testTag("people-suggestions")) {
+                KeyboardAwareSuggestions(expanded=focused && query.isNotBlank() && dismissed!=query && filtered.isNotEmpty(),onDismissRequest={dismissed=query},modifier=Modifier.heightIn(max=240.dp).testTag("people-suggestions")) {
                     filtered.take(6).forEach {row -> DropdownMenuItem(text={Text(listOf(row.person.name,row.year?.toString().orEmpty()).filter {it.isNotEmpty()}.joinToString(" · "))},onClick={onSelect(row.person)},modifier=Modifier.testTag("person-suggestion-${row.person.id}"))}
                 }
             }
