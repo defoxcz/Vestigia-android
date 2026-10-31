@@ -40,6 +40,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     var importing by rememberSaveable {mutableStateOf(false)}
     var create by rememberSaveable {mutableStateOf(false)}
     var editor by rememberSaveable {mutableStateOf<String?>(null)}
+    var eventEditing by rememberSaveable {mutableStateOf(false)}
     var draftId by rememberSaveable {mutableStateOf(newId())}
     var editorSession by rememberSaveable {mutableStateOf(newId())}
     var graphSize by remember {mutableStateOf(IntSize.Zero)}
@@ -50,7 +51,8 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     var discard by remember {mutableStateOf(false)}
     var relative by rememberSaveable {mutableStateOf<String?>(null)}
     var evidence by rememberSaveable {mutableStateOf<String?>(null)}
-    var relativeAfterSave by rememberSaveable {mutableStateOf<String?>(null)}
+    var actionAfterSave by rememberSaveable {mutableStateOf<PersonEditorAction?>(null)}
+    var actionPerson by rememberSaveable {mutableStateOf<String?>(null)}
     var pending by remember {mutableStateOf(false)}
     var pendingRevision by remember {mutableLongStateOf(0)}
     val editorStates=rememberSaveableStateHolder()
@@ -82,7 +84,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         if(bounds==null && e!=null)
             controller.view(state.view.copy(selected=id))
         else controller.view(state.view.copy(selected=id,x=graphSize.width/density/2-(x+(bounds?.width ?: 244f)/2)*zoom,y=30-y*zoom))
-        editor=id;dirty=false
+        editor=id;eventEditing=false;dirty=false
     }
     LaunchedEffect(selectedPerson,state.ready,tree?.id,graphSize) {
         if(selectedPerson!=null && state.ready && tree!=null && graphSize.width>0) {
@@ -96,28 +98,44 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             if(editor=="new") state.tree?.people?.firstOrNull {it.id==draftId}?.let {p ->
                 controller.view(state.view.copy(selected=p.id,x=30-p.x*state.view.zoom,y=40-p.y*state.view.zoom))
             }
-            dismissEditor();relative=relativeAfterSave;relativeAfterSave=null;evidence=null;pending=false
+            val action=actionAfterSave;val personId=actionPerson
+            dismissEditor();actionAfterSave=null;actionPerson=null;evidence=null;relative=null;pending=false
+            when(action?.kind) {
+                PersonActionKind.RELATIVE ->relative=personId
+                PersonActionKind.EVIDENCE ->evidence=personId
+                PersonActionKind.EDIT_EVENT -> {editorSession=newId();eventEditing=true;editor=action.value}
+                else ->Unit
+            }
         }
-        else if(pending && state.error!=null) {pending=false;relativeAfterSave=null}
+        else if(pending && state.error!=null) {pending=false;actionAfterSave=null;actionPerson=null}
     }
     BackHandler {when {evidence!=null -> evidence=null;relative!=null -> relative=null;editor!=null -> closeEditor();tree!=null -> controller.closeTree();else -> onExit()}}
+    fun savePerson(person: Person,life: PersonLifeDetails,action: PersonEditorAction?=null) {
+        val current=tree ?: return
+        var createdEvent: LifeEvent?=null
+        var nextAction=action
+        if(action?.kind==PersonActionKind.NEW_EVENT) {
+            val old=current.events.firstOrNull {it.kind==action.value && it.roles["subject"]==person.id && action.value!="genealogy.mentioned"}
+            val event=old ?: LifeEvent(kind=action.value,roles=mapOf("subject" to person.id),x=person.x+260,y=person.y+120).also {createdEvent=it}
+            nextAction=PersonEditorAction(PersonActionKind.EDIT_EVENT,event.id)
+        }
+        actionAfterSave=nextAction;actionPerson=person.id;pending=true;pendingRevision=state.revision
+        controller.edit {before ->
+            val updated=GenealogyEdits.person(before,person,life.birth,life.death,life.birthPlace,life.deathPlace,life.marriagePlaces)
+            createdEvent?.let {event ->updated.copy(events=updated.events+event).also(GenealogyEdits::validate)} ?: updated
+        }
+    }
     @Composable fun EditorBody() {
         val currentTree=tree ?: return
         val id=editor ?: return
         val person=if(id=="new") Person(id=draftId,x=(-state.view.x+40)/state.view.zoom,y=(-state.view.y+40)/state.view.zoom) else currentTree.people.firstOrNull {it.id==id}
         if(person!=null) PersonPanel(currentTree,person,id=="new",copy,state.busy,onDirty={dirty=it},onClose=::closeEditor,
             onExpand={},media=controller.media,placeSource=placeSource,
-            onSave={p,life -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,life.birth,life.death,life.birthPlace,life.deathPlace,life.marriagePlaces)}},
-            onSaveAndRelative={p,life ->relativeAfterSave=p.id;pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,life.birth,life.death,life.birthPlace,life.deathPlace,life.marriagePlaces)}},
-            onRelative={relative=person.id},onEvidence={evidence=person.id},onOpenEvent={eventId ->editor=eventId;dirty=false},onEvent={kind ->
-                val old=currentTree.events.firstOrNull {it.kind==kind && it.roles["subject"]==person.id && kind!="genealogy.mentioned"}
-                if(old!=null) {editor=old.id;dirty=false}
-                else {pending=true;pendingRevision=state.revision;controller.edit {it.copy(events=it.events+LifeEvent(kind=kind,roles=mapOf("subject" to person.id),x=person.x+260,y=person.y+120)).also(GenealogyEdits::validate)}}
-            },onOpen={doc ->
+            onSave={p,life ->savePerson(p,life)},onContinue={p,life,action ->savePerson(p,life,action)},onOpen={doc ->
                 try {context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(if(doc.file.startsWith("managed:"))GenealogyFileProvider.uri(context,doc.file.removePrefix("managed:")) else Uri.parse(doc.file),doc.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))}
                 catch(_: Exception) {localError=copy.t("Doklad nelze otevřít. Soubor mohl být přesunut nebo chybí vhodná aplikace.","Unable to open evidence. The file may have moved or no suitable app is installed.")}
             })
-        else currentTree.events.firstOrNull {it.id==id}?.let {event -> EventPanel(currentTree,event,copy,state.busy,{dirty=it},::closeEditor,{value -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.event(it,value)}},placeSource=placeSource)}
+        else currentTree.events.firstOrNull {it.id==id}?.let {event -> EventPanel(currentTree,event,copy,state.busy,{dirty=it},::closeEditor,{value -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.event(it,value)}},placeSource=placeSource,initialEditing=eventEditing)}
     }
     @Composable fun Panel() {editor?.let {id -> editorStates.SaveableStateProvider(editorSession) {EditorBody()}}}
     Scaffold(modifier=if(wide && editor!=null)Modifier.imePadding() else Modifier,topBar={if(!compactEditing)TopAppBar(title={Column {Text(tree?.title ?: copy.t("Rodokmeny","Family trees"),maxLines=1,overflow=TextOverflow.Ellipsis);AppVersionLabel()}},

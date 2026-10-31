@@ -46,7 +46,8 @@ existence skenu nebo matričního záznamu není podmínkou zadávání.
 
 Klepnutí na osobu otevře **spodní vysouvací panel** uvnitř stejné obrazovky
 (Compose bottom sheet, nikoli samostatná Android Activity). V částečné výšce
-ukáže jméno, data a akce Upravit / Přidat vazbu / Dokumentace. Roztažením se
+ukáže uložené údaje a tlačítko Upravit. Od 1.0.0033 jsou podrobnosti pouze pro
+čtení; přidávání vazeb, událostí a dokumentace je až v režimu Upravit. Roztažením se
 otevře editor téměř přes celou obrazovku; při psaní respektuje klávesnici.
 Sekce editoru: Osoba, Události a vazby, Dokumentace, Poznámky. Zavření zachová
 výběr, posun a zoom grafu. Panel nesmí zakrýt vybranou osobu bez možnosti

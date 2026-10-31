@@ -35,6 +35,8 @@ class PartnerGraphUiTest {
             rule.onNodeWithText("Partnerský vztah").assertDoesNotExist()
             rule.onNodeWithText("Partner: Anna Nováková").assertExists()
             rule.onNodeWithTag("partner-link-union").performTouchInput {click(center)}
+            rule.onNodeWithText("Typ události: Partnerský vztah").assertDoesNotExist()
+            rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Typ události: Partnerský vztah").performScrollTo().performClick()
             rule.onNodeWithText("Sňatek").performClick()
             rule.onNode(hasSetTextAction() and hasText("Datum svatby")).performScrollTo().performTextInput(GenealogyDates.format("1845-02-03"))

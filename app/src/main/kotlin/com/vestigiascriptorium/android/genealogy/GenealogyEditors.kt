@@ -17,6 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.vestigiascriptorium.android.ui.main.Copy
 import kotlinx.coroutines.Dispatchers
@@ -32,17 +33,25 @@ internal fun NameDialog(c: Copy,busy: Boolean,onDismiss: ()->Unit,onCreate: (Str
 }
 
 @Composable
-internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,PersonLifeDetails)->Unit,onRelative: ()->Unit,onEvidence: ()->Unit,onOpenEvent: (String)->Unit,onEvent: (String)->Unit,onOpen: (Evidence)->Unit,media: GenealogyMedia?=null,onSaveAndRelative: (Person,PersonLifeDetails)->Unit={_,_->},placeSource: com.vestigiascriptorium.android.aids.reader.AidReaderSource?=null) {
+internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onExpand: ()->Unit,onSave: (Person,PersonLifeDetails)->Unit,onContinue: (Person,PersonLifeDetails,PersonEditorAction)->Unit,onOpen: (Evidence)->Unit,media: GenealogyMedia?=null,placeSource: com.vestigiascriptorium.android.aids.reader.AidReaderSource?=null) {
     val context=LocalContext.current
     val configuration=LocalConfiguration.current
     val landscape=configuration.screenWidthDp>configuration.screenHeightDp
     val scope=rememberCoroutineScope()
     var portrait by rememberSaveable(person.id) {mutableStateOf(person.portrait)}
+    var portraitCopy by rememberSaveable(person.id) {mutableStateOf(!person.portrait.startsWith("content://"))}
     var photoBusy by remember {mutableStateOf(false)}
     var photoError by remember {mutableStateOf(false)}
     fun importPortrait(uri: Uri?) {if(uri!=null && media!=null)scope.launch {
         photoBusy=true;photoError=false
-        try {portrait=withContext(Dispatchers.IO) {val job=kotlin.coroutines.coroutineContext;media.importImage(context.contentResolver,uri) {job.ensureActive()}}}
+        try {portrait=withContext(Dispatchers.IO) {
+            if(portraitCopy) {val job=kotlin.coroutines.coroutineContext;media.importImage(context.contentResolver,uri) {job.ensureActive()}}
+            else {
+                media.validateImageReference(context.contentResolver,uri)
+                context.contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                uri.toString()
+            }
+        }}
         catch(e: Exception) {if(e is kotlinx.coroutines.CancellationException)throw e;photoError=true}
         finally {photoBusy=false}
     }}
@@ -71,6 +80,9 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
     val oldMarriagePlaces=marriages.associate {it.id to it.place}
     var marriagePlaces by rememberSaveable(person.id) {mutableStateOf(oldMarriagePlaces)}
     fun lifeDetails()=PersonLifeDetails(birth,death,birthPlace,deathPlace,marriagePlaces)
+    fun currentPerson()=person.copy(portrait=portrait,givenName=given,middleName=middle,surname=surname,mentionedFrom=mentionedFrom,mentionedTo=mentionedTo,gender=gender,note=note)
+    val canContinue=!busy && !photoBusy && named && datesValid
+    fun continueWith(action: PersonEditorAction) {onContinue(currentPerson(),lifeDetails(),action)}
     val changed=birthPlace!=birthPlaceValue || deathPlace!=deathPlaceValue || marriagePlaces!=oldMarriagePlaces || portrait!=person.portrait || photoBusy || given!=person.givenName || middle!=person.middleName || surname!=person.surname || mentionedFrom!=person.mentionedFrom || mentionedTo!=person.mentionedTo || !datesValid || note!=person.note || gender!=person.gender || birth!=birthValue || death!=deathValue
     LaunchedEffect(changed) {onDirty(changed)}
     Column(Modifier.fillMaxSize().padding(horizontal=if(landscape)16.dp else 20.dp,vertical=if(landscape)8.dp else 20.dp).imePadding(),verticalArrangement=Arrangement.spacedBy(if(landscape)8.dp else 12.dp)) {
@@ -83,9 +95,17 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(14.dp)) {
             if(portrait.isNotEmpty())PersonPortrait(portrait,media,c,Modifier.size(if(landscape)96.dp else 160.dp))
             if(editing) {
+                Text(c.t("Uložení portrétu","Portrait storage"),style=MaterialTheme.typography.titleSmall)
+                Row(Modifier.fillMaxWidth().testTag("portrait-source-copy").selectable(selected=portraitCopy,enabled=!busy && !photoBusy,role=Role.RadioButton,onClick={portraitCopy=true}),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                    RadioButton(selected=portraitCopy,onClick=null);Text(c.t("Vytvořit kopii ve Vestigii","Create a copy in Vestigia"))
+                }
+                Row(Modifier.fillMaxWidth().testTag("portrait-source-reference").selectable(selected=!portraitCopy,enabled=!busy && !photoBusy,role=Role.RadioButton,onClick={portraitCopy=false}),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                    RadioButton(selected=!portraitCopy,onClick=null);Text(c.t("Odkazovat na zdroj","Link to the source"))
+                }
+                Text(c.t("Volba platí pro další vybraný obrázek. Původní soubor se neupravuje.","The choice applies to the next selected image. The original file is never edited."),style=MaterialTheme.typography.bodySmall)
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(modifier=Modifier.weight(1f).fillMaxHeight(),enabled=!busy && !photoBusy && media!=null,onClick={picker.launch(arrayOf("image/*"))}) {Text(if(portrait.isEmpty())c.t("Vložit obrázek","Add portrait") else c.t("Změnit obrázek","Change portrait"))}
-                    OutlinedButton(modifier=Modifier.weight(1f).fillMaxHeight(),enabled=!busy && !photoBusy && media!=null,onClick={cloudPicker.launch(Unit)}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
+                    OutlinedButton(modifier=Modifier.weight(1f).fillMaxHeight(),enabled=!busy && !photoBusy && media!=null,onClick={if(portraitCopy)cloudPicker.launch(Unit) else picker.launch(arrayOf("image/*"))}) {Text(c.t("Google Disk / soubory","Google Drive / files"))}
                 }
                 if(portrait.isNotEmpty())TextButton(enabled=!busy && !photoBusy,onClick={portrait=""}) {Text(c.t("Odstranit obrázek","Remove portrait"))}
                 if(photoBusy)LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -105,35 +125,41 @@ internal fun PersonPanel(tree: FamilyTree,person: Person,isNew: Boolean,c: Copy,
                 GenealogyDateField(c.t("Připomínán od","Mentioned from"),mentionedFrom,c) {v,ok ->mentionedFrom=v;validDates=validDates+("from" to ok)}
                 GenealogyDateField(c.t("Připomínán do","Mentioned until"),mentionedTo,c) {v,ok ->mentionedTo=v;validDates=validDates+("to" to ok)}
                 if(!GenealogyDates.ordered(mentionedFrom,mentionedTo))Text(c.t("Připomínán do nesmí předcházet údaji od.","Mentioned until cannot precede mentioned from."),color=MaterialTheme.colorScheme.error)
-                OutlinedButton(enabled=!busy && !photoBusy && named && datesValid,onClick={onSaveAndRelative(person.copy(portrait=portrait,givenName=given,middleName=middle,surname=surname,mentionedFrom=mentionedFrom,mentionedTo=mentionedTo,gender=gender,note=note),lifeDetails())}) {Text(c.t("Přidat příbuzného","Add relative"))}
-                Text(c.t("Uloží osobu a otevře výběr příbuzného.","Saves the person and opens the relative picker."),style=MaterialTheme.typography.bodySmall)
                 OutlinedTextField(note,{note=it},Modifier.fillMaxWidth(),label={Text(c.t("Poznámky k osobě","Person notes"))},minLines=3)
             } else {
+                if(person.portrait.isNotBlank())Text(if(person.portrait.startsWith("content://"))c.t("Portrét: odkaz na zdroj","Portrait: source reference") else c.t("Portrét: vlastní kopie","Portrait: private copy"),style=MaterialTheme.typography.bodySmall)
                 lifeDates(tree,person.id).takeIf {it.isNotBlank()}?.let {Text(it)}
                 if(person.mentionedFrom.isNotBlank())Text(c.t("Připomínán od: ","Mentioned from: ")+GenealogyDates.format(person.mentionedFrom))
                 if(person.mentionedTo.isNotBlank())Text(c.t("Připomínán do: ","Mentioned until: ")+GenealogyDates.format(person.mentionedTo))
                 if(person.note.isNotBlank()) Text(person.note)
-                Text(c.t("Události a vazby","Events and relationships"),style=MaterialTheme.typography.titleMedium)
-                OutlinedButton(enabled=!busy,onClick=onRelative) {Text(c.t("Přidat příbuzného","Add relative"))}
-                tree.events.filter {person.id in it.roles.values}.forEach {event ->
-                    TextButton(enabled=!busy,onClick={onOpenEvent(event.id)}) {Text(listOf(event.title.ifBlank {eventLabel(event.kind,c)},event.roles["subject"]?.takeIf {it!=person.id && event.kind in listOf("genealogy.birth","genealogy.baptism","genealogy.parentage")}?.let {id ->tree.people.firstOrNull {it.id==id}?.name}.orEmpty(),GenealogyDates.format(event.date),event.place).filter {it.isNotBlank()}.joinToString(" · "))}
-                    event.roles.forEach {(role,id) -> if(id!=person.id) Text("${personEventRoleLabel(tree,event,role,person.id,c)}: ${tree.people.firstOrNull {it.id==id}?.name.orEmpty()}",style=MaterialTheme.typography.bodySmall)}
-                }
+                Text(c.t("Pohlaví: ","Gender: ")+when(person.gender) {"male" ->c.t("Muž","Male");"female" ->c.t("Žena","Female");else ->c.t("Neurčeno","Unknown")})
+            }
+            Text(c.t("Události a vazby","Events and relationships"),style=MaterialTheme.typography.titleMedium)
+            if(editing) {
+                OutlinedButton(enabled=canContinue,onClick={continueWith(PersonEditorAction(PersonActionKind.RELATIVE))}) {Text(c.t("Přidat příbuzného","Add relative"))}
+                Text(c.t("Následující akce uloží platné údaje osoby a pokračuje k vybrané úpravě.","The following actions save valid person details and continue to the selected edit."),style=MaterialTheme.typography.bodySmall)
+            }
+            tree.events.filter {person.id in it.roles.values}.forEach {event ->
+                val label=listOf(event.title.ifBlank {eventLabel(event.kind,c)},event.roles["subject"]?.takeIf {it!=person.id && event.kind in listOf("genealogy.birth","genealogy.baptism","genealogy.parentage")}?.let {id ->tree.people.firstOrNull {it.id==id}?.name}.orEmpty(),GenealogyDates.format(event.date),event.place).filter {it.isNotBlank()}.joinToString(" · ")
+                if(editing)TextButton(enabled=canContinue,onClick={continueWith(PersonEditorAction(PersonActionKind.EDIT_EVENT,event.id))}) {Text(label)} else Text(label,style=MaterialTheme.typography.titleSmall)
+                event.roles.forEach {(role,id) ->if(id!=person.id)Text("${personEventRoleLabel(tree,event,role,person.id,c)}: ${tree.people.firstOrNull {it.id==id}?.name.orEmpty()}",style=MaterialTheme.typography.bodySmall)}
+            }
+            if(editing) {
                 var eventKind by rememberSaveable(person.id) {mutableStateOf("genealogy.mentioned")}
                 Choice(c.t("Nová událost","New event"),GenealogyEdits.kinds.filter {it !in listOf("genealogy.parentage","genealogy.spousal-record","genealogy.marriage")},eventKind,{eventKind=it}) {eventLabel(it,c)}
-                TextButton(enabled=!busy,onClick={onEvent(eventKind)}) {Text(c.t("Přidat událost","Add event"))}
-                Text(c.t("Údaje události upravíte v tomto seznamu u osoby.","Edit event details in this person’s event list."),style=MaterialTheme.typography.bodySmall)
-                HorizontalDivider()
-                Text(c.t("Dokumentace","Documentation"),style=MaterialTheme.typography.titleMedium)
-                EvidenceGallery(tree.evidence.filter {it.person==person.id},media,c,onOpen)
-                OutlinedButton(enabled=!busy,onClick=onEvidence) {Text(c.t("Připojit dokumentaci","Attach documentation"))}
+                TextButton(enabled=canContinue,onClick={continueWith(PersonEditorAction(PersonActionKind.NEW_EVENT,eventKind))}) {Text(c.t("Přidat událost","Add event"))}
             }
+            HorizontalDivider()
+            Text(c.t("Dokumentace","Documentation"),style=MaterialTheme.typography.titleMedium)
+            EvidenceGallery(tree.evidence.filter {it.person==person.id},media,c,onOpen)
+            if(editing)OutlinedButton(enabled=canContinue,onClick={continueWith(PersonEditorAction(PersonActionKind.EVIDENCE))}) {Text(c.t("Připojit dokumentaci","Attach documentation"))}
         }
     }
 }
 
 @Composable
-internal fun EventPanel(tree: FamilyTree,event: LifeEvent,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onSave: (LifeEvent)->Unit,placeSource: com.vestigiascriptorium.android.aids.reader.AidReaderSource?=null) {
+internal fun EventPanel(tree: FamilyTree,event: LifeEvent,c: Copy,busy: Boolean,onDirty: (Boolean)->Unit,onClose: ()->Unit,onSave: (LifeEvent)->Unit,placeSource: com.vestigiascriptorium.android.aids.reader.AidReaderSource?=null,initialEditing: Boolean=false) {
+    var editing by rememberSaveable(event.id) {mutableStateOf(initialEditing)}
     var title by rememberSaveable(event.id) {mutableStateOf(event.title)}
     var date by rememberSaveable(event.id) {mutableStateOf(event.date)}
     var validDate by remember {mutableStateOf(true)}
@@ -147,9 +173,11 @@ internal fun EventPanel(tree: FamilyTree,event: LifeEvent,c: Copy,busy: Boolean,
         Text(eventLabel(event.kind,c),style=MaterialTheme.typography.titleLarge)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
             TextButton(enabled=!busy,onClick=onClose) {Text(c.t("Zavřít","Close"))}
-            Button(enabled=!busy && validDate,onClick={onSave(event.copy(kind=kind,title=title,date=date,place=place,note=note,roles=roles))}) {Text(c.t("Uložit událost","Save event"))}
+            if(editing)Button(enabled=!busy && validDate,onClick={onSave(event.copy(kind=kind,title=title,date=date,place=place,note=note,roles=roles))}) {Text(c.t("Uložit událost","Save event"))}
+            else Button(enabled=!busy,onClick={editing=true}) {Text(c.t("Upravit","Edit"))}
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+            if(editing) {
             Choice(c.t("Typ události","Event type"),GenealogyEdits.kinds.filter {GenealogyEdits.rolesFor(it)==GenealogyEdits.rolesFor(event.kind)},kind,{kind=it}) {eventLabel(it,c)}
             OutlinedTextField(title,{title=it},Modifier.fillMaxWidth(),label={Text(c.t("Název události","Event title"))})
             GenealogyDateField(if(kind=="genealogy.marriage")c.t("Datum svatby","Wedding date") else c.t("Datum události","Event date"),date,c) {v,ok ->date=v;validDate=ok}
@@ -159,6 +187,13 @@ internal fun EventPanel(tree: FamilyTree,event: LifeEvent,c: Copy,busy: Boolean,
             Text(c.t("Osoby a role","People and roles"),style=MaterialTheme.typography.titleMedium)
             GenealogyEdits.rolesFor(event.kind).forEach {role ->
                 Choice(eventRoleLabel(kind,role,c),listOf("")+tree.people.map {it.id},roles[role].orEmpty(),{id ->roles=if(id.isEmpty())roles-role else roles+(role to id)}) {id ->tree.people.firstOrNull {it.id==id}?.name ?: c.t("Nepřiřazeno","Unassigned")}
+            }
+            } else {
+                if(event.title.isNotBlank())Text(event.title)
+                if(event.date.isNotBlank())Text(c.t("Datum: ","Date: ")+GenealogyDates.format(event.date))
+                if(event.place.isNotBlank())Text(c.t("Obec / místo: ","Municipality / place: ")+event.place)
+                if(event.note.isNotBlank())Text(event.note)
+                event.roles.forEach {(role,id) ->Text(eventRoleLabel(event.kind,role,c)+": "+tree.people.firstOrNull {it.id==id}?.name.orEmpty())}
             }
         }
     }
@@ -255,7 +290,7 @@ internal fun EvidenceDialog(person: String,c: Copy,busy: Boolean,onDismiss: ()->
             RadioButton(selected=makeCopy,onClick=null)
             Text(c.t("Vytvořit kopii ve Vestigii","Create a copy in Vestigia"))
         }
-        Row(Modifier.fillMaxWidth().selectable(selected=!makeCopy,enabled=!busy && !copying,role=Role.RadioButton,onClick={if(makeCopy) {makeCopy=false;uri="";error=false}}),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().testTag("evidence-source-reference").selectable(selected=!makeCopy,enabled=!busy && !copying,role=Role.RadioButton,onClick={if(makeCopy) {makeCopy=false;uri="";error=false}}),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
             RadioButton(selected=!makeCopy,onClick=null)
             Text(c.t("Odkazovat na zdroj","Link to the source"))
         }

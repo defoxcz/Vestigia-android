@@ -71,5 +71,14 @@ class GenealogyEditsTest {
         problem("invalid") {GenealogyEdits.person(source,child,"","",marriagePlaces=mapOf("one" to "Neplatné"))}
         assertEquals("Původní",source.events.first().place)
     }
+    @Test fun portraitsAcceptManagedCopiesAndReadOnlyContentReferencesOnly() {
+        for(source in listOf("", "a".repeat(64)+".img","content://provider/document/photo%3A1")) {
+            assertTrue(source,validPortraitSource(source))
+            GenealogyEdits.validate(tree.copy(people=listOf(child.copy(portrait=source))))
+        }
+        for(source in listOf("file:///private/photo.png","https://example.com/photo.png","../../photo.img","content://","content://user@provider/photo","content://provider/photo#fragment")) {
+            assertFalse(source,validPortraitSource(source))
+        }
+    }
     private fun problem(expected: String,action: ()->Unit) {try {action();fail("Expected $expected")} catch(e: GenealogyProblem) {assertEquals(expected,e.code)}}
 }

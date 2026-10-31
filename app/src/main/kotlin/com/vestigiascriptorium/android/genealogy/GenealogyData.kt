@@ -11,6 +11,12 @@ internal data class Person(val id: String=newId(),val givenName: String="",val g
 internal data class LifeEvent(val id: String=newId(),val kind: String="genealogy.mentioned",val title: String="",val date: String="",val place: String="",val note: String="",val roles: Map<String,String> = emptyMap(),val x: Float=0f,val y: Float=0f)
 internal data class Evidence(val id: String=newId(),val person: String,val caption: String,val note: String="",val file: String="",val mime: String="application/octet-stream")
 internal data class FamilyTree(val id: String=newId(),val title: String,val people: List<Person> = emptyList(),val events: List<LifeEvent> = emptyList(),val evidence: List<Evidence> = emptyList(),val importSource: String="")
+internal enum class PersonActionKind { RELATIVE,EVIDENCE,EDIT_EVENT,NEW_EVENT }
+internal data class PersonEditorAction(val kind: PersonActionKind,val value: String=""): java.io.Serializable
+internal fun validPortraitSource(value: String): Boolean = value.isEmpty() || value.matches(Regex("[a-f0-9]{64}\\.img")) || runCatching {
+    val uri=java.net.URI(value)
+    uri.scheme=="content" && !uri.rawAuthority.isNullOrBlank() && uri.rawUserInfo==null && uri.rawFragment==null
+}.getOrDefault(false)
 internal data class PersonLifeDetails(val birth: String,val death: String,val birthPlace: String,val deathPlace: String,val marriagePlaces: Map<String,String>)
 internal data class GraphView(val x: Float=30f,val y: Float=40f,val zoom: Float=1f,val selected: String?=null)
 internal enum class Relative { FATHER,MOTHER,SPOUSE,CHILD_AS_FATHER,CHILD_AS_MOTHER }
@@ -27,7 +33,7 @@ internal object GenealogyEdits {
         check(tree.people.all {it.name.isNotBlank() && it.x.isFinite() && it.y.isFinite()},"name")
         check(tree.people.all {GenealogyDates.canonical(it.mentionedFrom) && GenealogyDates.canonical(it.mentionedTo)},"date")
         check(tree.people.all {GenealogyDates.ordered(it.mentionedFrom,it.mentionedTo)},"dateRange")
-        check(tree.people.all {it.portrait.isEmpty() || it.portrait.matches(Regex("[a-f0-9]{64}\\.img"))},"image")
+        check(tree.people.all {validPortraitSource(it.portrait)},"image")
         val parents=mutableMapOf<String,MutableSet<String>>()
         val parentSlots=mutableMapOf<Pair<String,String>,String>()
         tree.events.forEach { event ->

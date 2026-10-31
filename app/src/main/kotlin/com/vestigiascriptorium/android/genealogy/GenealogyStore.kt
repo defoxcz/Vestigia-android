@@ -7,17 +7,17 @@ import org.json.JSONObject
 import java.io.Closeable
 import java.io.File
 
-/** Standalone Android format v3 (reads v1/v2). No desktop database or research-aid file is opened. */
+/** Standalone Android format v4 (reads v1/v2/v3). No desktop database or research-aid file is opened. */
 internal class GenealogyStore(val root: File): Closeable {
     private val db: SQLiteDatabase
     init {
         check(root.isDirectory || root.mkdirs())
         db=SQLiteDatabase.openOrCreateDatabase(File(root,"genealogy.sqlite"),null)
-        require(db.version<=3) {"Newer genealogy storage"}
+        require(db.version<=4) {"Newer genealogy storage"}
         db.execSQL("CREATE TABLE IF NOT EXISTS trees(id TEXT PRIMARY KEY,title TEXT NOT NULL,payload TEXT NOT NULL)")
         db.execSQL("CREATE TABLE IF NOT EXISTS workspace(id TEXT PRIMARY KEY,x REAL NOT NULL,y REAL NOT NULL,zoom REAL NOT NULL,selected TEXT)")
         db.execSQL("CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT)")
-        if(db.version<3)db.version=3
+        if(db.version<4)db.version=4
     }
     fun list(): List<Pair<String,String>> = db.rawQuery("SELECT id,title FROM trees ORDER BY title COLLATE NOCASE,id",null).use {c -> buildList {while(c.moveToNext()) add(c.getString(0) to c.getString(1))} }
     fun read(id: String): FamilyTree {
@@ -57,13 +57,13 @@ internal class GenealogyStore(val root: File): Closeable {
         if(it.codePointCount(0,it.length)>64*1024*1024)throw GenealogyProblem("storage")
     }
     private fun encode(t: FamilyTree)=JSONObject().apply {
-        put("format",3);put("id",t.id);put("title",t.title);put("importSource",t.importSource)
+        put("format",4);put("id",t.id);put("title",t.title);put("importSource",t.importSource)
         put("people",JSONArray(t.people.map {p -> JSONObject().apply {put("id",p.id);put("givenName",p.givenName);put("middleName",p.middleName);put("surname",p.surname);put("legacyName",p.legacyName);put("portrait",p.portrait);put("mentionedFrom",p.mentionedFrom);put("mentionedTo",p.mentionedTo);put("gender",p.gender);put("note",p.note);put("x",p.x);put("y",p.y)} }))
         put("events",JSONArray(t.events.map {e -> JSONObject().apply {put("id",e.id);put("kind",e.kind);put("title",e.title);put("date",e.date);put("place",e.place);put("note",e.note);put("roles",JSONObject(e.roles));put("x",e.x);put("y",e.y)} }))
         put("evidence",JSONArray(t.evidence.map {e -> JSONObject().apply {put("id",e.id);put("person",e.person);put("caption",e.caption);put("note",e.note);put("file",e.file);put("mime",e.mime)} }))
     }
     private fun decode(o: JSONObject): FamilyTree {
-        val version=o.getInt("format");require(version in 1..3)
+        val version=o.getInt("format");require(version in 1..4)
         fun <T> rows(key: String,read: (JSONObject)->T)=o.getJSONArray(key).let {a -> (0 until a.length()).map {read(a.getJSONObject(it))} }
         return FamilyTree(o.getString("id"),o.getString("title"),rows("people") {Person(id=it.getString("id"),givenName=it.optString("givenName"),middleName=it.optString("middleName"),surname=it.optString("surname"),legacyName=if(version==1)it.getString("name") else it.optString("legacyName"),mentionedFrom=it.optString("mentionedFrom"),mentionedTo=it.optString("mentionedTo"),portrait=it.optString("portrait"),gender=it.getString("gender"),note=it.getString("note"),x=it.getDouble("x").toFloat(),y=it.getDouble("y").toFloat())},
             rows("events") {e -> val roles=e.getJSONObject("roles");LifeEvent(e.getString("id"),e.getString("kind"),e.getString("title"),e.getString("date"),e.getString("place"),e.getString("note"),roles.keys().asSequence().associateWith {roles.getString(it)},e.getDouble("x").toFloat(),e.getDouble("y").toFloat())},

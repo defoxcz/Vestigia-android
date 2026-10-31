@@ -11,6 +11,22 @@ import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class GenealogyDeviceTest {
+    @Test fun formatThreeCopiesUpgradeAndFormatFourPortraitReferencesReload()=isolated {root ->
+        val person=Person(givenName="Starší portrét",portrait="a".repeat(64)+".img")
+        val tree=FamilyTree(title="Migrace",people=listOf(person))
+        GenealogyStore(root).use {it.save(tree)}
+        android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(File(root,"genealogy.sqlite"),null).use {db ->
+            db.execSQL("UPDATE trees SET payload=replace(payload,?,?)",arrayOf("\"format\":4","\"format\":3"));db.version=3
+        }
+        GenealogyStore(root).use {store ->
+            assertEquals(person,store.read(tree.id).people.single())
+            store.save(tree.copy(people=listOf(person.copy(portrait="content://test-provider/document/portrait"))))
+        }
+        GenealogyStore(root).use {store ->
+            assertEquals("content://test-provider/document/portrait",store.read(tree.id).people.single().portrait)
+            assertEquals(tree.id,store.read(tree.id).id)
+        }
+    }
     @Test fun reopenPreservesRelationshipsEvidenceAndViewAndRejectsInvalidSave() {
         isolated {root ->
             val p=Person(givenName="Anna",note="Poznámka",x=-200f,y=300f);val father=Person(givenName="Jan")

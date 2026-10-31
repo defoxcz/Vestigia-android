@@ -573,3 +573,48 @@ Debug i Release jsou na telefonu ve verzi 1.0.0032, aktualizované pouze přes
 Předchozí APK 1.0.0030 a 1.0.0031 jsou zachované v archivu Androidu.
 Veřejně stažená 1.0.0032 je shodná s lokálním APK; SHA-256:
 `8b07c5ba3fbf87848c04a6a5b2e0bfd3ba52967fb68f5942c85b35bb481ec533`.
+
+## Přehled jen pro čtení a odkazovaný portrét (1.0.0033)
+
+Podrobnosti osoby pouze zobrazují uložené údaje, role, události a dokumentaci.
+Náhledy lze dál otevřít a přiblížit. Zadávací pole, připojení dokumentace,
+příbuzných a nové události jsou dostupné až po tlačítku Upravit. Událost otevřená
+ze spojnice má také nejprve přehled a vlastní Upravit. Přechod z editoru osoby
+na doklad, příbuzného nebo událost nejdříve uloží platný návrh osoby; při chybě
+ponechá návrh na místě a cílovou akci neotevře. Vytvoření nové události spolu
+s rozepsanými údaji osoby je jedna transakce a jedna operace Zpět.
+
+V editoru portrétu je volba Vytvořit kopii ve Vestigii / Odkazovat na zdroj.
+Platí pro další výběr obrázku; samotné přepnutí nemění stávající portrét.
+Obě tlačítka pro výběr zůstávají vedle sebe. Odkaz používá systémový výběr
+s trvalým oprávněním pouze ke čtení a ověřuje skutečný obrázek, ne jen MIME.
+Při kopii se dál používá dosavadní vlastní neměnný soubor; při odkazu nevzniká
+kopie ve složce médií Vestigie. Původní obrázek se neupravuje. Ztracené oprávnění
+nebo nedostupný zdroj ukáže chybějící obrázek, neodstraňuje osobu ani její vazby.
+Odkazovaný portrét se zobrazuje také v grafu a ve společném boxu manželů.
+
+Samostatné Android úložiště má formát 4: `Person.portrait` přijímá dosavadní
+SHA-256 klíč `.img` nebo `content://` URI s neprázdnou autoritou, bez userinfo
+a fragmentu. Schéma tabulek je zachováno, SQLite user_version a JSON format
+jsou 4. Čtou se formáty 1–3 a původní portréty se nepřekopírovávají ani nemažou.
+Starší Android čtečka nový formát odmítne namísto neúplného otevření.
+Desktopové `.vestigia`, GEDCOM/GEDZIP ani webové API se nemění; importované
+portréty zůstávají vlastními kopiemi. Před změnou byly zkontrolovány související
+pokyny desktopu/webu a desktopová dokumentace připojování médií.
+
+Ověření 1.0.0033: Debug/Release sestavení, Lint obou variant a 54 JVM testů
+prošly. Na fyzickém Samsungu SM-S938B prošlo všech 24 genealogických UI a
+databázových scénářů bez přeskočení. Nové kontroly ověřují nepřítomnost
+editačních polí/akcí v přehledu, odkazovaný portrét bez souboru v médiích,
+persistenci URI po novém načtení, Undo/Redo, čtení v3 s původní kopií a zápis
+v4 s odkazem. Přechod na dokumentaci zachová rozepsané jméno; vytvoření události
+s poznámkou osoby se vrátí jedním Zpět. Přehled události vyžaduje Upravit.
+Snímek telefonu ověřil odkazovaný portrét v grafu i přehledu pouze pro čtení.
+Testy používají vlastní rodokmeny a vlastní testovací URI/oprávnění ke čtení;
+uživatelská data, skutečné relace a zdrojové soubory se neměnily.
+
+Debug i Release byly aktualizovány pouze přes `adb install -r` na 1.0.0033.
+Podepsané APK je v `vestigia-installations/testing/`, předchozí 1.0.0032 je
+zachovaná v `vestigia-installations/archive/android/`. Veřejné stažení bylo
+porovnáno s lokální APK a má SHA-256:
+`d2364037777e1b5d7006b04801f1b63e713c50db30883ef2db1a46a20af1c048`.

@@ -17,6 +17,16 @@ internal class GenealogyMedia(val root: File) {
             return asset.use {add(it.createInputStream(),cancel)}
         }
     }
+    fun validateImageReference(resolver: android.content.ContentResolver,uri: android.net.Uri) {
+        val bounds=BitmapFactory.Options().apply {inJustDecodeBounds=true}
+        try {
+            (resolver.openInputStream(uri) ?: throw java.io.FileNotFoundException()).use {BitmapFactory.decodeStream(it,null,bounds)}
+        } catch(original: java.io.FileNotFoundException) {
+            val asset=resolver.openTypedAssetFileDescriptor(uri,"image/*",null) ?: throw original
+            asset.use {it.createInputStream().use {input ->BitmapFactory.decodeStream(input,null,bounds)}}
+        }
+        if(bounds.outWidth<=0 || bounds.outHeight<=0 || bounds.outWidth.toLong()*bounds.outHeight>220_000_000)throw GenealogyProblem("image")
+    }
     fun imageMime(key: String): String=file(key)?.let {source ->
         android.graphics.BitmapFactory.Options().apply {inJustDecodeBounds=true;android.graphics.BitmapFactory.decodeFile(source.path,this)}.outMimeType
     } ?: "image/*"

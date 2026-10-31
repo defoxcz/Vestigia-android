@@ -4,7 +4,9 @@ Samostatná aplikace v Kotlinu a Jetpack Compose. Na hlavní obrazovce je vidite
 pouze modul Genealogie. Rukopisy, Heraldika, Sfragistika, Epigrafika a Paleografika
 zůstávají v projektu skryté pro postupné doplňování. Genealogie umožňuje založit lokální rodokmen, vytvářet osoby a události
 v grafu vazeb, připojovat příbuzné a citace/doklady u osob a používat Zpět/Znovu.
-Editor osoby podporuje vlastní portrét, který zobrazuje i box grafu, a obce narození,
+Podrobnosti osoby jsou jen pro čtení; změny se zpřístupní tlačítkem Upravit.
+Editor osoby podporuje portrét jako vlastní kopii nebo odkaz na zdroj, zobrazený
+také v boxu grafu, a obce narození,
 úmrtí a svateb s volitelným místním našeptáváním z nainstalované Historické
 topografie. Dokumentace má tři náhledy vedle sebe, na šířku více; graf i editor
 se přizpůsobují dostupnému prostoru. Import podporuje
@@ -177,7 +179,7 @@ Dokončení přihlášení skutečného účtu vyžaduje potvrzení uživatele v
 ## Verzování
 
 Obě varianty používají verzi `1.0.XXXX`, kde `XXXX` je číslo buildu doplněné
-zleva nulami na čtyři číslice. Aktuální build je **1.0.0032** (`versionCode=32`);
+zleva nulami na čtyři číslice. Aktuální build je **1.0.0033** (`versionCode=33`);
 předchozí pracovní APK měly `versionCode=1`. Debug/Release se rozlišují názvem,
 ID a podpisem, nikoli příponou čísla verze. Verze je vlevo v záhlaví hlavní obrazovky i prohlížeče pomůcek, společně
 s označením DEBUG/RELEASE. Najdete ji také na přihlašovací obrazovce a v nabídce **Účet**.

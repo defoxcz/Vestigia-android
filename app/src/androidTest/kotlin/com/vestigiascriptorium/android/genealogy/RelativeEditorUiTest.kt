@@ -67,6 +67,7 @@ class RelativeEditorUiTest {
         repeat(6) {index ->
             rule.onNodeWithContentDescription("Přizpůsobit").performClick()
             rule.onNodeWithTag("genealogy-node-${father.id}").performClick()
+            rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
             rule.onNodeWithText("Vztah k vybrané osobě: Otec").performClick()
             rule.onNodeWithText("Dítě · vybraná osoba je otec").performClick()
