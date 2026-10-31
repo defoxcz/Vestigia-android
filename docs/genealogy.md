@@ -512,7 +512,7 @@ předchozí 1.0.0028 v `vestigia-installations/archive/android/`. Veřejné HTTP
 stažení je shodné s lokálním APK; SHA-256:
 `f1e96036a22804782410111ad91ebbd24c2a999ebd6952b6d5f549958fa11f6e`.
 
-## Obce, dokumentace a zobrazení na šířku (1.0.0031)
+## Obce, dokumentace a zobrazení na šířku (1.0.0032)
 
 Editor osoby má pole Obec narození a Obec úmrtí. Pro každý existující sňatek
 nabízí samostatnou Obec svatby s partnerem a datem; místo svatby je také přímo
@@ -524,7 +524,8 @@ Starší volání editace zachovávají uložená místa a ostatní role událos
 Od dvou znaků se u aktivního pole nabízejí nejvýše šest výsledků z nainstalované
 Historické topografie. Dotaz běží mimo UI po krátké prodlevě pro psaní. Používá
 stejný místní rejstřík jako prohlížeč pomůcky; hledá i historické názvy a nehledí
-na velikost písmen nebo diakritiku. Při prvním použití může příprava rejstříku
+na velikost písmen nebo diakritiku. Vlastní názvy obcí mají přednost před shodami
+v doplňujících údajích, například okrese. Při prvním použití může příprava rejstříku
 trvat déle a je vidět průběh. Návrh se převezme pouze klepnutím, nikdy sám
 nepřepíše rozepsané místo. Bez pomůcky nebo při její nedostupnosti lze vše
 zadat ručně; aplikace kvůli našeptávání nic nestahuje. Ukládá se text obce,
@@ -556,3 +557,19 @@ byly vizuálně zkontrolovány ze snímků telefonu.
 Debug i Release 1.0.0031 byly aktualizovány pouze přes `adb install -r`.
 Podepsané APK bylo zveřejněné a veřejně stažené shodně s lokální kopií;
 SHA-256: `68064eaff8809545f946e51b2ce634f6f974a414155b3acdcdb1530556cebebb`.
+
+Finální 1.0.0032 upřednostňuje shody ve vlastním názvu před doplňujícími údaji;
+výsledky se doplňují historickými názvy a deduplikují podle ID pomůcky. Test
+porovnává přímo Brno s Adamovem, který obsahuje Brno jen v údaji o okrese.
+Prošlo znovu všech 53 JVM testů, Debug sestavení a lint, čtyři scénáře
+`PlacesAndLayoutUiTest` na telefonu a podepsaný Release s Lint Release.
+Regresní sada před tím prošla všech 17 scénářů; po změně řazení byly zopakovány
+čtyři dotčené scénáře. Testy formulářů explicitně posouvají zadávaná pole do
+viditelné části panelu a kontrolují dostupné tlačítko Uložit.
+
+Debug i Release jsou na telefonu ve verzi 1.0.0032, aktualizované pouze přes
+`adb install -r`. Aktuální podepsané APK je veřejně dostupné jako
+`vestigia-installations/testing/VestigiaScriptorium-1.0.0032-release.apk`.
+Předchozí APK 1.0.0030 a 1.0.0031 jsou zachované v archivu Androidu.
+Veřejně stažená 1.0.0032 je shodná s lokálním APK; SHA-256:
+`8b07c5ba3fbf87848c04a6a5b2e0bfd3ba52967fb68f5942c85b35bb481ec533`.

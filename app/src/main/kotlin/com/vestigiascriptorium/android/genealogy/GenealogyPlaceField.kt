@@ -29,8 +29,10 @@ internal fun GenealogyPlaceField(label: String,value: String,c: Copy,source: Aid
         if(!focused || value.trim().length<2 || chosen==value || source==null)return@LaunchedEffect
         delay(200);loading=true
         try {
-            val page=source.page("places",if(c.cs)"cs" else "en",value,"",0,searchScope=SearchScope.ALL_FIELDS)
-            matches=page.records.take(6);resultQuery=value
+            val language=if(c.cs)"cs" else "en"
+            val names=source.page("places",language,value,"",0,searchScope=SearchScope.NAMES).records
+            val additional=if(names.size<6)source.page("places",language,value,"",0,searchScope=SearchScope.ALL_FIELDS).records else emptyList()
+            matches=(names+additional).distinctBy {it.id}.take(6);resultQuery=value
         } catch(e: Exception) {if(e is CancellationException)throw e;unavailable=true}
         finally {loading=false}
     }

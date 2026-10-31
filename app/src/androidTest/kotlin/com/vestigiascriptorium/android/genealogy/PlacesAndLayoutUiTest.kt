@@ -63,6 +63,7 @@ class PlacesAndLayoutUiTest {
             db.execSQL("CREATE TABLE place_names(place_id TEXT,name TEXT,normalized_name TEXT)")
             db.execSQL("INSERT INTO places VALUES('one','Břeclav','Jižní Morava','CZ','breclav')")
             db.execSQL("INSERT INTO places VALUES('two','Brno','Jižní Morava','CZ','brno')")
+            db.execSQL("INSERT INTO places VALUES('three','Adamov','okres Brno','CZ','adamov brno')")
             db.execSQL("INSERT INTO place_names VALUES('one','Lundenburg','lundenburg')")
         }
         val source=AidReaderSource(File(store.root,"index")) {file}
@@ -77,6 +78,7 @@ class PlacesAndLayoutUiTest {
         input.assertTextContains("Břeclav")
         input.performTextReplacement("Brno")
         rule.waitUntil(10000) {rule.onAllNodes(hasClickAction() and hasText("Brno") and !hasSetTextAction()).fetchSemanticsNodes().isNotEmpty()}
+        rule.onAllNodes(hasClickAction() and !hasSetTextAction())[0].assert(hasText("Brno"))
         rule.onNode(hasClickAction() and hasText("Břeclav") and !hasSetTextAction()).assertDoesNotExist()
         rule.onNode(hasClickAction() and hasText("Brno") and !hasSetTextAction()).performClick()
         input.assertTextContains("Brno")
