@@ -23,7 +23,7 @@ class RelativeEditorUiTest {
         rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
         rule.runOnIdle {controller.open(tree.id)}
         waitText("+ Osoba");rule.onNodeWithText("+ Osoba").performClick()
-        rule.onNodeWithText("Jméno").performTextInput("Anna")
+        rule.onNodeWithText("Jméno").performScrollTo().performTextInput("Anna")
         rule.onNodeWithText("Příjmení").performScrollTo().performTextInput("Dvořáková")
         val date=GenealogyDates.format("1691-03-21").replace(Regex("(?<![0-9])0(?=[1-9])"),"")
         rule.onNode(hasSetTextAction() and hasText("Datum narození")).performScrollTo().performTextInput(date)
@@ -50,7 +50,7 @@ class RelativeEditorUiTest {
         rule.onNodeWithContentDescription("Přizpůsobit").performClick()
         rule.onNodeWithText("Anna Dvořáková").performClick()
         rule.onNodeWithText("Upravit").performClick()
-        rule.onNodeWithText("Jméno").performTextReplacement("Anna Marie")
+        rule.onNodeWithText("Jméno").performScrollTo().performTextReplacement("Anna Marie")
         rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
         waitText("Hledat existující osobu")
         rule.onNodeWithText("Zrušit").performClick()

@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.platform.testTag
 import com.vestigiascriptorium.android.aids.reader.ImageZoom
 import com.vestigiascriptorium.android.aids.reader.RecordImage
@@ -23,7 +24,7 @@ import com.vestigiascriptorium.android.ui.main.Copy
 
 /** Image viewing only; both copies and source references remain immutable here. */
 @Composable
-internal fun EvidencePreview(doc: Evidence,media: GenealogyMedia?,c: Copy,onOpen: ()->Unit) {
+internal fun EvidencePreview(doc: Evidence,media: GenealogyMedia?,c: Copy,onOpen: ()->Unit,thumbnailHeight: Dp=140.dp,compact: Boolean=false) {
     var expanded by remember(doc.id,doc.file) {mutableStateOf(false)}
     val context=LocalContext.current
     val pdf by produceState<Bitmap?>(null,doc.file,doc.mime) {
@@ -46,16 +47,16 @@ internal fun EvidencePreview(doc: Evidence,media: GenealogyMedia?,c: Copy,onOpen
     if(doc.mime.startsWith("image/") || pdf!=null) {
         val data: Any=pdf ?: if(doc.file.startsWith("managed:")) media?.file(doc.file.removePrefix("managed:")) ?: Uri.EMPTY else Uri.parse(doc.file)
         val image=remember(doc.file,doc.caption,pdf) {RecordImage(name=doc.caption,data=data,online=false)}
-        if(pdf!=null)Text(c.t("První strana PDF","First PDF page"),style=MaterialTheme.typography.labelMedium)
-        ReferenceImage(image,c,Modifier.fillMaxWidth().height(140.dp).testTag("evidence-preview-${doc.id}"),onOpen={expanded=true})
+        if(pdf!=null && !compact)Text(c.t("První strana PDF","First PDF page"),style=MaterialTheme.typography.labelMedium)
+        ReferenceImage(image,c,Modifier.fillMaxWidth().height(thumbnailHeight).testTag("evidence-preview-${doc.id}"),onOpen={expanded=true})
         if(expanded)ImageZoom(image,c,{expanded=false})
-        if(pdf!=null)TextButton(onClick=onOpen) {Text(c.t("Otevřít celý dokument","Open full document"))}
+        if(pdf!=null)TextButton(onClick=onOpen) {Text(if(compact)c.t("Celé PDF","Full PDF") else c.t("Otevřít celý dokument","Open full document"))}
     } else {
         OutlinedCard(onClick=onOpen,modifier=Modifier.fillMaxWidth().testTag("evidence-preview-${doc.id}")) {
             Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
                 Text(if(doc.mime=="application/pdf")"PDF" else c.t("Dokument","Document"),style=MaterialTheme.typography.titleMedium)
-                Text(doc.caption)
-                Text(c.t("Otevřít doklad","Open evidence"),style=MaterialTheme.typography.labelLarge)
+                if(!compact)Text(doc.caption)
+                Text(if(compact)c.t("Otevřít","Open") else c.t("Otevřít doklad","Open evidence"),style=MaterialTheme.typography.labelLarge)
             }
         }
     }

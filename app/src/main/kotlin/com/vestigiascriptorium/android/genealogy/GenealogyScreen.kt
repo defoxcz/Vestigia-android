@@ -33,7 +33,7 @@ import com.vestigiascriptorium.android.ui.main.Copy
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExit: ()->Unit,onPeople: (String)->Unit={},selectedPerson: String?=null,onSelectionConsumed: ()->Unit={}) {
+internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExit: ()->Unit,onPeople: (String)->Unit={},selectedPerson: String?=null,onSelectionConsumed: ()->Unit={},placeSource: com.vestigiascriptorium.android.aids.reader.AidReaderSource?=null) {
     val state by controller.state.collectAsStateWithLifecycle()
     val tree=state.tree
     val latestBusy by rememberUpdatedState(state.busy)
@@ -57,7 +57,19 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     var localError by remember {mutableStateOf<String?>(null)}
     val context=LocalContext.current
     val windowSize=LocalWindowInfo.current.containerSize
-    val wide=with(LocalDensity.current) {windowSize.width.toDp()>=700.dp}
+    val landscape=windowSize.width>windowSize.height
+    val windowWidth=with(LocalDensity.current) {windowSize.width.toDp()}
+    val wide=windowWidth>=700.dp || (landscape && windowWidth>=600.dp)
+    val panelWidth=minOf(520.dp,maxOf(360.dp,windowWidth*.48f))
+    val compactEditing=landscape && editor!=null && WindowInsets.ime.getBottom(LocalDensity.current)>0
+    var lastViewport by remember(tree?.id) {mutableStateOf(IntSize.Zero)}
+    LaunchedEffect(graphSize,nodeBounds,landscape,tree?.id) {
+        if(graphSize.width>0 && graphSize.height>0 && nodeBounds.isNotEmpty() && graphSize!=lastViewport) {
+            kotlinx.coroutines.delay(120)
+            if(lastViewport!=IntSize.Zero || landscape)controller.view(centeredGraphView(nodeBounds.values,graphSize.width/density,graphSize.height/density,state.view))
+            lastViewport=graphSize
+        }
+    }
     fun dismissEditor() {editorStates.removeState(editorSession);editor=null;dirty=false}
     fun closeEditor() {if(state.busy)return;if(dirty)discard=true else dismissEditor()}
     fun select(id: String) {
@@ -94,9 +106,9 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         val id=editor ?: return
         val person=if(id=="new") Person(id=draftId,x=(-state.view.x+40)/state.view.zoom,y=(-state.view.y+40)/state.view.zoom) else currentTree.people.firstOrNull {it.id==id}
         if(person!=null) PersonPanel(currentTree,person,id=="new",copy,state.busy,onDirty={dirty=it},onClose=::closeEditor,
-            onExpand={},media=controller.media,
-            onSave={p,b,d -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
-            onSaveAndRelative={p,b,d ->relativeAfterSave=p.id;pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,b,d)}},
+            onExpand={},media=controller.media,placeSource=placeSource,
+            onSave={p,life -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,life.birth,life.death,life.birthPlace,life.deathPlace,life.marriagePlaces)}},
+            onSaveAndRelative={p,life ->relativeAfterSave=p.id;pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.person(it,p,life.birth,life.death,life.birthPlace,life.deathPlace,life.marriagePlaces)}},
             onRelative={relative=person.id},onEvidence={evidence=person.id},onOpenEvent={eventId ->editor=eventId;dirty=false},onEvent={kind ->
                 val old=currentTree.events.firstOrNull {it.kind==kind && it.roles["subject"]==person.id && kind!="genealogy.mentioned"}
                 if(old!=null) {editor=old.id;dirty=false}
@@ -105,13 +117,13 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
                 try {context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(if(doc.file.startsWith("managed:"))GenealogyFileProvider.uri(context,doc.file.removePrefix("managed:")) else Uri.parse(doc.file),doc.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))}
                 catch(_: Exception) {localError=copy.t("Doklad nelze otevřít. Soubor mohl být přesunut nebo chybí vhodná aplikace.","Unable to open evidence. The file may have moved or no suitable app is installed.")}
             })
-        else currentTree.events.firstOrNull {it.id==id}?.let {event -> EventPanel(currentTree,event,copy,state.busy,{dirty=it},::closeEditor,{value -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.event(it,value)}})}
+        else currentTree.events.firstOrNull {it.id==id}?.let {event -> EventPanel(currentTree,event,copy,state.busy,{dirty=it},::closeEditor,{value -> pending=true;pendingRevision=state.revision;controller.edit {GenealogyEdits.event(it,value)}},placeSource=placeSource)}
     }
     @Composable fun Panel() {editor?.let {id -> editorStates.SaveableStateProvider(editorSession) {EditorBody()}}}
-    Scaffold(topBar={TopAppBar(title={Column {Text(tree?.title ?: copy.t("Rodokmeny","Family trees"),maxLines=1,overflow=TextOverflow.Ellipsis);AppVersionLabel()}},
+    Scaffold(modifier=if(wide && editor!=null)Modifier.imePadding() else Modifier,topBar={if(!compactEditing)TopAppBar(title={Column {Text(tree?.title ?: copy.t("Rodokmeny","Family trees"),maxLines=1,overflow=TextOverflow.Ellipsis);AppVersionLabel()}},
         navigationIcon={BackButton(enabled=!state.busy,onClick={if(editor!=null)closeEditor() else if(tree!=null)controller.closeTree() else onExit()},label=copy.t("Zpět","Back"))},
         actions={if(tree!=null) TextButton(enabled=!state.busy && editor==null,onClick={onPeople(tree.id)}) {Text(copy.t("Osoby","People"))}})},
-        bottomBar={if(tree!=null) Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=8.dp),horizontalArrangement=Arrangement.SpaceBetween) {
+        bottomBar={if(tree!=null && !compactEditing) Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=8.dp),horizontalArrangement=Arrangement.SpaceBetween) {
             GenealogyToolTip(copy.t("Vrátit změnu","Undo")) {
             IconButton(enabled=state.undo && !state.busy && editor==null,onClick=controller::undo,modifier=Modifier.semantics {contentDescription=copy.t("Vrátit změnu","Undo")}) {GenealogyToolbarIcon(0)}
             }
@@ -120,14 +132,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
             }
             GenealogyToolTip(copy.t("Přizpůsobit","Fit")) {
             IconButton(modifier=Modifier.semantics {contentDescription=copy.t("Přizpůsobit","Fit")},enabled=!state.busy && tree.people.isNotEmpty(),onClick={
-                val nodes=nodeBounds.values.toList()
-                if(nodes.isEmpty())return@IconButton
-                val width=graphSize.width/density
-                val height=graphSize.height/density
-                val minX=nodes.minOf {it.x};val minY=nodes.minOf {it.y}
-                val maxX=nodes.maxOf {it.x+it.width};val maxY=nodes.maxOf {it.y+it.height}
-                val scale=minOf((width-40)/(maxX-minX),(height-40)/(maxY-minY),1f).coerceIn(.2f,3f)
-                controller.view(state.view.copy(x=20-minX*scale,y=20-minY*scale,zoom=scale))
+                controller.view(centeredGraphView(nodeBounds.values,graphSize.width/density,graphSize.height/density,state.view))
             }) {GenealogyToolbarIcon(2)}
             }
             GenealogyToolTip(copy.t("Manželky v boxu manžela","Wives in husband’s box")) {
@@ -153,7 +158,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
                 }
                 if(state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             }
-            if(wide && editor!=null) Surface(Modifier.width(360.dp).fillMaxHeight(),tonalElevation=3.dp) {Panel()}
+            if(wide && editor!=null) Surface(Modifier.width(panelWidth).fillMaxHeight().testTag("genealogy-side-panel"),tonalElevation=3.dp) {Panel()}
         }
     }
     // The same editor is used in the bottom sheet and the wide-window side panel.

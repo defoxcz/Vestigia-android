@@ -85,7 +85,7 @@ class PortraitImportUiTest {
         rule.onNodeWithText(person.name).performClick()
         rule.onNodeWithText("Připojit dokumentaci").performScrollTo().performClick()
         rule.onNodeWithText("Popisek dokladu / citace").performTextInput("Obrázek z cloudu")
-        rule.onNodeWithText("Google Disk / soubory").performClick()
+        rule.onNodeWithText("Google Disk / soubory").performScrollTo().performClick()
         waitText("Obrázek je uložen jako vlastní kopie. Původní soubor se nemění.")
         rule.onNodeWithText("Uložit doklad").performClick()
         rule.waitUntil(10000) {controller.state.value.tree?.evidence?.size==1 && !controller.state.value.busy}
@@ -151,7 +151,7 @@ class PortraitImportUiTest {
             waitText(person.name);rule.onNodeWithText(person.name).performClick()
             rule.onNodeWithText("Připojit dokumentaci").performScrollTo().performClick()
             rule.onNodeWithText("Popisek dokladu / citace").performTextInput("Zdrojový obrázek")
-            rule.onAllNodes(isSelectable()).filter(isNotSelected()).onFirst().performClick()
+            rule.onNodeWithText("Odkazovat na zdroj").performScrollTo().performClick()
             rule.onNodeWithText("Vybrat soubor").performScrollTo().performClick()
             waitText("Soubor vybrán")
             rule.onNodeWithText("Uložit doklad").performClick()

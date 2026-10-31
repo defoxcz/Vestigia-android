@@ -64,8 +64,8 @@ class HouseholdUiTest {
             rule.onNodeWithText("Otec dítěte Dítě: Jan").assertExists()
             rule.onNodeWithText("Otec: Jan").assertDoesNotExist()
             rule.onNodeWithText("Upravit").performClick()
-            rule.onNodeWithText("Jméno").performTextReplacement("Anna Marie")
-            rule.onNodeWithText("Uložit osobu").performClick()
+            rule.onNodeWithText("Jméno").performScrollTo().performTextReplacement("Anna Marie")
+            rule.onNodeWithText("Uložit osobu").assertIsEnabled().performClick()
             rule.waitUntil(10000) {controller.state.value.tree?.people?.any {it.id==wife.id && it.givenName=="Anna Marie"}==true && !controller.state.value.busy}
             rule.waitUntil(10000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithContentDescription("Vrátit změnu").performClick()

@@ -27,10 +27,10 @@ class GenealogyUiTest {
             rule.onNodeWithText("Název rodokmenu").performTextInput("Testovací rodina")
             rule.onNodeWithText("Vytvořit").performClick()
             waitText("+ Osoba");rule.onNodeWithText("+ Osoba").performClick()
-            rule.onNodeWithText("Jméno").performTextInput("Anna")
+            rule.onNodeWithText("Jméno").performScrollTo().performTextInput("Anna")
             rule.onNodeWithText("Druhé jméno").performScrollTo().performTextInput("Marie")
             rule.onNodeWithText("Příjmení").performScrollTo().performTextInput("Nováková")
-            rule.onNodeWithText("Uložit osobu").performClick()
+            rule.onNodeWithText("Uložit osobu").assertIsEnabled().performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.size==1 && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithText("Anna Marie Nováková").performClick()
@@ -74,7 +74,7 @@ class GenealogyUiTest {
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit doklad").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithText(p.name).performClick()
             rule.onNodeWithText("Upravit").performClick()
-            rule.onNodeWithText("Jméno").performTextReplacement("Anna upravená")
+            rule.onNodeWithText("Jméno").performScrollTo().performTextReplacement("Anna upravená")
             rule.onNodeWithContentDescription("Datum narození · Pouze rok").performScrollTo().performClick()
             field("Datum narození").performScrollTo().performTextInput("1820")
             rule.onNodeWithContentDescription("Připomínán od · Pouze rok").performScrollTo().performClick()
@@ -87,13 +87,13 @@ class GenealogyUiTest {
             screenshot("genealogy-editor-test.png",hasAnyDescendant(hasText("Uložit osobu")))
             rule.onNodeWithText("Zavřít").performClick()
             rule.onNodeWithText("Pokračovat v úpravách").performClick()
-            rule.onNodeWithText("Uložit osobu").performClick()
+            rule.onNodeWithText("Uložit osobu").assertIsEnabled().performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.name=="Anna upravená Nováková" && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithContentDescription("Přizpůsobit").performClick()
             rule.onNodeWithText("Anna upravená Nováková").performClick()
             rule.onNodeWithText("Narození · 1820").performScrollTo().performClick()
-            rule.onNodeWithText("Místo události").performScrollTo().performTextInput("Břeclav")
+            rule.onNodeWithText("Obec / místo události").performScrollTo().performTextInput("Břeclav")
             rule.onNodeWithText("Uložit událost").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.events?.single()?.place=="Břeclav" && !controller.state.value.busy}
             val stored=store.read(tree.id)

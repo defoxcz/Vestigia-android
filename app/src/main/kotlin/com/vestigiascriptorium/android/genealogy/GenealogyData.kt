@@ -11,6 +11,7 @@ internal data class Person(val id: String=newId(),val givenName: String="",val g
 internal data class LifeEvent(val id: String=newId(),val kind: String="genealogy.mentioned",val title: String="",val date: String="",val place: String="",val note: String="",val roles: Map<String,String> = emptyMap(),val x: Float=0f,val y: Float=0f)
 internal data class Evidence(val id: String=newId(),val person: String,val caption: String,val note: String="",val file: String="",val mime: String="application/octet-stream")
 internal data class FamilyTree(val id: String=newId(),val title: String,val people: List<Person> = emptyList(),val events: List<LifeEvent> = emptyList(),val evidence: List<Evidence> = emptyList(),val importSource: String="")
+internal data class PersonLifeDetails(val birth: String,val death: String,val birthPlace: String,val deathPlace: String,val marriagePlaces: Map<String,String>)
 internal data class GraphView(val x: Float=30f,val y: Float=40f,val zoom: Float=1f,val selected: String?=null)
 internal enum class Relative { FATHER,MOTHER,SPOUSE,CHILD_AS_FATHER,CHILD_AS_MOTHER }
 internal class GenealogyProblem(val code: String): IllegalArgumentException(code)
@@ -71,7 +72,7 @@ internal object GenealogyEdits {
         }
         throw GenealogyProblem("invalid")
     }
-    fun person(tree: FamilyTree,value: Person,birth: String,death: String): FamilyTree {
+    fun person(tree: FamilyTree,value: Person,birth: String,death: String,birthPlace: String?=null,deathPlace: String?=null,marriagePlaces: Map<String,String> = emptyMap()): FamilyTree {
         val previous=tree.people.firstOrNull {it.id==value.id}
         val oldBirth=tree.events.firstOrNull {it.kind=="genealogy.birth" && it.roles["subject"]==value.id}?.date.orEmpty()
         val oldDeath=tree.events.firstOrNull {it.kind=="genealogy.death" && it.roles["subject"]==value.id}?.date.orEmpty()
@@ -83,9 +84,12 @@ internal object GenealogyEdits {
         var next=tree.copy(people=tree.people.filterNot {it.id==value.id}+value.copy(givenName=value.givenName.trim(),middleName=value.middleName.trim(),surname=value.surname.trim(),legacyName=if(listOf(value.givenName,value.middleName,value.surname).any {it.isNotBlank()})"" else value.legacyName,x=position.first,y=position.second))
         listOf("genealogy.birth" to birth,"genealogy.death" to death).forEach { (kind,date) ->
             val old=next.events.firstOrNull {it.kind==kind && it.roles["subject"]==value.id}
-            if(old!=null) next=next.copy(events=next.events.map {if(it.id==old.id) it.copy(date=date.trim()) else it})
-            else if(date.isNotBlank()) {val p=freePosition(next,position.first+260,position.second+if(kind.endsWith("birth")) -100 else 100,width=196f);next=next.copy(events=next.events+LifeEvent(kind=kind,date=date.trim(),roles=mapOf("subject" to value.id),x=p.first,y=p.second))}
+            val place=if(kind=="genealogy.birth")birthPlace else deathPlace
+            if(old!=null) next=next.copy(events=next.events.map {if(it.id==old.id) it.copy(date=date.trim(),place=place?.trim() ?: it.place) else it})
+            else if(date.isNotBlank() || !place.isNullOrBlank()) {val p=freePosition(next,position.first+260,position.second+if(kind.endsWith("birth")) -100 else 100,width=196f);next=next.copy(events=next.events+LifeEvent(kind=kind,date=date.trim(),place=place.orEmpty().trim(),roles=mapOf("subject" to value.id),x=p.first,y=p.second))}
         }
+        if(marriagePlaces.keys.any {id ->next.events.none {it.id==id && it.kind=="genealogy.marriage" && value.id in it.roles.values}})throw GenealogyProblem("invalid")
+        next=next.copy(events=next.events.map {event ->marriagePlaces[event.id]?.let {event.copy(place=it.trim())} ?: event})
         validate(next);return next
     }
     fun relate(tree: FamilyTree,selected: String,other: String,kind: Relative): FamilyTree {

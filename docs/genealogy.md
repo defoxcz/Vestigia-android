@@ -511,3 +511,48 @@ APK je v `vestigia-installations/testing/VestigiaScriptorium-1.0.0029-release.ap
 předchozí 1.0.0028 v `vestigia-installations/archive/android/`. Veřejné HTTPS
 stažení je shodné s lokálním APK; SHA-256:
 `f1e96036a22804782410111ad91ebbd24c2a999ebd6952b6d5f549958fa11f6e`.
+
+## Obce, dokumentace a zobrazení na šířku (1.0.0031)
+
+Editor osoby má pole Obec narození a Obec úmrtí. Pro každý existující sňatek
+nabízí samostatnou Obec svatby s partnerem a datem; místo svatby je také přímo
+v editoru události Sňatek. Používá se stávající `LifeEvent.place`, bez změny
+formátu nebo migrace. Samotná obec nevyžaduje datum a nevytváří fiktivní
+letopočet. Úpravy osoby a jejích obcí jsou jedním uložením a jedním krokem Zpět.
+Starší volání editace zachovávají uložená místa a ostatní role událostí.
+
+Od dvou znaků se u aktivního pole nabízejí nejvýše šest výsledků z nainstalované
+Historické topografie. Dotaz běží mimo UI po krátké prodlevě pro psaní. Používá
+stejný místní rejstřík jako prohlížeč pomůcky; hledá i historické názvy a nehledí
+na velikost písmen nebo diakritiku. Při prvním použití může příprava rejstříku
+trvat déle a je vidět průběh. Návrh se převezme pouze klepnutím, nikdy sám
+nepřepíše rozepsané místo. Bez pomůcky nebo při její nedostupnosti lze vše
+zadat ručně; aplikace kvůli našeptávání nic nestahuje. Ukládá se text obce,
+nikoli závislost rodokmenu na instalaci pomůcky.
+
+Dokumentace osoby má na výšku tři sloupce. Na šířku používá podle šířky panelu
+čtyři až šest sloupců. Náhled, popisek a poznámka zůstávají u konkrétního dokladu;
+klepnutí zachovává velké zobrazení a zoom. PDF nabízí i otevření celého souboru.
+
+Na širokém okně a telefonu na šířku od 600 dp je editor v pravém panelu;
+jeho šířka využije přibližně 48 % okna, v rozsahu 360–520 dp. Graf využívá
+zbývající prostor. Přizpůsobit centruje rodokmen vodorovně i svisle a totéž se
+provede po změně velikosti pracovní plochy, včetně otočení nebo otevření bočního
+panelu. Při obyčejné editaci nebo posunu grafu se kamera znovu nepřizpůsobuje.
+Na výšku zůstává ručně nastavitelný spodní panel a zachování rozpracovaných polí.
+Při psaní na šířku se hlavní horní a spodní lišta dočasně skryjí a pracovní
+plocha respektuje klávesnici jako celek. Editor tak zachová dostupné Uložit
+osobu i posuvný formulář; po zavření klávesnice se lišty obnoví.
+
+Ověření prvního distribuovaného sestavení této změny 1.0.0031: 53 JVM testů,
+17 UI scénářů na fyzickém Samsungu SM-S938B, sestavení obou variant a Lint
+Debug/Release prošly. Nové scénáře ověřují ruční obce, zachování návrhu po
+obnově, společné uložení a Zpět, historický název a nahrazení dotazu IME,
+tři/čtyři sloupce náhledů i skutečné otočení telefonu, centrování a uložení
+s otevřenou klávesnicí. Našeptávání používá izolovanou syntetickou databázi,
+ne uživatelovu instalovanou pomůcku. Rozložení na šířku i formulář s klávesnicí
+byly vizuálně zkontrolovány ze snímků telefonu.
+
+Debug i Release 1.0.0031 byly aktualizovány pouze přes `adb install -r`.
+Podepsané APK bylo zveřejněné a veřejně stažené shodně s lokální kopií;
+SHA-256: `68064eaff8809545f946e51b2ce634f6f974a414155b3acdcdb1530556cebebb`.

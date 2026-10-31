@@ -53,5 +53,23 @@ class GenealogyEditsTest {
         problem("dateRange") {GenealogyEdits.person(tree,person.copy(mentionedFrom="1821"),"","")}
         problem("date") {GenealogyEdits.person(tree,person.copy(mentionedFrom="0000"),"","")}
     }
+    @Test fun placesCanBeSavedWithoutInventingDatesAndOldPlacesArePreserved() {
+        val result=GenealogyEdits.person(tree,child,"","",birthPlace=" Břeclav ",deathPlace="Brno")
+        assertEquals("Břeclav",result.events.single {it.kind=="genealogy.birth"}.place)
+        assertEquals("Brno",result.events.single {it.kind=="genealogy.death"}.place)
+        assertTrue(result.events.all {it.date.isEmpty()})
+        val unchanged=GenealogyEdits.person(result,child.copy(note="poznámka"),"","")
+        assertEquals(result.events,unchanged.events)
+    }
+    @Test fun marriagePlacesStayWithTheirOwnEventsAndShareOnePersonEdit() {
+        val first=LifeEvent(id="one",kind="genealogy.marriage",date="1820",place="Původní",roles=mapOf("subject" to father.id,"subject2" to mother.id))
+        val second=first.copy(id="two",date="1830")
+        val source=tree.copy(events=listOf(first,second))
+        val result=GenealogyEdits.person(source,father,"","",marriagePlaces=mapOf("one" to "Praha","two" to "Brno"))
+        assertEquals(listOf("Praha","Brno"),result.events.map {it.place})
+        assertEquals(listOf("1820","1830"),result.events.map {it.date})
+        problem("invalid") {GenealogyEdits.person(source,child,"","",marriagePlaces=mapOf("one" to "Neplatné"))}
+        assertEquals("Původní",source.events.first().place)
+    }
     private fun problem(expected: String,action: ()->Unit) {try {action();fail("Expected $expected")} catch(e: GenealogyProblem) {assertEquals(expected,e.code)}}
 }
