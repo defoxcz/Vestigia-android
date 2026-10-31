@@ -124,6 +124,12 @@ Release sestavíte `./gradlew assembleRelease` a nainstalujete
 `./scripts/run-release-device.sh` nebo úlohou **Android: nainstalovat a spustit Release**.
 APK je `app/build/outputs/apk/release/app-release.apk`. Release neumožňuje debugger.
 
+Podepsané Release APK se zveřejňuje do R2
+`vestigia-downloads/vestigia-installations/android/testing/`. Před nahráním se
+v tomto adresáři vždy smaže předchozí Android APK a následně se nahraje aktuální
+verze. Staré verze se nearchivují. Po uploadu se ověří veřejné stažení a SHA-256;
+v adresáři zůstává právě jedna aktuální Android verze.
+
 Trvalý podpisový klíč je lokálně v `~/.config/vestigia-android/release.keystore`.
 Konfigurace `~/.config/vestigia-android/release-signing.properties` obsahuje
 `storeFile`, `keyAlias`, `storePassword` a `keyPassword`. Cestu ke konfiguraci lze
