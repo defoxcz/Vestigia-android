@@ -710,3 +710,23 @@ Obě instalace jsou aktualizované přes `adb install -r`. Podepsané APK 1.0.00
 je v testing a předchozí 1.0.0036 je zachovaná v archivu Androidu. Veřejně
 stažené APK se shoduje s lokálním; SHA-256:
 `a57fdb3555df0ec4d47d5b33d58fd42243fdb8b54aff87a8ebaae474c429866a`.
+
+## Otevření detailů během dlouhého stisku (1.0.0038)
+
+Dlouhý stisk boxu otevře podrobnosti hned při uplynutí systémového intervalu
+pro dlouhý stisk. Nečeká na zvednutí prstu. Stejné pravidlo platí pro portrét
+a jméno manželky ve společném boxu. Uvolnění prstu již podruhé detail neotevírá.
+Po rozpoznání podržení lze pokračovat vodorovným přesunem boxu; přidání druhého
+prstu dál přepne gesto na zoom bez uložení rozpracovaného přesunu. Krátký stisk,
+posun náhledu a pinch před rozpoznáním podržení zachovávají dosavadní chování.
+
+Na fyzickém Samsungu SM-S938B prošlo všech pět scénářů gest. Nový regresní
+scénář používá izolovaný rodokmen a skutečný pracovní prostor: stiskne box,
+bez uvolnění prstu počká na viditelné tlačítko Upravit, potom box posune
+a ověří uloženou změnu souřadnic i stále otevřený přehled osoby.
+
+Debug/Release sestavení a Lint obou variant i všech 56 JVM testů prošly.
+Debug a Release 1.0.0038 byly aktualizovány pouze přes `adb install -r`.
+Podepsané APK je zveřejněno v testing; předchozí 1.0.0037 je zachovaná
+v archivu Androidu. Veřejné stažení se shoduje s lokálním APK; SHA-256:
+`cfb282890f316397db8e8d8ee967b1534f368d5ac94ab5768ce4923943e2e469`.

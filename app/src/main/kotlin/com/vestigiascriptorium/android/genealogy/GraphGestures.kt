@@ -32,13 +32,13 @@ internal suspend fun PointerInputScope.graphGestures(
             while(true) {
                 val event=if(mode==0 && target!=null)withTimeoutOrNull((deadline-eventTime).coerceAtLeast(1L)) {awaitPointerEvent(PointerEventPass.Initial)}
                     else awaitPointerEvent(PointerEventPass.Initial)
-                if(event==null) {mode=2;onHold(target!!);continue}
+                if(event==null) {mode=2;onHold(target!!);onOpen(target);continue}
                 eventTime=event.changes.maxOf {it.uptimeMillis}
                 val change=event.changes.firstOrNull {it.id==down.id}
                 if(event.changes.count {it.pressed}>1) {
                     mode=1;onCancelDrag()
                 } else if(mode==0 && change!=null) {
-                    if(target!=null && eventTime>=deadline) {mode=2;onHold(target)}
+                    if(target!=null && eventTime>=deadline) {mode=2;onHold(target);onOpen(target)}
                     else if((change.position-down.position).getDistance()>viewConfiguration.touchSlop)mode=1
                 }
                 if(mode==1)onTransform(event.calculateCentroid(useCurrent=false),event.calculatePan(),event.calculateZoom())
@@ -50,7 +50,7 @@ internal suspend fun PointerInputScope.graphGestures(
                 event.changes.forEach {it.consume()}
                 if(event.changes.none {it.pressed}) {
                     if(mode==2 && target!=null) {
-                        if(movedBox)onDrop(target,drag) else onOpen(target)
+                        if(movedBox)onDrop(target,drag)
                     } else if(mode==0 && target==null)onBackgroundTap(change?.position ?: down.position)
                     break
                 }

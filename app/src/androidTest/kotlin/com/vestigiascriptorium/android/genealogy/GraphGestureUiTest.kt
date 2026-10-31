@@ -43,6 +43,26 @@ class GraphGestureUiTest {
             Assert.assertEquals(person.x,tree.value.people.single().x);Assert.assertEquals(0,moves)
         }
     }
+    @Test fun holdOpensDetailsBeforeFingerIsReleased() {
+        val root=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"hold-details-${newId()}")
+        val store=GenealogyStore(root)
+        val scope=kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()+kotlinx.coroutines.Dispatchers.Main.immediate)
+        val controller=GenealogyController(store,scope)
+        try {
+            store.save(tree.value)
+            rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
+            rule.runOnIdle {controller.open(tree.value.id)}
+            rule.waitUntil(10000) {rule.onAllNodesWithTag("genealogy-node-${person.id}").fetchSemanticsNodes().isNotEmpty()}
+            val point=pointOnCard()
+            graph().performTouchInput {down(point)}
+            rule.waitUntil(5000) {rule.onAllNodesWithText("Upravit").fetchSemanticsNodes().isNotEmpty()}
+            rule.onNodeWithText("Upravit").assertIsDisplayed()
+            graph().performTouchInput {moveTo(point+Offset(140f,0f));up()}
+            rule.waitUntil(10000) {controller.state.value.tree?.people?.single()?.x!=person.x && !controller.state.value.busy}
+            Assert.assertTrue(store.read(tree.value.id).people.single().x>person.x)
+            rule.onNodeWithText("Upravit").assertIsDisplayed()
+        } finally {scope.coroutineContext[kotlinx.coroutines.Job]?.cancel();store.close();root.deleteRecursively()}
+    }
     @Test fun longPressOpensPersonAndLongPressDragMovesOneBox() {
         content();val point=pointOnCard()
         graph().performTouchInput {longClick(point)}
@@ -52,7 +72,7 @@ class GraphGestureUiTest {
         rule.runOnIdle {
             Assert.assertEquals(1,moves);Assert.assertTrue(tree.value.people.single().x>person.x)
             Assert.assertEquals(person.y,tree.value.people.single().y)
-            Assert.assertEquals(before.x,view.value.x);Assert.assertNull(opened)
+            Assert.assertEquals(before.x,view.value.x);Assert.assertEquals(person.id,opened)
         }
     }
     @Test fun secondFingerCancelsPendingMoveAndZoomsInstead() {
@@ -67,7 +87,7 @@ class GraphGestureUiTest {
         }
         rule.runOnIdle {
             Assert.assertTrue(view.value.zoom>before);Assert.assertEquals(0,moves)
-            Assert.assertEquals(person.x,tree.value.people.single().x);Assert.assertNull(opened)
+            Assert.assertEquals(person.x,tree.value.people.single().x);Assert.assertEquals(person.id,opened)
         }
     }
     @Test fun pinchWorksAcrossCardPortraitAndGroupedWifeName() {
