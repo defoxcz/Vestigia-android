@@ -33,7 +33,7 @@ class GenealogyUiTest {
             rule.onNodeWithText("Uložit osobu").assertIsEnabled().performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.size==1 && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
-            rule.onNodeWithText("Anna Marie Nováková").performClick()
+            rule.onNodeWithText("Anna Marie Nováková").performTouchInput {longClick()}
             rule.onNodeWithText("Upravit").performClick()
             waitText("Přidat příbuzného");rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
             rule.onNodeWithText("Jméno").performScrollTo().performTextInput("Jan")
@@ -66,7 +66,7 @@ class GenealogyUiTest {
         try {
             val restore=StateRestorationTester(rule)
             restore.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
-            waitText(p.name);rule.onNodeWithText(p.name).performClick()
+            waitText(p.name);rule.onNodeWithText(p.name).performTouchInput {longClick()}
             rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Připojit dokumentaci").performScrollTo().performClick()
             rule.onNodeWithText("Popisek dokladu / citace").performTextInput("Matrika 12, strana 45")
@@ -74,7 +74,7 @@ class GenealogyUiTest {
             rule.onNodeWithText("Uložit doklad").performClick()
             rule.waitUntil(10_000) {controller.state.value.tree?.evidence?.size==1 && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit doklad").fetchSemanticsNodes().isEmpty()}
-            rule.onNodeWithText(p.name).performClick()
+            rule.onNodeWithText(p.name).performTouchInput {longClick()}
             rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Jméno").performScrollTo().performTextReplacement("Anna upravená")
             rule.onNodeWithContentDescription("Datum narození · Pouze rok").performScrollTo().performClick()
@@ -93,7 +93,7 @@ class GenealogyUiTest {
             rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.name=="Anna upravená Nováková" && !controller.state.value.busy}
             rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
             rule.onNodeWithContentDescription("Přizpůsobit").performClick()
-            rule.onNodeWithText("Anna upravená Nováková").performClick()
+            rule.onNodeWithText("Anna upravená Nováková").performTouchInput {longClick()}
             rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Narození · 1820").performScrollTo().performClick()
             rule.onNodeWithText("Obec / místo události").performScrollTo().performTextInput("Břeclav")

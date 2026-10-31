@@ -59,7 +59,7 @@ class HouseholdUiTest {
             val childBounds=rule.onNodeWithTag("genealogy-node-${child.id}").fetchSemanticsNode().boundsInWindow
             Assert.assertEquals(childBounds.center.x,fatherBounds.center.x,2f)
             rule.onNodeWithText("1830–1880").assertIsDisplayed()
-            rule.onNodeWithContentDescription("Otevřít osobu: Anna").performClick()
+            rule.onNodeWithContentDescription("Otevřít osobu: Anna").performTouchInput {longClick()}
             rule.onNodeWithText("Anna").assertExists()
             rule.onNodeWithText("Otec dítěte Dítě: Jan").assertExists()
             rule.onNodeWithText("Otec: Jan").assertDoesNotExist()

@@ -37,7 +37,7 @@ class PlacesAndLayoutUiTest {
         store.save(tree);rule.runOnIdle {controller.open(tree.id)}
         val restoration=StateRestorationTester(rule)
         restoration.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
-        waitTag("genealogy-node-${person.id}");rule.onNodeWithTag("genealogy-node-${person.id}").performClick()
+        waitTag("genealogy-node-${person.id}");rule.onNodeWithTag("genealogy-node-${person.id}").performTouchInput {longClick()}
         rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Obec narození").performScrollTo().performTextInput("Břeclav")
         rule.onNodeWithText("Obec úmrtí").performScrollTo().performTextInput("Brno")
@@ -124,7 +124,7 @@ class PlacesAndLayoutUiTest {
             InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap ->File(contextBefore.cacheDir,"genealogy-landscape-before.png").outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}}
             assertCentered()
             val beforeZoom=controller.state.value.view.zoom
-            rule.onNodeWithTag("genealogy-node-${father.id}").performClick()
+            rule.onNodeWithTag("genealogy-node-${father.id}").performTouchInput {longClick()}
             rule.onNodeWithTag("genealogy-side-panel").assertIsDisplayed()
             rule.waitUntil(10000) {controller.state.value.view.zoom<beforeZoom-.01f}
             rule.waitForIdle();android.os.SystemClock.sleep(350)

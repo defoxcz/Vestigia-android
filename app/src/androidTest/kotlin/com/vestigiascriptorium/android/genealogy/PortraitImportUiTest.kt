@@ -38,7 +38,7 @@ class PortraitImportUiTest {
         rule.runOnIdle {controller.open(tree.id)}
         val owner=registry("portrait.png")
         rule.setContent {CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}}
-        waitText(person.name);rule.onNodeWithText(person.name).performClick();rule.onNodeWithText("Upravit").performClick()
+        waitText(person.name);rule.onNodeWithText(person.name).performTouchInput {longClick()};rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Vložit obrázek").performScrollTo()
         val localButton=rule.onNodeWithText("Vložit obrázek").fetchSemanticsNode().boundsInWindow
         val cloudButton=rule.onNodeWithText("Google Disk / soubory").fetchSemanticsNode().boundsInWindow
@@ -52,7 +52,7 @@ class PortraitImportUiTest {
         val key=controller.state.value.tree!!.people.single().portrait
         Assert.assertNotNull(controller.media.file(key))
         rule.onNodeWithContentDescription("Portrét osoby").assertIsDisplayed()
-        rule.onNodeWithText(person.name).performClick();rule.onNodeWithText("Upravit").performClick()
+        rule.onNodeWithText(person.name).performTouchInput {longClick()};rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Odstranit obrázek").performScrollTo().performClick();rule.onNodeWithText("Uložit osobu").performClick()
         rule.waitUntil(10_000) {controller.state.value.tree?.people?.single()?.portrait?.isEmpty()==true && !controller.state.value.busy}
         rule.waitUntil(10_000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
@@ -75,7 +75,7 @@ class PortraitImportUiTest {
         rule.runOnIdle {controller.open(tree.id)}
         val owner=registry("cloud-portrait.png")
         rule.setContent {CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}}
-        waitText(person.name);rule.onNodeWithText(person.name).performClick();rule.onNodeWithText("Upravit").performClick()
+        waitText(person.name);rule.onNodeWithText(person.name).performTouchInput {longClick()};rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Google Disk / soubory").performScrollTo().performClick()
         rule.waitUntil(10000) {rule.onAllNodesWithContentDescription("Portrét osoby").fetchSemanticsNodes().isNotEmpty()}
         rule.onNodeWithText("Uložit osobu").performClick()
@@ -83,7 +83,7 @@ class PortraitImportUiTest {
         rule.waitUntil(10000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
         val key=store.read(tree.id).people.single().portrait
         Assert.assertTrue(controller.media.file(key)!!.length()>0)
-        rule.onNodeWithText(person.name).performClick()
+        rule.onNodeWithText(person.name).performTouchInput {longClick()}
         rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Připojit dokumentaci").performScrollTo().performClick()
         rule.onNodeWithText("Popisek dokladu / citace").performTextInput("Obrázek z cloudu")
@@ -95,7 +95,7 @@ class PortraitImportUiTest {
         Assert.assertEquals("managed:$key",doc.file)
         Assert.assertEquals("image/png",doc.mime)
         rule.waitUntil(10000) {rule.onAllNodesWithText("Uložit doklad").fetchSemanticsNodes().isEmpty()}
-        rule.onNodeWithText(person.name).performClick()
+        rule.onNodeWithText(person.name).performTouchInput {longClick()}
         rule.onNodeWithTag("evidence-preview-${doc.id}").performScrollTo().performClick()
         rule.onNodeWithText("Zavřít obrázek").assertIsDisplayed()
         rule.onNodeWithContentDescription("Zvětšit obrázek").performClick()
@@ -150,7 +150,7 @@ class PortraitImportUiTest {
         val owner=registry("portrait.png")
         try {
             rule.setContent {CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}}
-            waitText(person.name);rule.onNodeWithText(person.name).performClick()
+            waitText(person.name);rule.onNodeWithText(person.name).performTouchInput {longClick()}
             rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Připojit dokumentaci").performScrollTo().performClick()
             rule.onNodeWithText("Popisek dokladu / citace").performTextInput("Zdrojový obrázek")
@@ -163,7 +163,7 @@ class PortraitImportUiTest {
             Assert.assertEquals(source.toString(),doc.file)
             Assert.assertTrue(controller.media.root.listFiles().orEmpty().isEmpty())
             rule.waitUntil(10000) {rule.onAllNodesWithText("Uložit doklad").fetchSemanticsNodes().isEmpty()}
-            rule.onNodeWithText(person.name).performClick()
+            rule.onNodeWithText(person.name).performTouchInput {longClick()}
             rule.onNodeWithTag("evidence-preview-${doc.id}").performScrollTo().performClick()
             rule.onNodeWithText("Zavřít obrázek").assertIsDisplayed()
             rule.onNodeWithText("Zavřít obrázek").performClick()
@@ -184,7 +184,7 @@ class PortraitImportUiTest {
         val owner=registry("portrait.png") {action=it}
         try {
             rule.setContent {CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}}
-            waitText(person.name);rule.onNodeWithText(person.name).performClick()
+            waitText(person.name);rule.onNodeWithText(person.name).performTouchInput {longClick()}
             rule.onAllNodes(hasSetTextAction()).assertCountEquals(0)
             rule.onNodeWithText("Přidat příbuzného").assertDoesNotExist()
             rule.onNodeWithText("Připojit dokumentaci").assertDoesNotExist()
@@ -200,7 +200,7 @@ class PortraitImportUiTest {
             Assert.assertTrue(controller.media.root.listFiles().orEmpty().isEmpty())
             GenealogyStore(store.root).use {Assert.assertEquals(source.toString(),it.read(tree.id).people.single().portrait)}
             rule.waitUntil(10000) {rule.onAllNodesWithText("Uložit osobu").fetchSemanticsNodes().isEmpty()}
-            rule.onNodeWithTag("genealogy-node-${person.id}").performClick()
+            rule.onNodeWithTag("genealogy-node-${person.id}").performTouchInput {longClick()}
             rule.onNodeWithText("Portrét: odkaz na zdroj").assertExists()
             rule.onNodeWithTag("portrait-source-reference").assertDoesNotExist()
             rule.onAllNodes(hasSetTextAction()).assertCountEquals(0)
@@ -221,7 +221,7 @@ class PortraitImportUiTest {
         val person=Person(givenName="Původní jméno");val tree=FamilyTree(title="Návrh",people=listOf(person))
         store.save(tree);rule.runOnIdle {controller.open(tree.id)}
         rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
-        waitText(person.name);rule.onNodeWithText(person.name).performClick()
+        waitText(person.name);rule.onNodeWithText(person.name).performTouchInput {longClick()}
         rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Jméno").performScrollTo().performTextReplacement("Upravené jméno")
         rule.onNodeWithText("Připojit dokumentaci").performScrollTo().performClick()
@@ -231,7 +231,7 @@ class PortraitImportUiTest {
         rule.onNodeWithText("Uložit doklad").performClick()
         rule.waitUntil(10000) {controller.state.value.tree?.evidence?.size==1 && !controller.state.value.busy}
         rule.waitUntil(10000) {rule.onAllNodesWithText("Uložit doklad").fetchSemanticsNodes().isEmpty()}
-        rule.onNodeWithTag("genealogy-node-${person.id}").performClick()
+        rule.onNodeWithTag("genealogy-node-${person.id}").performTouchInput {longClick()}
         rule.onNodeWithText("Citace po úpravě").assertExists()
         rule.onNodeWithText("Připojit dokumentaci").assertDoesNotExist()
         rule.onAllNodes(hasSetTextAction()).assertCountEquals(0)
@@ -240,7 +240,7 @@ class PortraitImportUiTest {
         val person=Person(givenName="Nová událost");val tree=FamilyTree(title="Transakce",people=listOf(person))
         store.save(tree);rule.runOnIdle {controller.open(tree.id)}
         rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
-        waitText(person.name);rule.onNodeWithTag("genealogy-node-${person.id}").performClick()
+        waitText(person.name);rule.onNodeWithTag("genealogy-node-${person.id}").performTouchInput {longClick()}
         rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Poznámky k osobě").performScrollTo().performTextInput("Rozepsaná poznámka")
         rule.onNodeWithText("Přidat událost").performScrollTo().performClick()

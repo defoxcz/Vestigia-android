@@ -28,7 +28,7 @@ class SheetGestureUiTest {
         try {
             rule.setContent {VestigiaScriptoriumTheme {GenealogyWorkspace(controller,Copy(true),{})}}
             rule.waitUntil(10000) {rule.onAllNodesWithText(p.name).fetchSemanticsNodes().isNotEmpty()}
-            rule.onNodeWithText(p.name).performClick()
+            rule.onNodeWithText(p.name).performTouchInput {longClick()}
             val panel=rule.onNodeWithTag("genealogy-editor-panel")
             val handle=rule.onNodeWithTag("genealogy-panel-handle")
             val initial=panel.fetchSemanticsNode().boundsInWindow.top

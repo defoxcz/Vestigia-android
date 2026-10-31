@@ -44,7 +44,7 @@ existence skenu nebo matričního záznamu není podmínkou zadávání.
 - Akce Zpět/Znovu jsou dostupné z kompaktního ovládání grafu. Automatické
   uspořádání je výslovný příkaz; běžná editace nepřeskládává ruční pozice.
 
-Klepnutí na osobu otevře **spodní vysouvací panel** uvnitř stejné obrazovky
+Dlouhé podržení osoby bez tahu (od 1.0.0034) otevře **spodní vysouvací panel** uvnitř stejné obrazovky
 (Compose bottom sheet, nikoli samostatná Android Activity). V částečné výšce
 ukáže uložené údaje a tlačítko Upravit. Od 1.0.0033 jsou podrobnosti pouze pro
 čtení; přidávání vazeb, událostí a dokumentace je až v režimu Upravit. Roztažením se

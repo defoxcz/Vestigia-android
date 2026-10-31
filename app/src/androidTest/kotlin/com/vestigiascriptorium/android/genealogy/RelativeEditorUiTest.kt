@@ -48,7 +48,7 @@ class RelativeEditorUiTest {
         result.events.forEach {rule.onNodeWithTag("genealogy-node-${it.id}").assertDoesNotExist()}
         Assert.assertEquals(ParentConnection(father.id,anna.id,"genealogy.father"),GenealogyPresentation(result).parents.single())
         rule.onNodeWithContentDescription("Přizpůsobit").performClick()
-        rule.onNodeWithText("Anna Dvořáková").performClick()
+        rule.onNodeWithText("Anna Dvořáková").performTouchInput {longClick()}
         rule.onNodeWithText("Upravit").performClick()
         rule.onNodeWithText("Jméno").performScrollTo().performTextReplacement("Anna Marie")
         rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
@@ -66,7 +66,7 @@ class RelativeEditorUiTest {
         rule.waitUntil(10000) {rule.onAllNodesWithContentDescription("Přizpůsobit").fetchSemanticsNodes().isNotEmpty()}
         repeat(6) {index ->
             rule.onNodeWithContentDescription("Přizpůsobit").performClick()
-            rule.onNodeWithTag("genealogy-node-${father.id}").performClick()
+            rule.onNodeWithTag("genealogy-node-${father.id}").performTouchInput {longClick()}
             rule.onNodeWithText("Upravit").performClick()
             rule.onNodeWithText("Přidat příbuzného").performScrollTo().performClick()
             rule.onNodeWithText("Vztah k vybrané osobě: Otec").performClick()

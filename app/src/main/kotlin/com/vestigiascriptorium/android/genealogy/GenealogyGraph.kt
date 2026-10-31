@@ -2,9 +2,6 @@ package com.vestigiascriptorium.android.genealogy
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -14,9 +11,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.layoutId
@@ -61,6 +62,7 @@ internal fun personEventRoleLabel(tree: FamilyTree,event: LifeEvent,role: String
     return eventRoleLabel(event.kind,role,c)
 }
 internal fun lifeDates(tree: FamilyTree,id: String)=listOf("genealogy.birth" to "*", "genealogy.death" to "†").mapNotNull { (kind,mark) -> tree.events.firstOrNull {it.kind==kind && it.roles["subject"]==id && it.date.isNotBlank()}?.let {"$mark ${GenealogyDates.format(it.date)}"} }.joinToString(" · ")
+private data class PersonTouchRegion(val owner: String,val person: String,val bounds: Rect)
 private data class BoxLine(val text: String,val title: Boolean=false,val limit: Int=Int.MAX_VALUE,val personId: String?=null)
 
 @Composable
@@ -68,8 +70,19 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
     val density=LocalDensity.current
     val latest by rememberUpdatedState(view)
     val latestSelect by rememberUpdatedState(onSelect)
+    val latestMove by rememberUpdatedState(onMove)
     val ink=MaterialTheme.colorScheme.outline
     val primary=MaterialTheme.colorScheme.primary
+    var graphOrigin by remember(tree.id) {mutableStateOf(Offset.Zero)}
+    val touchRegions=remember(tree.id) {mutableMapOf<String,PersonTouchRegion>()}
+    @Composable fun personRegion(owner: String,person: String,kind: String): Modifier {
+        val key="$owner:$person:$kind"
+        DisposableEffect(tree.id,key) {onDispose {touchRegions.remove(key)}}
+        return Modifier.onGloballyPositioned {coordinates ->
+            val region=PersonTouchRegion(owner,person,coordinates.boundsInRoot())
+            touchRegions[key]=region
+        }
+    }
     var liveDrag by remember(tree.id) {mutableStateOf<Pair<String,Offset>?>(null)}
     LaunchedEffect(tree) {liveDrag=null}
     val locale=java.util.Locale.getDefault(java.util.Locale.Category.FORMAT)
@@ -125,19 +138,43 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
     fun screen(point: GraphPoint)=Offset((point.x*view.zoom+view.x)*density.density,(point.y*view.zoom+view.y)*density.density)
     val currentBoxes by rememberUpdatedState(boxes)
     val currentConnections by rememberUpdatedState(visibleConnections)
-    Box(modifier.clipToBounds()
-        .pointerInput(tree.id,density.density) {detectTransformGestures {centroid,pan,zoom,_ ->
-            val old=latest;val next=(old.zoom*zoom).coerceIn(.2f,3f);val focus=centroid/density.density
-            val moved=focus-(focus-Offset(old.x,old.y))*(next/old.zoom)+pan/density.density
-            onView(old.copy(x=moved.x,y=moved.y,zoom=next))
-        }}
-        .pointerInput(tree.id,enabled) {if(enabled)detectTapGestures {point ->
-            val v=latest;val world=GraphPoint((point.x/density.density-v.x)/v.zoom,(point.y/density.density-v.y)/v.zoom)
-            currentConnections.mapNotNull {connection ->
-                val a=currentBoxes[connection.first];val b=currentBoxes[connection.second]
-                if(a==null || b==null)null else {val ends=connectionEnds(a,b);connection to segmentDistance(world,ends.first,ends.second)}
-            }.minByOrNull {it.second}?.takeIf {it.second<=12/v.zoom}?.let {latestSelect(it.first.editId)}
-        }}
+    val currentRegions by rememberUpdatedState(touchRegions)
+    val currentOwners by rememberUpdatedState(household.owners)
+    val currentPeople by rememberUpdatedState(people)
+    Box(modifier.clipToBounds().onGloballyPositioned {graphOrigin=it.positionInRoot()}
+        .pointerInput(tree.id,density.density,enabled) {
+            var gestureView=latest
+            graphGestures(
+                targetAt={point ->
+                    gestureView=latest
+                    val v=gestureView;val world=(point/density.density-Offset(v.x,v.y))/v.zoom
+                    val owner=currentBoxes.entries.lastOrNull {(_,box) ->world.x in box.x..box.x+box.width && world.y in box.y..box.y+box.height}?.key
+                    if(!enabled || owner==null)null else {
+                        val region=currentRegions.values.lastOrNull {it.owner==owner && (it.person==owner || currentOwners[it.person]==owner) && it.bounds.contains(point+graphOrigin)}
+                        GraphGestureTarget(owner,region?.person ?: owner,currentBoxes.getValue(owner).x,currentPeople.getValue(owner).y)
+                    }
+                },
+                onHold={target ->gestureView=gestureView.copy(selected=target.person);onView(gestureView)},
+                onOpen={target ->latestSelect(target.person)},
+                onDrag={target,amount ->liveDrag=target.owner to Offset(amount.x/(density.density*gestureView.zoom),0f)},
+                onDrop={target,amount ->latestMove(target.owner,target.x+amount.x/(density.density*gestureView.zoom),target.y)},
+                onCancelDrag={liveDrag=null},
+                onTransform={centroid,pan,zoom ->
+                    if(centroid!=Offset.Unspecified) {
+                        val old=gestureView;val next=(old.zoom*zoom).coerceIn(.2f,3f);val focus=centroid/density.density
+                        val moved=focus-(focus-Offset(old.x,old.y))*(next/old.zoom)+pan/density.density
+                        gestureView=old.copy(x=moved.x,y=moved.y,zoom=next);onView(gestureView)
+                    }
+                },
+                onBackgroundTap={point ->if(enabled) {
+                    val v=latest;val world=GraphPoint((point.x/density.density-v.x)/v.zoom,(point.y/density.density-v.y)/v.zoom)
+                    currentConnections.mapNotNull {connection ->
+                        val a=currentBoxes[connection.first];val b=currentBoxes[connection.second]
+                        if(a==null || b==null)null else {val ends=connectionEnds(a,b);connection to segmentDistance(world,ends.first,ends.second)}
+                    }.minByOrNull {it.second}?.takeIf {it.second<=12/v.zoom}?.let {latestSelect(it.first.editId)}
+                }}
+            )
+        }
         .semantics {contentDescription=copy.t("Graf vazeb. Posun prstem, přiblížení dvěma prsty.","Connections graph. Drag to pan, pinch to zoom.")}) {
         Canvas(Modifier.fillMaxSize()) {
             val familyBoxes=boxes.mapValues {(id,_) ->liveBox(id)}
@@ -165,10 +202,8 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
         Layout(modifier=Modifier.matchParentSize(),measurePolicy=measureCards,content={
         positions.forEach {(id,box) -> key(id) {
-            var drag by remember(id,box.x,box.y) {mutableStateOf(Offset.Zero)}
             Card(enabled=enabled,onClick={onSelect(id)},modifier=Modifier.layoutId(id).testTag("genealogy-node-$id")
-                .onSizeChanged {actual ->if(measuredSizes[id]!=actual)measuredSizes=measuredSizes+(id to actual)}
-                .pointerInput(id,box.x,box.y,enabled) {if(enabled)detectDragGesturesAfterLongPress(onDragStart={drag=Offset.Zero},onDragCancel={drag=Offset.Zero;liveDrag=null},onDragEnd={onMove(id,box.x+drag.x,people.getValue(id).y)}) {change,amount ->change.consume();drag+=Offset(amount.x,0f)/(density.density*latest.zoom);liveDrag=id to drag}},
+                .onSizeChanged {actual ->if(measuredSizes[id]!=actual)measuredSizes=measuredSizes+(id to actual)},
                 shape=RoundedCornerShape((12*view.zoom).dp),border=if(household.owner(view.selected.orEmpty())==id)androidx.compose.foundation.BorderStroke(2.dp,primary) else null,
                 colors=CardDefaults.cardColors(containerColor=if(id in people)MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(Modifier.padding((10*view.zoom).dp),verticalArrangement=Arrangement.spacedBy((5*view.zoom).dp)) {
@@ -178,13 +213,13 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                         val portraitSize=minOf(80f,(224f-5f*(portraits.size-1))/portraits.size).coerceAtLeast(1f)
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy((5*view.zoom).dp)) {
                             portraits.forEach {person ->
-                                PersonPortrait(person.portrait,media,copy,Modifier.size((portraitSize*view.zoom).dp).clip(CircleShape)
+                                PersonPortrait(person.portrait,media,copy,Modifier.size((portraitSize*view.zoom).dp).clip(CircleShape).then(personRegion(id,person.id,"portrait"))
                                     .clickable(enabled=enabled) {onSelect(person.id)}.semantics {contentDescription=copy.t("Portrét: ","Portrait: ")+person.name},contentScale=ContentScale.Crop)
                             }
                         }
                     }
                     lines.getValue(id).forEach {line ->
-                        Text(line.text,modifier=if(line.personId!=null)Modifier.clickable(enabled=enabled) {onSelect(line.personId)}.semantics {contentDescription=copy.t("Otevřít osobu: ","Open person: ")+people.getValue(line.personId).name} else Modifier,letterSpacing=0.sp,fontSize=((if(line.title)14 else 11)*view.zoom).sp,lineHeight=((if(line.title)17 else 14)*view.zoom).sp,maxLines=line.limit,overflow=TextOverflow.Ellipsis,textDecoration=if(line.personId!=null)androidx.compose.ui.text.style.TextDecoration.Underline else null,color=if(line.personId!=null)primary else if(line.title)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)}
+                        Text(line.text,modifier=if(line.personId!=null)Modifier.then(personRegion(id,line.personId,"name")).clickable(enabled=enabled) {onSelect(line.personId)}.semantics {contentDescription=copy.t("Otevřít osobu: ","Open person: ")+people.getValue(line.personId).name} else Modifier,letterSpacing=0.sp,fontSize=((if(line.title)14 else 11)*view.zoom).sp,lineHeight=((if(line.title)17 else 14)*view.zoom).sp,maxLines=line.limit,overflow=TextOverflow.Ellipsis,textDecoration=if(line.personId!=null)androidx.compose.ui.text.style.TextDecoration.Underline else null,color=if(line.personId!=null)primary else if(line.title)MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)}
                 }
             }
         }}

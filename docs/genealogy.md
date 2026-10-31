@@ -10,7 +10,7 @@ oprávnění, stejně jako pomůcky. Nepřidává žádnou výjimku přihlášen
 2. + Osoba otevře editor. Jméno je rozdělené na jméno, druhé jméno a příjmení; stačí alespoň jedna
    neprázdná část. Volitelné jsou pohlaví, životní data, připomínán od/do a
    poznámky. Data podporují celé datum nebo samotný rok podle systémového locale.
-3. Uložit osobu vloží box do grafu. Klepnutí na box otevře přehled a akci Upravit.
+3. Uložit osobu vloží box do grafu. Dlouhý stisk boxu bez tahu otevře přehled a akci Upravit.
 4. Přidat příbuzného nabídne otce, matku, partnera nebo dítě s výslovně vybranou
    rodičovskou rolí. Je možné vyhledat a připojit existující osobu nebo ji založit.
    Založení osoby a vazby je jedna transakce a jedna operace Zpět.
@@ -618,3 +618,33 @@ Podepsané APK je v `vestigia-installations/testing/`, předchozí 1.0.0032 je
 zachovaná v `vestigia-installations/archive/android/`. Veřejné stažení bylo
 porovnáno s lokální APK a má SHA-256:
 `d2364037777e1b5d7006b04801f1b63e713c50db30883ef2db1a46a20af1c048`.
+
+## Gesta grafu přes boxy (1.0.0034)
+
+Dotyky celé plochy zpracovává jeden rozpoznávač před obsluhou jednotlivých
+boxů. Běžný tah prstem po pozadí i boxu posouvá náhled. Dva prsty vždy ovládají
+posun a zoom, také přes portréty a jména manželek ve společném boxu. Přidání
+druhého prstu zruší rozpracovaný přesun boxu bez zápisu souřadnic; zbývající
+prst pak dál ovládá náhled až do ukončení celého gesta.
+
+Box se vybere dlouhým stiskem. Následný vodorovný tah během stejného podržení
+přesune box; generační řádek zůstane zachován. Dlouhý stisk bez tahu otevře
+podrobnosti po uvolnění prstu. Krátké klepnutí na box nic nevybírá a neotevírá.
+Manželku lze stejně vybrat podržením jejího portrétu nebo jména. Přístupné
+sémantické akce pro čtečku obrazovky zůstávají dostupné. Klepnutí na partnerskou
+spojnici dál otevírá přehled vztahu. Zoom zachovává dosavadní rozsah 20–300 %.
+
+Ověření 1.0.0034: sestavení Debug/Release, Lint obou variant a všech 54 JVM testů
+prošly. Na fyzickém Samsungu SM-S938B prošlo všech 25 UI scénářů bez přeskočení,
+včetně čtyř nových scénářů gest. Ověřují krátké klepnutí bez výběru, posun
+náhledu přes box, dlouhé podržení a přesun jediného boxu, přidání druhého prstu
+během přesunu bez změny souřadnic, pinch přes box/portrét/jméno manželky a její
+výběr podržením. Dosavadní scénáře výběru osob nyní používají dlouhý stisk;
+prošly také editory, dokumentace, rodinné větve, landscape i ruční výška panelu.
+Testy používají izolované stavy a vlastní dočasná média, ne uživatelovy rodokmeny.
+
+Debug i Release jsou na telefonu ve verzi 1.0.0034, aktualizované pouze přes
+`adb install -r`. Podepsané APK je v `vestigia-installations/testing/`, předchozí
+1.0.0033 je zachovaná v `vestigia-installations/archive/android/`.
+Veřejně stažené APK se shoduje s lokálním; SHA-256:
+`88a7a0e7f14614ef058fcac1819dbe4b58006f783661404907aa15cdc743c424`.
