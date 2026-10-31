@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -65,7 +64,7 @@ internal fun ReferenceImage(image: RecordImage,copy: Copy,modifier: Modifier=Mod
     val request=remember(image.data,retry,resolution) {
         AidImages.request(context,image.data,retry,resolution)
     }
-    Box(modifier.background(Color(0xFFF8F8F5)).then(if(onOpen!=null && !failed) Modifier.clickable(onClick=onOpen) else Modifier),contentAlignment=Alignment.Center) {
+    Box(modifier.then(if(onOpen!=null && !failed) Modifier.clickable(onClick=onOpen) else Modifier),contentAlignment=Alignment.Center) {
         val preview=LocalInspectionMode.current
         val bitmap=remember(image.data,preview) {
             if(preview && image.data is ByteArray) BitmapFactory.decodeByteArray(image.data,0,image.data.size)?.asImageBitmap() else null
@@ -73,10 +72,10 @@ internal fun ReferenceImage(image: RecordImage,copy: Copy,modifier: Modifier=Mod
         if(bitmap!=null) Image(bitmap,contentDescription=image.name,contentScale=ContentScale.Fit,modifier=Modifier.fillMaxSize())
         else AsyncImage(model=request,imageLoader=AidImages.loader(context),contentDescription=image.name,contentScale=ContentScale.Fit,
             modifier=Modifier.fillMaxSize(),onLoading={loading=true;failed=false},onError={loading=false;failed=true},onSuccess={loading=false;failed=false})
-        if(loading && bitmap==null) CircularProgressIndicator(modifier=Modifier.size(24.dp),color=Color(0xFF24475C))
+        if(loading && bitmap==null) CircularProgressIndicator(modifier=Modifier.size(24.dp))
         if(failed) Column(Modifier.padding(12.dp),horizontalAlignment=Alignment.CenterHorizontally) {
-            Text(copy.t("Obrázek nelze načíst. Bez připojení se zobrazí pouze obrázky z mezipaměti.","Unable to load image. Offline, only cached images can be displayed."),style=MaterialTheme.typography.bodySmall,color=Color(0xFF34454F))
-            TextButton(onClick={retry++},colors=ButtonDefaults.textButtonColors(contentColor=Color(0xFF24475C))) { Text(copy.t("Zkusit znovu","Retry")) }
+            Text(copy.t("Obrázek nelze načíst. Bez připojení se zobrazí pouze obrázky z mezipaměti.","Unable to load image. Offline, only cached images can be displayed."),style=MaterialTheme.typography.bodySmall)
+            TextButton(onClick={retry++}) { Text(copy.t("Zkusit znovu","Retry")) }
         }
     }
 }

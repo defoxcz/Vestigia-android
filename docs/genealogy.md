@@ -648,3 +648,20 @@ Debug i Release jsou na telefonu ve verzi 1.0.0034, aktualizované pouze přes
 1.0.0033 je zachovaná v `vestigia-installations/archive/android/`.
 Veřejně stažené APK se shoduje s lokálním; SHA-256:
 `88a7a0e7f14614ef058fcac1819dbe4b58006f783661404907aa15cdc743c424`.
+
+
+## Pozadí náhledů (1.0.0035)
+
+Sdílený náhled obrázků a dokumentace nemá vlastní pevnou světlou výplň.
+Průhledné části a prostor kolem obrázku přebírají skutečné pozadí okolní karty,
+panelu nebo aktivity, včetně tmavého režimu a tónování povrchu. Stejné pravidlo
+platí ve velkém náhledu. Obsah obrázku ani vykreslená stránka PDF se nemění.
+
+Indikátor načítání a chybové popisky používají barvy aktuálního motivu.
+Ověření 1.0.0035: Debug/Release sestavení a Lint obou variant prošly. Na fyzickém
+Samsungu SM-S938B prošlo všech devět scénářů `PortraitImportUiTest`, včetně
+náhledů obrázků, PDF a zoomu. Snímek velkého náhledu byl vizuálně zkontrolován.
+Debug i Release byly aktualizovány na 1.0.0035 pouze přes `adb install -r`.
+Podepsané APK je v `vestigia-installations/testing/`; předchozí 1.0.0034 je
+zachovaná v archivu Androidu. Veřejné stažení se shoduje s lokálním APK;
+SHA-256: `d2cdaa5844e220c769312e8cb8e785028dde7ab06a298ffca12bb5e6b218ce54`.
