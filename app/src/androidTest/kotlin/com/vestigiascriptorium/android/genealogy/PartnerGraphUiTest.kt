@@ -56,18 +56,18 @@ class PartnerGraphUiTest {
         val b=Person(id="b",givenName="Anna",x=800f)
         val c=Person(id="c",givenName="Marie",x=10f,y=350f,mentionedFrom="1830",mentionedTo="1880")
         val tree=FamilyTree(title="Rod",people=listOf(a,b,c),events=listOf(
-            LifeEvent(kind="genealogy.birth",date="1800-03-04",roles=mapOf("subject" to a.id),x=800f,y=100f),
-            LifeEvent(kind="genealogy.death",date="1880-05-06",roles=mapOf("subject" to a.id),x=800f,y=250f),
+            LifeEvent(kind="genealogy.birth",date="1800-03-04",place="Břeclav",roles=mapOf("subject" to a.id),x=800f,y=100f),
+            LifeEvent(kind="genealogy.death",date="1880-05-06",place="Brno",roles=mapOf("subject" to a.id),x=800f,y=250f),
             LifeEvent(kind="genealogy.marriage",date="1825",roles=mapOf("subject" to a.id,"subject2" to b.id)),
-            LifeEvent(kind="genealogy.marriage",date="1850",roles=mapOf("subject" to a.id,"subject2" to c.id))))
+            LifeEvent(kind="genealogy.marriage",date="1850",place="Olomouc",roles=mapOf("subject" to a.id,"subject2" to c.id))))
         val camera=mutableStateOf(GraphView())
         rule.setContent {VestigiaScriptoriumTheme {GenealogyGraph(tree,camera.value,Copy(true),{camera.value=it}, {}, {_,_,_ ->})}}
-        rule.onNodeWithText("* 1800  + 1880").assertIsDisplayed()
+        rule.onNodeWithText("* 1800 · Břeclav  + 1880 · Brno").assertIsDisplayed()
         rule.onNodeWithText("Partner: Anna").assertIsDisplayed()
         rule.onNodeWithText("2. partner: Marie").assertIsDisplayed()
-        rule.onAllNodesWithText("Svatba: 1850")[0].assertIsDisplayed()
+        rule.onAllNodesWithText("Svatba: 1850 · Olomouc")[0].assertIsDisplayed()
         rule.onNodeWithText("1830–1880").assertIsDisplayed()
-        val last=rule.onAllNodesWithText("Svatba: 1850",useUnmergedTree=true)[0].getUnclippedBoundsInRoot()
+        val last=rule.onAllNodesWithText("Svatba: 1850 · Olomouc",useUnmergedTree=true)[0].getUnclippedBoundsInRoot()
         val reference=rule.onNodeWithText("Partner: Anna",useUnmergedTree=true).getUnclippedBoundsInRoot()
         Assert.assertTrue("Last wedding row is clipped: $last vs $reference",last.bottom-last.top>=reference.bottom-reference.top-1.dp)
         val context=InstrumentationRegistry.getInstrumentation().targetContext
@@ -76,7 +76,7 @@ class PartnerGraphUiTest {
         rule.runOnIdle {camera.value=camera.value.copy(zoom=3f)}
         val zoomed=rule.onNodeWithTag("genealogy-node-a",useUnmergedTree=true).getUnclippedBoundsInRoot()
         Assert.assertTrue("Zoomed card must retain its world width",zoomed.right-zoomed.left>700.dp)
-        val zoomedLast=rule.onAllNodesWithText("Svatba: 1850",useUnmergedTree=true)[0].getUnclippedBoundsInRoot()
+        val zoomedLast=rule.onAllNodesWithText("Svatba: 1850 · Olomouc",useUnmergedTree=true)[0].getUnclippedBoundsInRoot()
         val zoomedReference=rule.onNodeWithText("Partner: Anna",useUnmergedTree=true).getUnclippedBoundsInRoot()
         Assert.assertTrue("Last row must also fit at 3x zoom",zoomedLast.bottom-zoomedLast.top>=zoomedReference.bottom-zoomedReference.top-1.dp)
     }

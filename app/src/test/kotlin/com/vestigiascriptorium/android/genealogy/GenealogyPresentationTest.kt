@@ -29,6 +29,21 @@ class GenealogyPresentationTest {
         assertEquals("",GenealogyPresentation(tree).person("b").years)
         assertEquals("1810",GenealogyPresentation(tree.copy(people=listOf(a.copy(mentionedTo="")))).person("a").years)
     }
+    @Test fun lifeFactsKeepTheirOwnPlaceAndSupportUndatedPlaces() {
+        val birth=LifeEvent(kind="genealogy.birth",date="1820",place=" Břeclav ",roles=mapOf("subject" to "a"))
+        val death=LifeEvent(kind="genealogy.death",date="1890",place="Brno",roles=mapOf("subject" to "a"))
+        fun display(vararg events: LifeEvent)=GenealogyPresentation(tree.copy(events=events.toList())).person("a").years
+        assertEquals("* 1820 · Břeclav  + 1890 · Brno",display(birth,death))
+        assertEquals("* 1820",display(birth.copy(place=""),birth.copy(date="",place="Praha")))
+        assertEquals("* Břeclav  1810–1860",display(birth.copy(date="")))
+    }
+    @Test fun weddingsPreserveDatePlacePairsAndIgnoreRelationshipRecordPlaces() {
+        val first=event("genealogy.marriage","1840").copy(place="Brno")
+        val second=event("genealogy.marriage","1840").copy(place="Praha")
+        val record=event("genealogy.spousal-record","1839").copy(place="Jihlava")
+        val connection=GenealogyPresentation(tree.copy(events=listOf(first,second,record))).connections.single()
+        assertEquals(listOf("1840 · Brno","1840 · Praha"),connection.weddingDetails(java.util.Locale.forLanguageTag("cs")))
+    }
     @Test fun partnershipIsAConnectionWhileStoredRecordAndIncompleteEventsRemainAvailable() {
         val relation=event("genealogy.spousal-record",date="1840",id="rel")
         val incomplete=LifeEvent(kind="genealogy.spousal-record",roles=mapOf("subject" to "a"))

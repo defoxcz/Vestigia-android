@@ -102,7 +102,7 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                     val label=if(grouped) {if(index==0)copy.t("Manželka","Wife") else copy.t("${index+1}. manželka","Wife ${index+1}")} else if(index==0)copy.t("Partner","Partner") else copy.t("${index+1}. partner","Partner ${index+1}")
                     add(BoxLine("$label: ${partner.person.name}",personId=if(household.owners[partner.person.id]==p.id)partner.person.id else null))
                     if(household.owners[partner.person.id]==p.id)presentation.person(partner.person.id,copy.cs).years.takeIf {it.isNotBlank()}?.let {add(BoxLine(it))}
-                    val dates=partner.connection.weddingDates.map {GenealogyDates.format(it,locale)}
+                    val dates=partner.connection.weddingDetails(locale)
                     add(BoxLine(copy.t("Svatba: ","Wedding: ")+dates.joinToString(" · ").ifBlank {"—"}))
                 }
             })

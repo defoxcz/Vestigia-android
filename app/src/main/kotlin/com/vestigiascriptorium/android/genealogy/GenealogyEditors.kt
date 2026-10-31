@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -207,6 +208,7 @@ internal fun <T> Choice(label: String,options: List<T>,value: T,onChange: (T)->U
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolean,onDismiss: ()->Unit,onSave: (String?,Person,Relative,String?)->Unit) {
     var kind by rememberSaveable {mutableStateOf(Relative.FATHER)}
@@ -223,18 +225,21 @@ internal fun RelativeDialog(tree: FamilyTree,person: String,c: Copy,busy: Boolea
             val partners=remember(tree,person) {GenealogyPresentation(tree).person(person).partners.map {it.person}}
             if(partners.isNotEmpty())Choice(c.t("Druhý rodič dítěte","Child’s other parent"),listOf("")+partners.map {it.id},secondParent,{secondParent=it}) {key ->partners.firstOrNull {it.id==key}?.name ?: c.t("Neurčený druhý rodič","Other parent unspecified")}
         }
-        OutlinedTextField(query,{query=it;existing=""},Modifier.fillMaxWidth(),label={Text(c.t("Hledat existující osobu","Find existing person"))},singleLine=true)
         val rows=remember(tree) {PeopleIndex.rows(tree,java.util.Locale.getDefault()).filter {it.person.id!=person}}
         val matches=remember(rows,query) {PeopleIndex.filter(rows,query)}
-        if(query.isNotBlank() && existing.isEmpty()) {
-            if(matches.isEmpty())Text(c.t("Žádná odpovídající osoba","No matching person"))
-            matches.take(20).forEach {row ->
-                TextButton(modifier=Modifier.fillMaxWidth(),onClick={existing=row.person.id;query=row.person.name}) {
-                    Text(listOf(row.person.name,row.year?.toString().orEmpty()).filter {it.isNotEmpty()}.joinToString(" · "))
+        var focused by remember {mutableStateOf(false)}
+        var dismissed by remember {mutableStateOf<String?>(null)}
+        val expanded=focused && query.isNotBlank() && existing.isEmpty() && dismissed!=query && matches.isNotEmpty()
+        ExposedDropdownMenuBox(expanded=expanded,onExpandedChange={dismissed=if(it)null else query}) {
+            OutlinedTextField(query,{query=it;existing="";dismissed=null},Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).onFocusChanged {focused=it.isFocused},label={Text(c.t("Hledat existující osobu","Find existing person"))},singleLine=true)
+            ExposedDropdownMenu(expanded=expanded,onDismissRequest={dismissed=query},modifier=Modifier.heightIn(max=240.dp).testTag("relative-suggestions")) {
+                matches.take(20).forEach {row ->
+                    DropdownMenuItem(text={Text(listOf(row.person.name,row.year?.toString().orEmpty()).filter {it.isNotEmpty()}.joinToString(" · "))},onClick={existing=row.person.id;query=row.person.name},modifier=Modifier.testTag("relative-suggestion-${row.person.id}"))
                 }
+                if(matches.size>20)Text(c.t("Zpřesněte hledání pro další osoby.","Refine the search for more people."),Modifier.padding(12.dp),style=MaterialTheme.typography.bodySmall)
             }
-            if(matches.size>20)Text(c.t("Zpřesněte hledání pro další osoby.","Refine the search for more people."))
         }
+        if(query.isNotBlank() && existing.isEmpty() && matches.isEmpty())Text(c.t("Žádná odpovídající osoba","No matching person"))
         if(existing.isNotEmpty()) {
             Text(c.t("Vybraná osoba: ","Selected person: ")+tree.people.first {it.id==existing}.name)
             TextButton(onClick={existing="";query=""}) {Text(c.t("Vytvořit novou osobu","Create new person"))}

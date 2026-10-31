@@ -69,11 +69,16 @@ class PlacesAndLayoutUiTest {
         val source=AidReaderSource(File(store.root,"index")) {file}
         rule.setContent {VestigiaScriptoriumTheme {
             var value by remember {mutableStateOf("")}
-            Column {GenealogyPlaceField("Obec",value,Copy(true),source) {value=it}}
+            Column(Modifier.fillMaxSize().imePadding().padding(16.dp),verticalArrangement=Arrangement.Bottom) {GenealogyPlaceField("Obec",value,Copy(true),source) {value=it}}
         }}
         val input=rule.onNodeWithText("Obec")
         input.performClick().performTextInput("lunden")
         waitText("Břeclav")
+        input.assertIsFocused()
+        rule.onNodeWithTag("place-suggestions").assertIsDisplayed()
+        InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap ->
+            File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"place-suggestions-keyboard.png").outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
+        }
         rule.onNode(hasClickAction() and hasText("Břeclav")).performClick()
         input.assertTextContains("Břeclav")
         input.performTextReplacement("Brno")

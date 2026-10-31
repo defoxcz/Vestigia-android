@@ -1,9 +1,14 @@
 package com.vestigiascriptorium.android.genealogy
 
+import java.util.Locale
+
 /** Read-only projection: hidden relationship records remain the source of truth. */
 internal data class PartnerConnection(val first: String,val second: String,val events: List<LifeEvent>) {
     val editId: String get()=events.firstOrNull {it.kind=="genealogy.marriage" && it.date.isNotBlank()}?.id
         ?: events.firstOrNull {it.kind=="genealogy.marriage"}?.id ?: events.first().id
+    fun weddingDetails(locale: Locale): List<String> = events.filter {it.kind=="genealogy.marriage"}.sortedBy {dateOrder(it.date)}.map {event ->
+        listOf(GenealogyDates.format(event.date,locale),event.place.trim()).filter {it.isNotBlank()}.joinToString(" · ")
+    }.filter {it.isNotBlank()}.distinct()
     val weddingDates: List<String> get()=events.filter {it.kind=="genealogy.marriage"}.map {it.date}.filter {it.isNotBlank()}.distinct().sortedBy(::dateOrder)
 }
 internal data class ParentConnection(val parent: String,val child: String,val role: String)
@@ -32,15 +37,16 @@ internal class GenealogyPresentation(val tree: FamilyTree) {
     private val lifeEvents=tree.events.filter {it.kind in listOf("genealogy.birth","genealogy.death")}.groupBy {it.roles["subject"]}
     fun person(id: String,cs: Boolean=true): PersonBoxData {
         val subject=people.getValue(id)
-        fun year(kind: String)=lifeEvents[id].orEmpty().filter {it.kind==kind}.firstNotNullOfOrNull {GenealogyDates.year(it.date)}
-        val birth=year("genealogy.birth");val death=year("genealogy.death")
-        val dates=if(birth!=null || death!=null)listOfNotNull(birth?.let {"* $it"},death?.let {"+ $it"}).joinToString("  ") else {
-            val from=GenealogyDates.year(subject.mentionedFrom);val to=GenealogyDates.year(subject.mentionedTo)
-            when {from!=null && to!=null -> "$from–$to"
-                from!=null -> "$from"
-                to!=null -> "$to"
-                else -> ""}
+        fun event(kind: String)=lifeEvents[id].orEmpty().filter {it.kind==kind}.let {events ->events.firstOrNull {GenealogyDates.year(it.date)!=null} ?: events.firstOrNull {it.place.isNotBlank()}}
+        val birth=event("genealogy.birth");val death=event("genealogy.death")
+        fun fact(event: LifeEvent?,mark: String): String?=event?.let {
+            val text=listOfNotNull(GenealogyDates.year(it.date)?.toString(),it.place.trim().takeIf {place ->place.isNotBlank()}).joinToString(" · ")
+            text.takeIf {it.isNotBlank()}?.let {"$mark $it"}
         }
+        val from=GenealogyDates.year(subject.mentionedFrom);val to=GenealogyDates.year(subject.mentionedTo)
+        val mentions=when {from!=null && to!=null -> "$from–$to";from!=null -> "$from";to!=null -> "$to";else -> ""}
+        val facts=listOfNotNull(fact(birth,"*"),fact(death,"+"))
+        val dates=(facts+if(GenealogyDates.year(birth?.date.orEmpty())==null && GenealogyDates.year(death?.date.orEmpty())==null && mentions.isNotBlank())listOf(mentions) else emptyList()).joinToString("  ")
         val partners=connectionsByPerson[id].orEmpty()
             .sortedWith(compareBy<PartnerConnection> {it.weddingDates.firstOrNull()?.let(::dateOrder) ?: "99999"}.thenBy {connection ->order.getValue(connection.events.first().id)})
             .map {PartnerEntry(people.getValue(if(it.first==id)it.second else it.first),it)}

@@ -665,3 +665,25 @@ Debug i Release byly aktualizovány na 1.0.0035 pouze přes `adb install -r`.
 Podepsané APK je v `vestigia-installations/testing/`; předchozí 1.0.0034 je
 zachovaná v archivu Androidu. Veřejné stažení se shoduje s lokálním APK;
 SHA-256: `d2cdaa5844e220c769312e8cb8e785028dde7ab06a298ffca12bb5e6b218ce54`.
+
+## Obce v boxech a našeptávání nad klávesnicí (1.0.0036)
+
+Box osoby uvádí vedle roku narození a úmrtí také obec příslušné události,
+například `* 1820 · Břeclav  + 1890 · Brno`. Stejné zobrazení platí pro
+manželky ve společném boxu. Svatební řádky připojují obec ke konkrétnímu datu;
+opakované svatby se stejným datem a různými obcemi zůstávají rozlišené.
+Samotná obec se zobrazí i bez známého data. Dosavadní období doložení zůstává
+náhradou za neznámé životní letopočty. Uložený formát dat se nemění.
+
+Našeptávače obcí a příbuzných používají nabídku ukotvenou k editovatelnému poli.
+Nabídka se umístí do dostupného prostoru nad klávesnicí, případně nad pole,
+a při psaní ponechá poli fokus. Delší seznam lze posouvat; maximální výška
+je 240 dp. Stejný limit platí pro našeptávač v seznamu osob.
+
+Ověření: sestavení a Lint Debug/Release, všech 56 JVM testů a deset UI scénářů
+na fyzickém Samsungu SM-S938B prošlo. Doplněné kontroly našeptávání u spodního
+okraje s otevřenou klávesnicí a boxu s obcemi při 3× zoomu rovněž prošly;
+snímky byly vizuálně zkontrolovány. Testy používají izolované rodokmeny a databázi
+obcí. Debug i Release byly aktualizovány pouze pomocí `adb install -r`.
+Podepsané APK 1.0.0036 je zveřejněno v testing, předchozí 1.0.0035 je v archivu.
+SHA-256: `fb99e2a8088ee1aec85da16c4c13e27ebec9f8efe128bdadb3201211028fd3f2`.
