@@ -730,3 +730,23 @@ Debug a Release 1.0.0038 byly aktualizovány pouze přes `adb install -r`.
 Podepsané APK je zveřejněno v testing; předchozí 1.0.0037 je zachovaná
 v archivu Androidu. Veřejné stažení se shoduje s lokálním APK; SHA-256:
 `cfb282890f316397db8e8d8ee967b1534f368d5ac94ab5768ce4923943e2e469`.
+
+## Úplná místní data v boxech (1.0.0039)
+
+Narození a úmrtí se v boxech osob zobrazují s celým zadaným datem, stejně
+jako svatby. Formát dne, měsíce a roku určuje oblast zařízení pomocí společného
+`GenealogyDates.format`; jazyk textů aplikace pořadí částí data nepřepisuje.
+Pravidlo platí také pro období doložení a manželky ve společném boxu.
+Samostatně zadaný rok zůstává rokem, neznámé části data se nedoplňují.
+Obec zůstává vedle příslušného data. Uložená data ani formát souboru se nemění.
+
+Jednotkové testy ověřují odlišné pořadí data v americkém a německém formátu,
+plné datum období doložení i zachování samostatného roku. Test boxu na telefonu
+kontroluje úplná data s obcemi a jejich výšku při 3× zoomu.
+
+Ověření 1.0.0039: sestavení a Lint Debug/Release, všech 57 JVM testů a tři
+UI scénáře na fyzickém Samsungu SM-S938B prošly. Snímek boxu s úplnými daty
+byl vizuálně zkontrolován. Debug i Release byly aktualizovány pomocí
+`adb install -r`. Podepsané APK je v testing, předchozí 1.0.0038 je zachovaná
+v archivu Androidu. Veřejně stažené APK se shoduje s lokálním; SHA-256:
+`f7243af565717e7d634d973ea00767573c915f234e1a676432380ee92426f08c`.

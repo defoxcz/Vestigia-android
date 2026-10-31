@@ -4,7 +4,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GenealogyPresentationTest {
-    private val a=Person(id="a",givenName="Jan",surname="Novák",mentionedFrom="1810-02-03",mentionedTo="1860")
+    private val a=Person(id="a",givenName="Jan",surname="Novák",mentionedFrom="1810",mentionedTo="1860")
     private val b=Person(id="b",givenName="Anna")
     private val c=Person(id="c",givenName="Marie")
     private val tree=FamilyTree(title="Rod",people=listOf(a,b,c))
@@ -24,10 +24,19 @@ class GenealogyPresentationTest {
         assertEquals("1810–1860",GenealogyPresentation(tree).person("a").years)
         val born=LifeEvent(kind="genealogy.birth",date="1820-02-03",roles=mapOf("subject" to "a"))
         val died=LifeEvent(kind="genealogy.death",date="1890",roles=mapOf("subject" to "a"))
-        assertEquals("* 1820  + 1890",GenealogyPresentation(tree.copy(events=listOf(born,died))).person("a").years)
+        assertEquals("* "+GenealogyDates.format("1820-02-03")+"  + 1890",GenealogyPresentation(tree.copy(events=listOf(born,died))).person("a").years)
         assertEquals("+ 1890",GenealogyPresentation(tree.copy(events=listOf(died))).person("a").years)
         assertEquals("",GenealogyPresentation(tree).person("b").years)
         assertEquals("1810",GenealogyPresentation(tree.copy(people=listOf(a.copy(mentionedTo="")))).person("a").years)
+    }
+    @Test fun boxesFormatCompleteDatesForDeviceLocaleAndKeepYearPrecision() {
+        val birth=LifeEvent(kind="genealogy.birth",date="1820-02-03",place="Břeclav",roles=mapOf("subject" to "a"))
+        val death=LifeEvent(kind="genealogy.death",date="1890",roles=mapOf("subject" to "a"))
+        val view=GenealogyPresentation(tree.copy(events=listOf(birth,death)))
+        assertEquals("* 2/3/1820 · Břeclav  + 1890",view.person("a",locale=java.util.Locale.US).years)
+        assertEquals("* 03.02.1820 · Břeclav  + 1890",view.person("a",locale=java.util.Locale.GERMANY).years)
+        val mentions=GenealogyPresentation(tree.copy(people=listOf(a.copy(mentionedFrom="1810-02-03",mentionedTo="1860-04-05"))))
+        assertEquals("2/3/1810–4/5/1860",mentions.person("a",locale=java.util.Locale.US).years)
     }
     @Test fun lifeFactsKeepTheirOwnPlaceAndSupportUndatedPlaces() {
         val birth=LifeEvent(kind="genealogy.birth",date="1820",place=" Břeclav ",roles=mapOf("subject" to "a"))

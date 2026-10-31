@@ -93,7 +93,7 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
     val people=remember(tree.people) {tree.people.associateBy {it.id}}
     val lines=remember(presentation,locale,copy.cs,household) {buildMap<String,List<BoxLine>> {
         tree.people.forEach {p ->
-            val data=presentation.person(p.id,copy.cs)
+            val data=presentation.person(p.id,copy.cs,locale)
             put(p.id,buildList {
                 add(BoxLine(p.name,true,2))
                 if(data.years.isNotBlank())add(BoxLine(data.years))
@@ -101,7 +101,7 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                     val grouped=household.owners[partner.person.id]==p.id
                     val label=if(grouped) {if(index==0)copy.t("Manželka","Wife") else copy.t("${index+1}. manželka","Wife ${index+1}")} else if(index==0)copy.t("Partner","Partner") else copy.t("${index+1}. partner","Partner ${index+1}")
                     add(BoxLine("$label: ${partner.person.name}",personId=if(household.owners[partner.person.id]==p.id)partner.person.id else null))
-                    if(household.owners[partner.person.id]==p.id)presentation.person(partner.person.id,copy.cs).years.takeIf {it.isNotBlank()}?.let {add(BoxLine(it))}
+                    if(household.owners[partner.person.id]==p.id)presentation.person(partner.person.id,copy.cs,locale).years.takeIf {it.isNotBlank()}?.let {add(BoxLine(it))}
                     val dates=partner.connection.weddingDetails(locale)
                     add(BoxLine(copy.t("Svatba: ","Wedding: ")+dates.joinToString(" · ").ifBlank {"—"}))
                 }

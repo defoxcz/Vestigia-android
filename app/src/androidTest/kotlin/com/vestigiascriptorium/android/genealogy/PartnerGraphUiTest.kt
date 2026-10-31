@@ -62,7 +62,7 @@ class PartnerGraphUiTest {
             LifeEvent(kind="genealogy.marriage",date="1850",place="Olomouc",roles=mapOf("subject" to a.id,"subject2" to c.id))))
         val camera=mutableStateOf(GraphView())
         rule.setContent {VestigiaScriptoriumTheme {GenealogyGraph(tree,camera.value,Copy(true),{camera.value=it}, {}, {_,_,_ ->})}}
-        rule.onNodeWithText("* 1800 · Břeclav  + 1880 · Brno").assertIsDisplayed()
+        rule.onNodeWithText("* "+GenealogyDates.format("1800-03-04")+" · Břeclav  + "+GenealogyDates.format("1880-05-06")+" · Brno").assertIsDisplayed()
         rule.onNodeWithText("Partner: Anna").assertIsDisplayed()
         rule.onNodeWithText("2. partner: Marie").assertIsDisplayed()
         rule.onAllNodesWithText("Svatba: 1850 · Olomouc")[0].assertIsDisplayed()

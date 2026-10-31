@@ -35,15 +35,15 @@ internal class GenealogyPresentation(val tree: FamilyTree) {
     val families=parents.groupBy {it.child}.map { (child,links) ->links.map {it.parent}.distinct().sorted() to child }
         .groupBy({it.first},{it.second}).map {(parents,children) ->FamilyConnection(parents,children.distinct())}
     private val lifeEvents=tree.events.filter {it.kind in listOf("genealogy.birth","genealogy.death")}.groupBy {it.roles["subject"]}
-    fun person(id: String,cs: Boolean=true): PersonBoxData {
+    fun person(id: String,cs: Boolean=true,locale: Locale=Locale.getDefault(Locale.Category.FORMAT)): PersonBoxData {
         val subject=people.getValue(id)
         fun event(kind: String)=lifeEvents[id].orEmpty().filter {it.kind==kind}.let {events ->events.firstOrNull {GenealogyDates.year(it.date)!=null} ?: events.firstOrNull {it.place.isNotBlank()}}
         val birth=event("genealogy.birth");val death=event("genealogy.death")
         fun fact(event: LifeEvent?,mark: String): String?=event?.let {
-            val text=listOfNotNull(GenealogyDates.year(it.date)?.toString(),it.place.trim().takeIf {place ->place.isNotBlank()}).joinToString(" · ")
+            val text=listOfNotNull(it.date.takeIf {date ->GenealogyDates.year(date)!=null}?.let {date ->GenealogyDates.format(date,locale)},it.place.trim().takeIf {place ->place.isNotBlank()}).joinToString(" · ")
             text.takeIf {it.isNotBlank()}?.let {"$mark $it"}
         }
-        val from=GenealogyDates.year(subject.mentionedFrom);val to=GenealogyDates.year(subject.mentionedTo)
+        val from=subject.mentionedFrom.takeIf {GenealogyDates.year(it)!=null}?.let {GenealogyDates.format(it,locale)};val to=subject.mentionedTo.takeIf {GenealogyDates.year(it)!=null}?.let {GenealogyDates.format(it,locale)}
         val mentions=when {from!=null && to!=null -> "$from–$to";from!=null -> "$from";to!=null -> "$to";else -> ""}
         val facts=listOfNotNull(fact(birth,"*"),fact(death,"+"))
         val dates=(facts+if(GenealogyDates.year(birth?.date.orEmpty())==null && GenealogyDates.year(death?.date.orEmpty())==null && mentions.isNotBlank())listOf(mentions) else emptyList()).joinToString("  ")
