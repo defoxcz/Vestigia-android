@@ -750,3 +750,8 @@ byl vizuálně zkontrolován. Debug i Release byly aktualizovány pomocí
 `adb install -r`. Podepsané APK je v testing, předchozí 1.0.0038 je zachovaná
 v archivu Androidu. Veřejně stažené APK se shoduje s lokálním; SHA-256:
 `f7243af565717e7d634d973ea00767573c915f234e1a676432380ee92426f08c`.
+
+APK 1.0.0039 bylo následně zveřejněno podle nových pokynů v
+`vestigia-installations/android/testing/`. Cílový adresář před uploadem neobsahoval
+žádné staré APK; nyní obsahuje právě tuto verzi. Archivní kopie se při tomto
+uploadu nevytvářela. Veřejné stažení bylo ověřeno a SHA-256 zůstává shodné.
