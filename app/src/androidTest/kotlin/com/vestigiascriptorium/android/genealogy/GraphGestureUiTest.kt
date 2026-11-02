@@ -19,12 +19,13 @@ class GraphGestureUiTest {
     private val tree=mutableStateOf(FamilyTree(title="Gesta",people=listOf(person)))
     private val view=mutableStateOf(GraphView(x=30f,y=30f,zoom=.8f))
     private var opened: String?=null
+    private var tapped: String?=null
     private var moves=0
     private val graphDescription="Graf vazeb. Posun prstem, přiblížení dvěma prsty."
     private fun content(media: GenealogyMedia?=null,grouped: Boolean=false) {
         rule.setContent {VestigiaScriptoriumTheme {GenealogyGraph(tree.value,view.value,Copy(true),{view.value=it},{opened=it},{id,x,y ->
             moves++;tree.value=tree.value.copy(people=tree.value.people.map {if(it.id==id)it.copy(x=x,y=y) else it})
-        },Modifier.fillMaxSize(),media=media,collapseWives=grouped)}}
+        },Modifier.fillMaxSize(),media=media,collapseWives=grouped,onTap={tapped=it})}}
         rule.waitForIdle()
     }
     private fun graph()=rule.onNodeWithContentDescription(graphDescription)
@@ -42,6 +43,22 @@ class GraphGestureUiTest {
             Assert.assertNull(view.value.selected);Assert.assertNull(opened)
             Assert.assertEquals(person.x,tree.value.people.single().x);Assert.assertEquals(0,moves)
         }
+    }
+    @Test fun doubleTapOpensPersonWithoutMovingBox() {
+        content();val point=pointOnCard()
+        graph().performTouchInput {doubleClick(point)}
+        rule.runOnIdle {Assert.assertEquals(person.id,opened);Assert.assertEquals(0,moves)}
+    }
+    @Test fun tapsOnDifferentPeopleDoNotCountAsDoubleTap() {
+        val other=Person(id="other",givenName="Anna",x=320f)
+        tree.value=tree.value.copy(people=listOf(person,other))
+        content()
+        val first=pointOnCard()
+        graph().performTouchInput {click(first)}
+        val bounds=rule.onNodeWithTag("genealogy-node-${other.id}").fetchSemanticsNode().boundsInRoot
+        val point=bounds.center-graph().fetchSemanticsNode().boundsInRoot.topLeft
+        graph().performTouchInput {advanceEventTime(100);click(point)}
+        rule.runOnIdle {Assert.assertEquals(other.id,tapped);Assert.assertNull(opened);Assert.assertEquals(0,moves)}
     }
     @Test fun holdOpensDetailsBeforeFingerIsReleased() {
         val root=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"hold-details-${newId()}")

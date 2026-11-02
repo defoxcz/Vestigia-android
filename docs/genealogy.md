@@ -10,7 +10,9 @@ oprávnění, stejně jako pomůcky. Nepřidává žádnou výjimku přihlášen
 2. + Osoba otevře editor. Jméno je rozdělené na jméno, druhé jméno a příjmení; stačí alespoň jedna
    neprázdná část. Volitelné jsou pohlaví, životní data, připomínán od/do a
    poznámky. Data podporují celé datum nebo samotný rok podle systémového locale.
-3. Uložit osobu vloží box do grafu. Dlouhý stisk boxu bez tahu otevře přehled a akci Upravit.
+3. Uložit osobu vloží box do grafu. Dvojklik boxu otevře přehled a akci Upravit. Je-li panel otevřený, jednoduchý klik
+   na jinou osobu aktualizuje tentýž panel bez posunu grafu. Neuložené úpravy zůstávají chráněné.
+   Dlouhý stisk nadále otevře přehled a umožní přesun boxu.
 4. Přidat příbuzného nabídne otce, matku, partnera nebo dítě s výslovně vybranou
    rodičovskou rolí. Je možné vyhledat a připojit existující osobu nebo ji založit.
    Založení osoby a vazby je jedna transakce a jedna operace Zpět.

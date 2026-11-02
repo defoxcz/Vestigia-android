@@ -74,14 +74,15 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
     }
     fun dismissEditor() {editorStates.removeState(editorSession);editor=null;dirty=false}
     fun closeEditor() {if(state.busy)return;if(dirty)discard=true else dismissEditor()}
-    fun select(id: String) {
+    fun select(id: String,center: Boolean=true) {
+        if(editor==id)return
         if(dirty) {discard=true;return}
         editorStates.removeState(editorSession);editorSession=newId()
         val p=tree?.people?.firstOrNull {it.id==id};val e=tree?.events?.firstOrNull {it.id==id}
         val x=nodeBounds[id]?.x ?: p?.x ?: e?.x ?: 0f;val y=nodeBounds[id]?.y ?: p?.y ?: e?.y ?: 0f
         val zoom=state.view.zoom
         val bounds=nodeBounds[id]
-        if(bounds==null && e!=null)
+        if(!center || (bounds==null && e!=null))
             controller.view(state.view.copy(selected=id))
         else controller.view(state.view.copy(selected=id,x=graphSize.width/density/2-(x+(bounds?.width ?: 244f)/2)*zoom,y=30-y*zoom))
         editor=id;eventEditing=false;dirty=false
@@ -169,7 +170,7 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
         }
         else Row(Modifier.padding(padding).fillMaxSize()) {
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                GenealogyGraph(tree,state.view,copy,controller::view,::select,{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy,onBounds={nodeBounds=it},media=controller.media,collapseWives=state.collapseWives)
+                GenealogyGraph(tree,state.view,copy,controller::view,{select(it)},{id,x,y -> if(!state.busy)controller.edit {GenealogyEdits.move(it,id,x,y)}},Modifier.fillMaxSize().onSizeChanged {graphSize=it},enabled=!state.busy,onBounds={nodeBounds=it},media=controller.media,collapseWives=state.collapseWives,onTap={id ->if(editor!=null && editor!=id)select(id,center=false)})
                 if(tree.people.isEmpty()) Column(Modifier.align(Alignment.Center).padding(32.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
                     Text(copy.t("Přidejte první osobu","Add the first person"),style=MaterialTheme.typography.headlineSmall)
                     Text(copy.t("Graf nevyžaduje stránku matriky ani jiný doklad.","The graph does not require a register page or evidence."))

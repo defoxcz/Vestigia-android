@@ -18,10 +18,19 @@ internal suspend fun PointerInputScope.graphGestures(
     onCancelDrag: ()->Unit,
     onTransform: (Offset,Offset,Float)->Unit,
     onBackgroundTap: (Offset)->Unit,
+    onTap: (GraphGestureTarget)->Unit={},
 ) {
+    var lastTap: GraphGestureTarget?=null
+    var lastTapTime=0L
+    var lastTapPosition=Offset.Zero
     awaitEachGesture {
         val down=awaitFirstDown(requireUnconsumed=false,pass=PointerEventPass.Initial)
         val target=targetAt(down.position)
+        val interval=down.uptimeMillis-lastTapTime
+        val doubleTap=target!=null && lastTap?.person==target.person &&
+            interval in viewConfiguration.doubleTapMinTimeMillis..viewConfiguration.doubleTapTimeoutMillis &&
+            (down.position-lastTapPosition).getDistance()<=viewConfiguration.touchSlop*2
+        lastTap=null
         val deadline=down.uptimeMillis+viewConfiguration.longPressTimeoutMillis
         var eventTime=down.uptimeMillis
         var mode=0 // Undecided, viewport, held box.
@@ -51,7 +60,14 @@ internal suspend fun PointerInputScope.graphGestures(
                 if(event.changes.none {it.pressed}) {
                     if(mode==2 && target!=null) {
                         if(movedBox)onDrop(target,drag)
-                    } else if(mode==0 && target==null)onBackgroundTap(change?.position ?: down.position)
+                    } else if(mode==0) {
+                        if(target==null)onBackgroundTap(change?.position ?: down.position)
+                        else if(doubleTap)onOpen(target)
+                        else {
+                            lastTap=target;lastTapTime=eventTime;lastTapPosition=down.position
+                            onTap(target)
+                        }
+                    }
                     break
                 }
             }

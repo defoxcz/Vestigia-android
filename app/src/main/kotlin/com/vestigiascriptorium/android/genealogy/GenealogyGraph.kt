@@ -66,9 +66,10 @@ private data class PersonTouchRegion(val owner: String,val person: String,val bo
 private data class BoxLine(val text: String,val title: Boolean=false,val limit: Int=Int.MAX_VALUE,val personId: String?=null)
 
 @Composable
-internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: (GraphView)->Unit,onSelect: (String)->Unit,onMove: (String,Float,Float)->Unit,modifier: Modifier=Modifier,enabled: Boolean=true,onBounds: (Map<String,GraphBox>)->Unit={},media: GenealogyMedia?=null,collapseWives: Boolean=false) {
+internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: (GraphView)->Unit,onSelect: (String)->Unit,onMove: (String,Float,Float)->Unit,modifier: Modifier=Modifier,enabled: Boolean=true,onBounds: (Map<String,GraphBox>)->Unit={},media: GenealogyMedia?=null,collapseWives: Boolean=false,onTap: (String)->Unit={}) {
     val density=LocalDensity.current
     val latest by rememberUpdatedState(view)
+    val latestTap by rememberUpdatedState(onTap)
     val latestSelect by rememberUpdatedState(onSelect)
     val latestMove by rememberUpdatedState(onMove)
     val ink=MaterialTheme.colorScheme.outline
@@ -156,6 +157,7 @@ internal fun GenealogyGraph(tree: FamilyTree,view: GraphView,copy: Copy,onView: 
                 },
                 onHold={target ->gestureView=gestureView.copy(selected=target.person);onView(gestureView)},
                 onOpen={target ->latestSelect(target.person)},
+                onTap={target ->latestTap(target.person)},
                 onDrag={target,amount ->liveDrag=target.owner to Offset(amount.x/(density.density*gestureView.zoom),0f)},
                 onDrop={target,amount ->latestMove(target.owner,target.x+amount.x/(density.density*gestureView.zoom),target.y)},
                 onCancelDrag={liveDrag=null},
