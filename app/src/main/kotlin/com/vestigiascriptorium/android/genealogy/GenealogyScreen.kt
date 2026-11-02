@@ -176,13 +176,11 @@ internal fun GenealogyWorkspace(controller: GenealogyController,copy: Copy,onExi
                     Text(copy.t("Graf nevyžaduje stránku matriky ani jiný doklad.","The graph does not require a register page or evidence."))
                 }
                 if(state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if(editor!=null && !wide) ResizableEditorPanel(copy,panelFraction,{panelFraction=it}) {Panel()}
             }
             if(wide && editor!=null) Surface(Modifier.width(panelWidth).fillMaxHeight().testTag("genealogy-side-panel"),tonalElevation=3.dp) {Panel()}
         }
     }
-    // The same editor is used in the bottom sheet and the wide-window side panel.
-    if(tree!=null && editor!=null && !wide) ResizableEditorPanel(copy,panelFraction,{panelFraction=it},::closeEditor) {Panel()}
-    // Wide panels are composed below to avoid separate editor state implementations.
     if(importing || state.importPreview!=null) GenealogyImportDialog(controller,state,copy,onDismiss={importing=false;controller.cancelImport()})
     if(create) NameDialog(copy,state.busy,onDismiss={create=false},onCreate={controller.create(it);create=false})
     if(discard) AlertDialog(onDismissRequest={discard=false},title={Text(copy.t("Zahodit změny?","Discard changes?"))},text={Text(copy.t("Rozpracované údaje nejsou uložené.","The edited details have not been saved."))},confirmButton={TextButton(onClick={discard=false;dismissEditor()}) {Text(copy.t("Zahodit","Discard"))}},dismissButton={TextButton(onClick={discard=false}) {Text(copy.t("Pokračovat v úpravách","Keep editing"))}})

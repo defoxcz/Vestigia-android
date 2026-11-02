@@ -29,7 +29,9 @@ Svislou polohu boxů určuje generační řádek; vodorovné pozice lze upravova
 přímými spojnicemi osob. Události zůstávají datovými záznamy bez vlastních boxů.
 
 Na telefonu je přehled/editor ve vysouvacím spodním panelu, na širokém okně
-v pravém panelu. Uložit potvrdí návrh; zavření změněného editoru žádá potvrzení
+v pravém panelu. Spodní panel neblokuje odkrytou část grafu; kliknutí mimo panel
+jej nezavírá a kliknutí na jinou osobu aktualizuje jeho obsah. Zavření je dostupné
+tlačítkem Zavřít nebo Zpět. Uložit potvrdí návrh; zavření změněného editoru žádá potvrzení
 zahození. Rozpracovaná pole používají uložitelný Compose stav včetně změn
 konfigurace. Při ukončení procesu systémem může Android obnovit uložený návrh
 v rámci obnovení úlohy; nejde o náhradu tlačítka Uložit.

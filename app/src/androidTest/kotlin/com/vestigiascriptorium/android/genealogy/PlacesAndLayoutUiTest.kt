@@ -69,7 +69,7 @@ class PlacesAndLayoutUiTest {
         val source=AidReaderSource(File(store.root,"index")) {file}
         rule.setContent {VestigiaScriptoriumTheme {
             var value by remember {mutableStateOf("")}
-            ResizableEditorPanel(Copy(true),.95f,{},{}) {
+            ResizableEditorPanel(Copy(true),.95f,{}) {
                 Column(Modifier.fillMaxSize().imePadding().padding(16.dp),verticalArrangement=Arrangement.Bottom) {GenealogyPlaceField("Obec",value,Copy(true),source) {value=it}}
             }
         }}
